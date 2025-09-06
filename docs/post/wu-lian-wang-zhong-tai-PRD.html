@@ -1,0 +1,1745 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark" data-light-theme="light" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
+    
+    <link rel="icon" href="https://github.githubassets.com/favicons/favicon.svg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="## 一、需求背景
+- Y项目将要接入多种硬件设备，在开发、测试、生产几个不同的阶段，设备需要接入不同的软件环境，基于多租户的设备中心只能部署在单一环境中，无法解决设备在不同环境之间分配和切换的问题。">
+<meta property="og:title" content="物联网中台PRD">
+<meta property="og:description" content="## 一、需求背景
+- Y项目将要接入多种硬件设备，在开发、测试、生产几个不同的阶段，设备需要接入不同的软件环境，基于多租户的设备中心只能部署在单一环境中，无法解决设备在不同环境之间分配和切换的问题。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://shuaiwang888.github.io/appStore-Blog.github.io/post/wu-lian-wang-zhong-tai-PRD.html">
+<meta property="og:image" content="https://github.githubassets.com/favicons/favicon.svg">
+<title>物联网中台PRD</title>
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+.copy-feedback {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    color: var(--color-fg-on-emphasis);
+    background-color: var(--color-fg-muted);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
+</style>
+
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">物联网中台PRD</h1>
+<div class="title-right">
+    <a href="https://shuaiwang888.github.io/appStore-Blog.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/shuaiwang888/appStore-Blog.github.io/issues/46" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><h2>一、需求背景</h2>
+<ul>
+<li>Y项目将要接入多种硬件设备，在开发、测试、生产几个不同的阶段，设备需要接入不同的软件环境，基于多租户的设备中心只能部署在单一环境中，无法解决设备在不同环境之间分配和切换的问题。物联网中台同样基于多租户权限系统，每个租户可以对设备进行分组管理，每个分组对应一种软件环境，物联网中台对外提供openAPI，部署在不同环境中的设备中心可以通过openAPI获取设备、进行设备相关的所有操作。</li>
+<li>参考了阿里云、华为云等物联网平台产品，按照现阶段Y项目需求最小集的要求，引入了产品、设备、物模型、南向接口、北向接口、规则引擎等产品模块，可以实现物联网中台的必要功能，同时保留了扩展的可能性。</li>
+</ul>
+<h2>二、需求目标</h2>
+<ul>
+<li>多租户：利用现有多租户系统，后期可直接面向多个租户使用；</li>
+<li>物模型、南向接口：制定统一的南向接口，新设备接入物联网中台无需开发，直接接入，物模型用来解析参数，相当于硬件协议，通过物模型中的产品模型解决级联设备的管理问题；</li>
+<li>北向接口、设备分组：openAPI形式，支持跨域调用，可以面向多个环境，解决开发、测试、生产环境的设备分配问题；</li>
+<li>规则引擎：物联网中台设置规则，生成事件或触发设备联动，由业务系统消费；</li>
+</ul>
+<h2>三、名词解释</h2>
+<ul>
+<li>产品：设备的集合，通常指一组具有相同功能的设备。</li>
+<li>设备：归属于某个产品下的具体设备。</li>
+<li>属性：设备可读取和设置的能力。一般用于描述设备运行时的状态，如环境监测设备所读取的当前环境温度等。属性支持GET和SET请求方式。应用系统可发起对属性的读取和设置请求。</li>
+<li>事件：设备可被外部调用的能力或方法，可设置输入参数和输出参数。产品提供了什么功能供云端调用。相比于属性，服务可通过一条指令实现更复杂的业务逻辑，如执行某项特定的任务。</li>
+<li>服务：设备运行时，主动上报给云端的事件。事件一般包含需要被外部感知和处理的通知信息，可包含多个输出参数。例如，某项任务完成的信息，或者设备发生故障或告警时的温度等，事件可以被订阅和推送。</li>
+</ul>
+<h2>四、需求分析</h2>
+<h3>4.1 场景描述</h3>
+<ul>
+<li>通过描述还原参与场景的人、事、物。便于读者与产品统一对场景、痛点和目标的理解。</li>
+<li>简单场景也可略过或通过流程图表达。</li>
+</ul>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/d20caa0f41a1def5296d54f9cfd37439122f21bba1a36353f250b7877ac0b59a/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f35353861373036343033386534383137623334353166656235366338616233382e706e673f782d6f73732d70726f636573733d696d6167652f77617465726d61726b2c747970655f643346354c58706c626d686c61512c736861646f775f35302c746578745f51314e4554694241625442664e5445774e7a41784f44513d2c73697a655f32302c636f6c6f725f4646464646462c745f37302c675f73652c785f3136"><img src="https://camo.githubusercontent.com/d20caa0f41a1def5296d54f9cfd37439122f21bba1a36353f250b7877ac0b59a/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f35353861373036343033386534383137623334353166656235366338616233382e706e673f782d6f73732d70726f636573733d696d6167652f77617465726d61726b2c747970655f643346354c58706c626d686c61512c736861646f775f35302c746578745f51314e4554694241625442664e5445774e7a41784f44513d2c73697a655f32302c636f6c6f725f4646464646462c745f37302c675f73652c785f3136" alt="" data-canonical-src="https://img-blog.csdnimg.cn/558a7064038e4817b3451feb56c8ab38.png?x-oss-process=image/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBAbTBfNTEwNzAxODQ=,size_20,color_FFFFFF,t_70,g_se,x_16" style="max-width: 100%;"></a></p>
+<h3>4.2 产品需求功能规划</h3>
+<ul>
+<li>xx端＋xx模块＋xxx功能，可以使用脑图管理</li>
+</ul>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/c154ae0798ba4c8e6e67c8c694cb000097e0b9555f11dec97288e4502889638b/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f65383934643230633739326534663163616162323432666634356438303538342e706e673f782d6f73732d70726f636573733d696d6167652f77617465726d61726b2c747970655f643346354c58706c626d686c61512c736861646f775f35302c746578745f51314e4554694241625442664e5445774e7a41784f44513d2c73697a655f32302c636f6c6f725f4646464646462c745f37302c675f73652c785f3136"><img src="https://camo.githubusercontent.com/c154ae0798ba4c8e6e67c8c694cb000097e0b9555f11dec97288e4502889638b/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f65383934643230633739326534663163616162323432666634356438303538342e706e673f782d6f73732d70726f636573733d696d6167652f77617465726d61726b2c747970655f643346354c58706c626d686c61512c736861646f775f35302c746578745f51314e4554694241625442664e5445774e7a41784f44513d2c73697a655f32302c636f6c6f725f4646464646462c745f37302c675f73652c785f3136" alt="" data-canonical-src="https://img-blog.csdnimg.cn/e894d20c792e4f1caab242ff45d80584.png?x-oss-process=image/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBAbTBfNTEwNzAxODQ=,size_20,color_FFFFFF,t_70,g_se,x_16" style="max-width: 100%;"></a></p>
+<h3>4.3 需求列表</h3>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th>端</th>
+<th>模块</th>
+<th>功能</th>
+<th>解决问题&amp;目标</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>web端商户管理后台</td>
+<td>登录</td>
+<td>登录租户 切换租户</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>产品管理</td>
+<td>物模型</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>设备管理-设备列表</td>
+<td>设备列表</td>
+<td>显示和查询设备列表、设备统计</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>设备分组</td>
+<td>分组对应不同的环境，利用分组实现设备分配到不同的环境</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>设备详情</td>
+<td>显示基本信息 &amp; 显示实时监测数据，查看历史监测数据列表 &amp; 查看事件记录列表 &amp; 查看服务调用记录列表</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>子设备管理</td>
+<td>显示一台设备的子设备列表 &amp; 跳转至子设备详情页</td>
+</tr>
+<tr>
+<td></td>
+<td>设备管理-分组管理</td>
+<td>分组列表</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>创建分组</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>删除分组</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>分组设备列表</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>关联分组</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>取消分组</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>规则引擎</td>
+<td>规则列表</td>
+<td>显示和查询规则列表</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>启用/停用</td>
+<td>设置规则的启用/停用状态</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>新增</td>
+<td>新增规则</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>详情</td>
+<td>查看和编辑规则详情 &amp; 显示和查询规则执行记录列表</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>删除</td>
+<td>删除规则</td>
+</tr>
+<tr>
+<td></td>
+<td>系统设置</td>
+<td>用户管理</td>
+<td>显示和查询用户列表 &amp; 锁定/解锁用户 &amp; 新建用户 &amp; 查看和编辑用户详情 &amp; 查看用户关联的角色列表，跳转至角色详情</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>角色管理</td>
+<td>显示和查询角色列表 &amp; 添加角色 &amp; 查看和编辑角色信息、资源绑定 &amp; 显示和查询用户列表、关联和取消关联用户 &amp; 删除角色</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>审计日志</td>
+<td>显示和查询审计日志</td>
+</tr>
+<tr>
+<td></td>
+<td>物模型</td>
+<td>产品</td>
+<td>设置产品信息</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>属性</td>
+<td>设置设备属性</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>事件</td>
+<td>设置设备事件</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>服务</td>
+<td>设置设备服务</td>
+</tr>
+<tr>
+<td></td>
+<td>南向接口</td>
+<td>平台端</td>
+<td>设备属性值上报 &amp; 设备事件上报 &amp; 设备注册 &amp; 设备批量注册 &amp; 设备注销 &amp; 设备启用 &amp; 设备禁用</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>设备端</td>
+<td>设备命令下发 &amp; 查询设备列表 &amp; 查询设备属性值、事件记录、服务调用记录 &amp; 接入管理</td>
+</tr>
+<tr>
+<td></td>
+<td>北向接口</td>
+<td>产品管理</td>
+<td>查询产品列表 &amp; 查询产品详细信息</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>设备管理</td>
+<td>获取某个产品的设备列表 &amp; 获取设备详情 &amp; 编辑设备 &amp; 锁定/解锁设备 &amp; 获取设备数据、事件、服务指令下发记录 &amp; 调用设备服务 &amp; 设备事件推送 &amp; 规则查询 &amp; 规则创建 &amp; 规则修改 &amp; 接入管理</td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<h2>五、详细需求文档</h2>
+<h3>5.1 相关图示</h3>
+<h4>5.1.1 业务流程图</h4>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/3d8b5392a7f4d3c51601ee30e5e3b17327ae3347e001626d3e900cb675996bc9/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f64653165653232306364306634623834396237303664626362633162353265332e706e673f782d6f73732d70726f636573733d696d6167652f77617465726d61726b2c747970655f643346354c58706c626d686c61512c736861646f775f35302c746578745f51314e4554694241625442664e5445774e7a41784f44513d2c73697a655f32302c636f6c6f725f4646464646462c745f37302c675f73652c785f3136"><img src="https://camo.githubusercontent.com/3d8b5392a7f4d3c51601ee30e5e3b17327ae3347e001626d3e900cb675996bc9/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f64653165653232306364306634623834396237303664626362633162353265332e706e673f782d6f73732d70726f636573733d696d6167652f77617465726d61726b2c747970655f643346354c58706c626d686c61512c736861646f775f35302c746578745f51314e4554694241625442664e5445774e7a41784f44513d2c73697a655f32302c636f6c6f725f4646464646462c745f37302c675f73652c785f3136" alt="" data-canonical-src="https://img-blog.csdnimg.cn/de1ee220cd0f4b849b706dbcbc1b52e3.png?x-oss-process=image/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBAbTBfNTEwNzAxODQ=,size_20,color_FFFFFF,t_70,g_se,x_16" style="max-width: 100%;"></a></p>
+<h4>5.1.2 需求用例图</h4>
+<p>略！</p>
+<h4>5.1.3 依赖关系图</h4>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/f8555d65c4fe38ad96cef1734dbe53e15ab34812682aa2ff2a412acee5c49d80/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f39356437356138343733383634623666616134346133376433303763366233352e706e673f782d6f73732d70726f636573733d696d6167652f77617465726d61726b2c747970655f643346354c58706c626d686c61512c736861646f775f35302c746578745f51314e4554694241625442664e5445774e7a41784f44513d2c73697a655f31352c636f6c6f725f4646464646462c745f37302c675f73652c785f3136"><img src="https://camo.githubusercontent.com/f8555d65c4fe38ad96cef1734dbe53e15ab34812682aa2ff2a412acee5c49d80/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f39356437356138343733383634623666616134346133376433303763366233352e706e673f782d6f73732d70726f636573733d696d6167652f77617465726d61726b2c747970655f643346354c58706c626d686c61512c736861646f775f35302c746578745f51314e4554694241625442664e5445774e7a41784f44513d2c73697a655f31352c636f6c6f725f4646464646462c745f37302c675f73652c785f3136" alt="" data-canonical-src="https://img-blog.csdnimg.cn/95d75a8473864b6faa44a37d307c6b35.png?x-oss-process=image/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBAbTBfNTEwNzAxODQ=,size_15,color_FFFFFF,t_70,g_se,x_16" style="max-width: 100%;"></a></p>
+<h3>5.2 具体需求</h3>
+<p>略！</p>
+<h2>六、数据库设计</h2>
+<div class="highlight highlight-source-sql"><pre class="notranslate"><span class="pl-k">CREATE</span> <span class="pl-k">TABLE</span> `<span class="pl-en">iot_product_info</span>` (
+  <span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span> <span class="pl-k">bigint</span>(<span class="pl-c1">20</span>) <span class="pl-k">NOT NULL</span> AUTO_INCREMENT COMMENT <span class="pl-s"><span class="pl-pds">'</span>主键<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>product_key<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">64</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>产品编码<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>product_name<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">64</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>产品名称<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>product_no<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">36</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>产品编码前缀<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>node_type<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">16</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>设备类型 子设备  父级设备  非及联设备<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>father_product_key<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">64</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>父级产品编码<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>father_product_name<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">64</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>父级产品名称<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>product_state<span class="pl-pds">`</span></span> <span class="pl-k">tinyint</span>(<span class="pl-c1">1</span>) <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span>0<span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>产品状态 0启用  1未启用<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>product_cycle<span class="pl-pds">`</span></span> <span class="pl-k">int</span>(<span class="pl-c1">11</span>) <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span>0<span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>产品最小周期时间 单位S<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>create_time<span class="pl-pds">`</span></span> datetime <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-c1">CURRENT_TIMESTAMP</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>创建时间<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>version<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">16</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span>1.0.0<span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>版本号<span class="pl-pds">'</span></span>,
+  <span class="pl-k">PRIMARY KEY</span> (<span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span>)
+) ENGINE<span class="pl-k">=</span>InnoDB AUTO_INCREMENT<span class="pl-k">=</span><span class="pl-c1">25</span> DEFAULT CHARSET<span class="pl-k">=</span>utf8mb4 COLLATE<span class="pl-k">=</span>utf8mb4_unicode_ci COMMENT<span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">'</span>产品信息表<span class="pl-pds">'</span></span>;
+
+
+
+
+
+<span class="pl-k">CREATE</span> <span class="pl-k">TABLE</span> `<span class="pl-en">iot_product_properties_info</span>` (
+  <span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span> <span class="pl-k">bigint</span>(<span class="pl-c1">20</span>) <span class="pl-k">NOT NULL</span> AUTO_INCREMENT COMMENT <span class="pl-s"><span class="pl-pds">'</span>主键<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>product_key<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">64</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>产品编码<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>product_name<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">64</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>产品名称<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>identifier<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">128</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>产品属性code<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>name<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">128</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>产品属性名称<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>access_mode<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">16</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>读写模式，r只读,rw读写<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>identifier_type<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">64</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>属性值数据类型<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>specs<span class="pl-pds">`</span></span> json <span class="pl-k">NOT NULL</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>属性具体json<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>create_time<span class="pl-pds">`</span></span> datetime <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-c1">CURRENT_TIMESTAMP</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>创建时间<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>product_id<span class="pl-pds">`</span></span> <span class="pl-k">bigint</span>(<span class="pl-c1">20</span>) <span class="pl-k">NOT NULL</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>关联产品表<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>version<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">16</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span>1.0.0<span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>版本号<span class="pl-pds">'</span></span>,
+  <span class="pl-k">PRIMARY KEY</span> (<span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span>)
+) ENGINE<span class="pl-k">=</span>InnoDB AUTO_INCREMENT<span class="pl-k">=</span><span class="pl-c1">33</span> DEFAULT CHARSET<span class="pl-k">=</span>utf8mb4 COLLATE<span class="pl-k">=</span>utf8mb4_unicode_ci COMMENT<span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">'</span>产品属性信息表<span class="pl-pds">'</span></span>;
+
+
+
+<span class="pl-k">CREATE</span> <span class="pl-k">TABLE</span> `<span class="pl-en">iot_product_events_info</span>` (
+  <span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span> <span class="pl-k">bigint</span>(<span class="pl-c1">20</span>) <span class="pl-k">NOT NULL</span> AUTO_INCREMENT COMMENT <span class="pl-s"><span class="pl-pds">'</span>主键<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>product_key<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">64</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>产品编码<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>product_name<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">64</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>产品名称<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>identifier<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">128</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>产品事件code<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>name<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">128</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>事件名称<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>event_type<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">16</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>事件类型  信息info、告警alert、故障error<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>output_data<span class="pl-pds">`</span></span> json <span class="pl-k">NOT NULL</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>事件输出参数json<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>create_time<span class="pl-pds">`</span></span> datetime <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-c1">CURRENT_TIMESTAMP</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>创建时间<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>product_id<span class="pl-pds">`</span></span> <span class="pl-k">bigint</span>(<span class="pl-c1">20</span>) <span class="pl-k">NOT NULL</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>关联产品ID<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>version<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">16</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span>1.0.0<span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>版本号<span class="pl-pds">'</span></span>,
+  <span class="pl-k">PRIMARY KEY</span> (<span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span>)
+) ENGINE<span class="pl-k">=</span>InnoDB AUTO_INCREMENT<span class="pl-k">=</span><span class="pl-c1">29</span> DEFAULT CHARSET<span class="pl-k">=</span>utf8mb4 COLLATE<span class="pl-k">=</span>utf8mb4_unicode_ci COMMENT<span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">'</span>产品事件信息表<span class="pl-pds">'</span></span>;
+
+
+
+
+<span class="pl-k">CREATE</span> <span class="pl-k">TABLE</span> `<span class="pl-en">iot_product_services_info</span>` (
+  <span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span> <span class="pl-k">bigint</span>(<span class="pl-c1">20</span>) <span class="pl-k">NOT NULL</span> AUTO_INCREMENT COMMENT <span class="pl-s"><span class="pl-pds">'</span>主键<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>product_key<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">64</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>产品编码<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>product_name<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">64</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>产品名称<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>identifier<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">128</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>服务code<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>name<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">128</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>服务名称<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>call_type<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">16</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>服务调用方式   async 异步  sync  同步 <span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>service_method<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">128</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>调用方法<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>create_time<span class="pl-pds">`</span></span> datetime <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-c1">CURRENT_TIMESTAMP</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>创建时间<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>output_data<span class="pl-pds">`</span></span> json <span class="pl-k">NOT NULL</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>服务输出参数json<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>input_data<span class="pl-pds">`</span></span> json <span class="pl-k">NOT NULL</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>服务输入参数json<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>product_id<span class="pl-pds">`</span></span> <span class="pl-k">bigint</span>(<span class="pl-c1">20</span>) <span class="pl-k">NOT NULL</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>关联产品ID<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>version<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">16</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span>1.0.0<span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>版本号<span class="pl-pds">'</span></span>,
+  <span class="pl-k">PRIMARY KEY</span> (<span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span>)
+) ENGINE<span class="pl-k">=</span>InnoDB AUTO_INCREMENT<span class="pl-k">=</span><span class="pl-c1">2</span> DEFAULT CHARSET<span class="pl-k">=</span>utf8mb4 COLLATE<span class="pl-k">=</span>utf8mb4_unicode_ci COMMENT<span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">'</span>产品服务信息表<span class="pl-pds">'</span></span>;
+
+
+
+
+
+
+
+
+
+<span class="pl-k">CREATE</span> <span class="pl-k">TABLE</span> `<span class="pl-en">iot_device_info_record</span>` (
+  <span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span> <span class="pl-k">bigint</span>(<span class="pl-c1">20</span>) <span class="pl-k">NOT NULL</span> AUTO_INCREMENT COMMENT <span class="pl-s"><span class="pl-pds">'</span>主键<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>device_sn_code<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">64</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>硬件ID<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>device_name<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">36</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>设备名称<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>device_code<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">36</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>设备编号<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>device_type<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">10</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>设备类型 子设备  父级设备  非及联设备<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>belong_to_project<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">18</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span>unassigned<span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>所属项目<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>allocate_time<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">36</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>分配时间<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>state<span class="pl-pds">`</span></span> <span class="pl-k">int</span>(<span class="pl-c1">1</span>) <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span>1<span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>0 在线  1 离线  在线状态<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>version<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">10</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>版本号<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>product_key<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">36</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>所属产品<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>parent_product_code<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">36</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>上级产品编码<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>parent_code<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">36</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>上级设备ID<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>last_heart_time<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">100</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>最后在线时间:定时更新<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>is_deleted<span class="pl-pds">`</span></span> <span class="pl-k">tinyint</span>(<span class="pl-c1">1</span>) <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span>0<span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>数据删除状态<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>create_time<span class="pl-pds">`</span></span> datetime <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-c1">CURRENT_TIMESTAMP</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>创建时间<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>update_time<span class="pl-pds">`</span></span> datetime <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-c1">CURRENT_TIMESTAMP</span> <span class="pl-k">ON</span> <span class="pl-k">UPDATE</span> <span class="pl-c1">CURRENT_TIMESTAMP</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>修改时间<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>product_name<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">100</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>产品名称<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>create_user<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">36</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>创建人<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>enable_state<span class="pl-pds">`</span></span> <span class="pl-k">int</span>(<span class="pl-c1">1</span>) <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span>0<span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>启用状态  0 启用  1禁用<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>fault_state<span class="pl-pds">`</span></span> <span class="pl-k">int</span>(<span class="pl-c1">1</span>) <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span>0<span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>故障状态  0 无故障  1故障<span class="pl-pds">'</span></span>,
+  <span class="pl-k">PRIMARY KEY</span> (<span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span>)
+) ENGINE<span class="pl-k">=</span>InnoDB AUTO_INCREMENT<span class="pl-k">=</span><span class="pl-c1">39</span> DEFAULT CHARSET<span class="pl-k">=</span>utf8mb4 COLLATE<span class="pl-k">=</span>utf8mb4_unicode_ci COMMENT<span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">'</span>设备信息记录表<span class="pl-pds">'</span></span>;
+
+
+
+
+
+
+<span class="pl-k">CREATE</span> <span class="pl-k">TABLE</span> `<span class="pl-en">iot_device_online_state_log</span>` (
+  <span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span> <span class="pl-k">bigint</span>(<span class="pl-c1">20</span>) <span class="pl-k">NOT NULL</span> AUTO_INCREMENT COMMENT <span class="pl-s"><span class="pl-pds">'</span>主键<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>device_id<span class="pl-pds">`</span></span> <span class="pl-k">bigint</span>(<span class="pl-c1">20</span>) <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span>0<span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>设备ID<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>monitoring_property<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">64</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>在线状态<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>monitoring_property_name<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">64</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>在线状态名称<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>online_state<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">64</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>在线状态<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>last_heart_time<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">100</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>最后在线时间:定时更新<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>active_time<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">100</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>激活时间<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>create_time<span class="pl-pds">`</span></span> datetime <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-c1">CURRENT_TIMESTAMP</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>创建时间<span class="pl-pds">'</span></span>,
+  <span class="pl-k">PRIMARY KEY</span> (<span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span>)
+) ENGINE<span class="pl-k">=</span>InnoDB AUTO_INCREMENT<span class="pl-k">=</span><span class="pl-c1">22</span> DEFAULT CHARSET<span class="pl-k">=</span>utf8mb4 COLLATE<span class="pl-k">=</span>utf8mb4_unicode_ci COMMENT<span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">'</span>设备在线状态记录表<span class="pl-pds">'</span></span>;
+
+
+
+
+<span class="pl-k">CREATE</span> <span class="pl-k">TABLE</span> `<span class="pl-en">iot_monitoring_data_log</span>` (
+  <span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span> <span class="pl-k">bigint</span>(<span class="pl-c1">20</span>) <span class="pl-k">NOT NULL</span> AUTO_INCREMENT COMMENT <span class="pl-s"><span class="pl-pds">'</span>主键<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>device_id<span class="pl-pds">`</span></span> <span class="pl-k">bigint</span>(<span class="pl-c1">20</span>) <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span>0<span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>设备ID<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>product_key<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">36</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>产品编码<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>monitoring_property<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">64</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>监控属性<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>monitoring_property_name<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">64</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>监控属性名称<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>monitoring_value<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">1000</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>监控值<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>monitoring_value_name<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">64</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>监控值<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>create_time<span class="pl-pds">`</span></span> datetime <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-c1">CURRENT_TIMESTAMP</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>创建时间<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>version_num<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">32</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>版本号<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>unit<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">32</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>单位<span class="pl-pds">'</span></span>,
+  <span class="pl-k">PRIMARY KEY</span> (<span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span>)
+) ENGINE<span class="pl-k">=</span>InnoDB AUTO_INCREMENT<span class="pl-k">=</span><span class="pl-c1">1</span> DEFAULT CHARSET<span class="pl-k">=</span>utf8mb4 COLLATE<span class="pl-k">=</span>utf8mb4_unicode_ci COMMENT<span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">'</span>设备监测数据记录表<span class="pl-pds">'</span></span>;
+
+
+
+
+
+
+
+<span class="pl-k">CREATE</span> <span class="pl-k">TABLE</span> `<span class="pl-en">iot_use_service_log</span>` (
+  <span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span> <span class="pl-k">bigint</span>(<span class="pl-c1">20</span>) <span class="pl-k">NOT NULL</span> AUTO_INCREMENT COMMENT <span class="pl-s"><span class="pl-pds">'</span>主键<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>device_id<span class="pl-pds">`</span></span> <span class="pl-k">bigint</span>(<span class="pl-c1">20</span>) <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span>0<span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>设备ID<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>product_key<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">36</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>所属产品<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>action_id<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">64</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>命令下发Id<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>service_id<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">64</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>服务ID<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>service_name<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">64</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>服务名称<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>input_param<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">64</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>输入参数<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>output_param<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">1000</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>输出参数<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>create_time<span class="pl-pds">`</span></span> datetime <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-c1">CURRENT_TIMESTAMP</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>创建时间<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>call_back_message<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">255</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>回调提示信息<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>state<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">32</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span> fail-失败  success-成功<span class="pl-cce">\n</span><span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>version_num<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">32</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>版本号<span class="pl-pds">'</span></span>,
+  <span class="pl-k">PRIMARY KEY</span> (<span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span>)
+) ENGINE<span class="pl-k">=</span>InnoDB AUTO_INCREMENT<span class="pl-k">=</span><span class="pl-c1">12</span> DEFAULT CHARSET<span class="pl-k">=</span>utf8mb4 COLLATE<span class="pl-k">=</span>utf8mb4_unicode_ci COMMENT<span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">'</span>设备服务调用记录表<span class="pl-pds">'</span></span>;
+
+
+
+<span class="pl-k">CREATE</span> <span class="pl-k">TABLE</span> `<span class="pl-en">iot_event_log</span>` (
+  <span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span> <span class="pl-k">bigint</span>(<span class="pl-c1">20</span>) <span class="pl-k">NOT NULL</span> AUTO_INCREMENT COMMENT <span class="pl-s"><span class="pl-pds">'</span>主键<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>device_id<span class="pl-pds">`</span></span> <span class="pl-k">bigint</span>(<span class="pl-c1">20</span>) <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span>0<span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>设备ID<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>product_key<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">36</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>所属产品<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>event_id<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">64</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>事件ID<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>event_name<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">64</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>事件名称<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>event_type<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">32</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>事件类型<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>event_type_name<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">32</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>事件类名称<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>output_param<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">1000</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>输出参数<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>create_time<span class="pl-pds">`</span></span> datetime <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-c1">CURRENT_TIMESTAMP</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>创建时间<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>event_time<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">32</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>事件时间<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>version_num<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">32</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>版本号<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>message_id<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">64</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>上报事件ID<span class="pl-pds">'</span></span>,
+  <span class="pl-k">PRIMARY KEY</span> (<span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span>)
+) ENGINE<span class="pl-k">=</span>InnoDB AUTO_INCREMENT<span class="pl-k">=</span><span class="pl-c1">6</span> DEFAULT CHARSET<span class="pl-k">=</span>utf8mb4 COLLATE<span class="pl-k">=</span>utf8mb4_unicode_ci COMMENT<span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">'</span>设备事件记录表<span class="pl-pds">'</span></span>;
+
+
+
+
+
+
+<span class="pl-k">CREATE</span> <span class="pl-k">TABLE</span> `<span class="pl-en">iot_rule_engine_record</span>` (
+  <span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span> <span class="pl-k">bigint</span>(<span class="pl-c1">20</span>) <span class="pl-k">NOT NULL</span> AUTO_INCREMENT COMMENT <span class="pl-s"><span class="pl-pds">'</span>主键<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>rule_name<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">36</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>规则名称<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>card_active<span class="pl-pds">`</span></span> <span class="pl-k">tinyint</span>(<span class="pl-c1">2</span>) <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span>0<span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>启用状态0 启用   1 禁用<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>is_deleted<span class="pl-pds">`</span></span> <span class="pl-k">tinyint</span>(<span class="pl-c1">1</span>) <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span>0<span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>数据删除状态<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>create_time<span class="pl-pds">`</span></span> datetime <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-c1">CURRENT_TIMESTAMP</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>创建时间<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>update_time<span class="pl-pds">`</span></span> datetime <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-c1">CURRENT_TIMESTAMP</span> <span class="pl-k">ON</span> <span class="pl-k">UPDATE</span> <span class="pl-c1">CURRENT_TIMESTAMP</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>修改时间<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>remark<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">128</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>备注<span class="pl-pds">'</span></span>,
+  <span class="pl-k">PRIMARY KEY</span> (<span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span>)
+) ENGINE<span class="pl-k">=</span>InnoDB AUTO_INCREMENT<span class="pl-k">=</span><span class="pl-c1">5</span> DEFAULT CHARSET<span class="pl-k">=</span>utf8mb4 COLLATE<span class="pl-k">=</span>utf8mb4_unicode_ci COMMENT<span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">'</span>设备规则引擎表<span class="pl-pds">'</span></span>;
+
+
+
+
+
+<span class="pl-k">CREATE</span> <span class="pl-k">TABLE</span> `<span class="pl-en">iot_rule_engine_trigger_info</span>` (
+  <span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span> <span class="pl-k">bigint</span>(<span class="pl-c1">20</span>) <span class="pl-k">NOT NULL</span> AUTO_INCREMENT COMMENT <span class="pl-s"><span class="pl-pds">'</span>主键<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>rule_id<span class="pl-pds">`</span></span> <span class="pl-k">bigint</span>(<span class="pl-c1">20</span>) <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span>0<span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>规则ID<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>version<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">10</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>版本号<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>product_key<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">64</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>产品key<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>trigger_type<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">16</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>触发类型   设备触发 时间触发<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>trigger_mode<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">16</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>触发方式   属性触发  事件触发<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>trigger_property<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">64</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>触发属性<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>trigger_event<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">64</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>触发事件<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>trigger_symbol<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">255</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>触发运算符<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>trigger_value<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">100</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>触发值<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>min_value<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">16</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>开始值<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>max_value<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">16</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>结束值<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>trigger_times<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">16</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>触发限制次数<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>trigger_time_frame<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">16</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>触发时间限制 单位:分钟<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>trigger_condition<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">16</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>触发条件<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>trigger_repeat_mode<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">16</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>时间触发重复方式<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>trigger_time<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">36</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>时间触发时刻<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>trigger_week_time<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">36</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>时间触发每周时间<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>trigger_month_time<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">64</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>时间触发月时间<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>device_ids<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">36</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>时间触发选择设备集合<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>create_time<span class="pl-pds">`</span></span> datetime <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-c1">CURRENT_TIMESTAMP</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>创建时间<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>update_time<span class="pl-pds">`</span></span> datetime <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-c1">CURRENT_TIMESTAMP</span> <span class="pl-k">ON</span> <span class="pl-k">UPDATE</span> <span class="pl-c1">CURRENT_TIMESTAMP</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>修改时间<span class="pl-pds">'</span></span>,
+  <span class="pl-k">PRIMARY KEY</span> (<span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span>)
+) ENGINE<span class="pl-k">=</span>InnoDB AUTO_INCREMENT<span class="pl-k">=</span><span class="pl-c1">7</span> DEFAULT CHARSET<span class="pl-k">=</span>utf8mb4 COLLATE<span class="pl-k">=</span>utf8mb4_unicode_ci COMMENT<span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">'</span>设备规则引擎触发器表<span class="pl-pds">'</span></span>;
+
+
+
+
+
+<span class="pl-k">CREATE</span> <span class="pl-k">TABLE</span> `<span class="pl-en">iot_rule_engine_execution_info</span>` (
+  <span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span> <span class="pl-k">bigint</span>(<span class="pl-c1">20</span>) <span class="pl-k">NOT NULL</span> AUTO_INCREMENT COMMENT <span class="pl-s"><span class="pl-pds">'</span>主键<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>rule_id<span class="pl-pds">`</span></span> <span class="pl-k">bigint</span>(<span class="pl-c1">20</span>) <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span>0<span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>规则ID<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>execution_type<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">16</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>执行类型  设备动作、事件生成<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>execution_service<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">64</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>执行服务<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>execution_value<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">500</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>执行参数<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>execution_delay_time<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">16</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>执行延时时间<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>execution_mode<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">16</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>时间方式设备选择方式<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>device_ids<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">500</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>时间触发选择设备集合<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>execution_event<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">64</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>执行事件<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>garden_name<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">100</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>设备所在职场名<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>garden_id<span class="pl-pds">`</span></span> <span class="pl-k">int</span>(<span class="pl-c1">11</span>) <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span>0<span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>设备所在职场id<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>building_name<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">100</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>设备所在楼栋名称<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>building_id<span class="pl-pds">`</span></span> <span class="pl-k">int</span>(<span class="pl-c1">11</span>) <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span>0<span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>设备所在楼栋id<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>floor_name<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">100</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>设备所在楼层名称<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>floor_id<span class="pl-pds">`</span></span> <span class="pl-k">int</span>(<span class="pl-c1">11</span>) <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span>0<span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>设备所在楼层id<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>area_name<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">100</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>设备所在区域名称<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>area_id<span class="pl-pds">`</span></span> <span class="pl-k">int</span>(<span class="pl-c1">11</span>) <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span>0<span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>设备所在区域id<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>create_time<span class="pl-pds">`</span></span> datetime <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-c1">CURRENT_TIMESTAMP</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>创建时间<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>update_time<span class="pl-pds">`</span></span> datetime <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-c1">CURRENT_TIMESTAMP</span> <span class="pl-k">ON</span> <span class="pl-k">UPDATE</span> <span class="pl-c1">CURRENT_TIMESTAMP</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>修改时间<span class="pl-pds">'</span></span>,
+  <span class="pl-k">PRIMARY KEY</span> (<span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span>)
+) ENGINE<span class="pl-k">=</span>InnoDB AUTO_INCREMENT<span class="pl-k">=</span><span class="pl-c1">7</span> DEFAULT CHARSET<span class="pl-k">=</span>utf8mb4 COLLATE<span class="pl-k">=</span>utf8mb4_unicode_ci COMMENT<span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">'</span>设备规则引擎执行器表<span class="pl-pds">'</span></span>;
+
+
+
+
+
+<span class="pl-k">CREATE</span> <span class="pl-k">TABLE</span> `<span class="pl-en">iot_rule_engine_execution_log</span>` (
+  <span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span> <span class="pl-k">bigint</span>(<span class="pl-c1">20</span>) <span class="pl-k">NOT NULL</span> AUTO_INCREMENT COMMENT <span class="pl-s"><span class="pl-pds">'</span>主键<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>rule_id<span class="pl-pds">`</span></span> <span class="pl-k">bigint</span>(<span class="pl-c1">20</span>) <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span>0<span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>规则ID<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>execution_id<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">255</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span>0<span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>执行器ID<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>trigger_id<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">255</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span>0<span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>触发器ID<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>trigger_time<span class="pl-pds">`</span></span> datetime <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-c1">CURRENT_TIMESTAMP</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>触发时间<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>execution_action<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">100</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>执行动作<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>trigger_mode<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">100</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>触发条件<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>create_time<span class="pl-pds">`</span></span> datetime <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-c1">CURRENT_TIMESTAMP</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>创建时间<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>execution_result<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">500</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>执行动作<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>action_id<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">128</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>事件ID<span class="pl-pds">'</span></span>,
+  <span class="pl-k">PRIMARY KEY</span> (<span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span>)
+) ENGINE<span class="pl-k">=</span>InnoDB DEFAULT CHARSET<span class="pl-k">=</span>utf8mb4 COLLATE<span class="pl-k">=</span>utf8mb4_unicode_ci COMMENT<span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">'</span>设备规则引擎执行执行记录表<span class="pl-pds">'</span></span>;
+
+
+
+
+<span class="pl-k">CREATE</span> <span class="pl-k">TABLE</span> `<span class="pl-en">iot_service_event_info</span>` (
+  <span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span> <span class="pl-k">bigint</span>(<span class="pl-c1">20</span>) <span class="pl-k">NOT NULL</span> AUTO_INCREMENT COMMENT <span class="pl-s"><span class="pl-pds">'</span>主键<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>identifier<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">100</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>业务事件<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>identifier_name<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">100</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>业务事件名称<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>output_data<span class="pl-pds">`</span></span> json <span class="pl-k">NOT NULL</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>输出参数json<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>create_time<span class="pl-pds">`</span></span> datetime <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-c1">CURRENT_TIMESTAMP</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>创建时间<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>update_time<span class="pl-pds">`</span></span> datetime <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-c1">CURRENT_TIMESTAMP</span> <span class="pl-k">ON</span> <span class="pl-k">UPDATE</span> <span class="pl-c1">CURRENT_TIMESTAMP</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>修改时间<span class="pl-pds">'</span></span>,
+  <span class="pl-k">PRIMARY KEY</span> (<span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span>)
+) ENGINE<span class="pl-k">=</span>InnoDB AUTO_INCREMENT<span class="pl-k">=</span><span class="pl-c1">7</span> DEFAULT CHARSET<span class="pl-k">=</span>utf8mb4 COLLATE<span class="pl-k">=</span>utf8mb4_unicode_ci COMMENT<span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">'</span>业务事件表<span class="pl-pds">'</span></span>;
+
+
+
+
+
+<span class="pl-k">CREATE</span> <span class="pl-k">TABLE</span> `<span class="pl-en">iot_user_op_record</span>` (
+  <span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span> <span class="pl-k">bigint</span>(<span class="pl-c1">20</span>) <span class="pl-k">NOT NULL</span> AUTO_INCREMENT COMMENT <span class="pl-s"><span class="pl-pds">'</span>主键<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>tenant_code<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">100</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>租户编号<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>user_name<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">100</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>用户名<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>op_function<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">100</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>操作功能<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>op_content<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">1500</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>操作内容<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>op_ip<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">50</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>操作ip<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>create_time<span class="pl-pds">`</span></span> datetime <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-c1">CURRENT_TIMESTAMP</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>创建时间<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>update_time<span class="pl-pds">`</span></span> datetime <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-c1">CURRENT_TIMESTAMP</span> <span class="pl-k">ON</span> <span class="pl-k">UPDATE</span> <span class="pl-c1">CURRENT_TIMESTAMP</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>修改时间<span class="pl-pds">'</span></span>,
+  <span class="pl-s"><span class="pl-pds">`</span>user_code<span class="pl-pds">`</span></span> <span class="pl-k">varchar</span>(<span class="pl-c1">100</span>) COLLATE utf8mb4_unicode_ci <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>用户code<span class="pl-pds">'</span></span>,
+  <span class="pl-k">PRIMARY KEY</span> (<span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span>)
+) ENGINE<span class="pl-k">=</span>InnoDB AUTO_INCREMENT<span class="pl-k">=</span><span class="pl-c1">1</span> DEFAULT CHARSET<span class="pl-k">=</span>utf8mb4 COLLATE<span class="pl-k">=</span>utf8mb4_unicode_ci COMMENT<span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">'</span>审计日志<span class="pl-pds">'</span></span>;
+
+
+
+
+
+设备分组记录表  待定
+
+
+<span class="pl-k">CREATE</span> <span class="pl-k">TABLE</span> `<span class="pl-en">iot_device_group_info</span>` (
+	<span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span> <span class="pl-k">BIGINT</span> <span class="pl-k">NOT NULL</span> AUTO_INCREMENT COMMENT <span class="pl-s"><span class="pl-pds">'</span>主键<span class="pl-pds">'</span></span>,
+	<span class="pl-s"><span class="pl-pds">`</span>group_id<span class="pl-pds">`</span></span> <span class="pl-k">VARCHAR</span> ( <span class="pl-c1">64</span> ) <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>分组ID<span class="pl-pds">'</span></span>,
+	<span class="pl-s"><span class="pl-pds">`</span>group_name<span class="pl-pds">`</span></span> <span class="pl-k">VARCHAR</span> ( <span class="pl-c1">64</span> ) <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>分组名称<span class="pl-pds">'</span></span>,
+	<span class="pl-s"><span class="pl-pds">`</span>remark<span class="pl-pds">`</span></span> <span class="pl-k">VARCHAR</span> ( <span class="pl-c1">200</span> ) <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>描述<span class="pl-pds">'</span></span>,
+	<span class="pl-s"><span class="pl-pds">`</span>is_deleted<span class="pl-pds">`</span></span> TINYINT ( <span class="pl-c1">1</span> ) <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span>0<span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>数据删除状态<span class="pl-pds">'</span></span>,
+	<span class="pl-s"><span class="pl-pds">`</span>update_time<span class="pl-pds">`</span></span> datetime <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-c1">CURRENT_TIMESTAMP</span> <span class="pl-k">ON</span> <span class="pl-k">UPDATE</span> <span class="pl-c1">CURRENT_TIMESTAMP</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>修改时间<span class="pl-pds">'</span></span>,
+	<span class="pl-s"><span class="pl-pds">`</span>create_time<span class="pl-pds">`</span></span> datetime <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-c1">CURRENT_TIMESTAMP</span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>创建时间<span class="pl-pds">'</span></span>,
+<span class="pl-k">PRIMARY KEY</span> ( <span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span> ) 
+) ENGINE <span class="pl-k">=</span> INNODB DEFAULT CHARSET <span class="pl-k">=</span> utf8mb4 COLLATE <span class="pl-k">=</span> utf8mb4_unicode_ci COMMENT <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>设备分组表<span class="pl-pds">'</span></span>;
+
+
+
+
+
+<span class="pl-k">CREATE</span> <span class="pl-k">TABLE</span> `<span class="pl-en">iot_device_group_middle_info</span>` (
+	<span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span> <span class="pl-k">BIGINT</span> <span class="pl-k">NOT NULL</span> AUTO_INCREMENT COMMENT <span class="pl-s"><span class="pl-pds">'</span>主键<span class="pl-pds">'</span></span>,
+	<span class="pl-s"><span class="pl-pds">`</span>group_id<span class="pl-pds">`</span></span> <span class="pl-k">VARCHAR</span> ( <span class="pl-c1">64</span> ) <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>分组ID<span class="pl-pds">'</span></span>,
+	<span class="pl-s"><span class="pl-pds">`</span>device_id<span class="pl-pds">`</span></span> <span class="pl-k">VARCHAR</span> ( <span class="pl-c1">64</span> ) <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span> COMMENT <span class="pl-s"><span class="pl-pds">'</span>设备ID<span class="pl-pds">'</span></span>,
+<span class="pl-k">PRIMARY KEY</span> ( <span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span> ) 
+) ENGINE <span class="pl-k">=</span> INNODB DEFAULT CHARSET <span class="pl-k">=</span> utf8mb4 COLLATE <span class="pl-k">=</span> utf8mb4_unicode_ci COMMENT <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>设备分组中间表<span class="pl-pds">'</span></span>;</pre></div>
+<h2>七、表关系</h2>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/c3c295ecc19f3ec63807a855cb010518fe466d61e2e2ad674379ee67916d7d76/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f66626231373261343537633434373065383534343164623436663237623962352e706e673f782d6f73732d70726f636573733d696d6167652f77617465726d61726b2c747970655f643346354c58706c626d686c61512c736861646f775f35302c746578745f51314e4554694241625442664e5445774e7a41784f44513d2c73697a655f32302c636f6c6f725f4646464646462c745f37302c675f73652c785f3136"><img src="https://camo.githubusercontent.com/c3c295ecc19f3ec63807a855cb010518fe466d61e2e2ad674379ee67916d7d76/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f66626231373261343537633434373065383534343164623436663237623962352e706e673f782d6f73732d70726f636573733d696d6167652f77617465726d61726b2c747970655f643346354c58706c626d686c61512c736861646f775f35302c746578745f51314e4554694241625442664e5445774e7a41784f44513d2c73697a655f32302c636f6c6f725f4646464646462c745f37302c675f73652c785f3136" alt="" data-canonical-src="https://img-blog.csdnimg.cn/fbb172a457c4470e85441db46f27b9b5.png?x-oss-process=image/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBAbTBfNTEwNzAxODQ=,size_20,color_FFFFFF,t_70,g_se,x_16" style="max-width: 100%;"></a></p>
+<h2>八、接口设计</h2>
+<h3>8.1 iot本地接口</h3>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th>id</th>
+<th>接口名称</th>
+<th>path</th>
+<th>接口类型</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>设备列表-设备管理列表</td>
+<td>/api/device/queryList</td>
+<td>get</td>
+</tr>
+<tr>
+<td>2</td>
+<td>设备列表-产品选择下拉</td>
+<td>/api/product/list</td>
+<td>get</td>
+</tr>
+<tr>
+<td>3</td>
+<td>设备列表-设备所属项目下拉</td>
+<td>/api/device/projectList</td>
+<td>get</td>
+</tr>
+<tr>
+<td>4</td>
+<td>设备列表-设备管理列表统计设备数量接口</td>
+<td>/api/device/countList</td>
+<td>get</td>
+</tr>
+<tr>
+<td>5</td>
+<td>设备列表-设备状态下拉</td>
+<td>/api/device/stateList</td>
+<td>get</td>
+</tr>
+<tr>
+<td>6</td>
+<td>设备列表-启用禁用设备接口</td>
+<td>/api/device/updateState</td>
+<td>put</td>
+</tr>
+<tr>
+<td>7</td>
+<td>设备列表-返回列表展示字段接口</td>
+<td>/api/device/fieldList</td>
+<td>get</td>
+</tr>
+<tr>
+<td>8</td>
+<td>设备列表-设备管理子设备列表</td>
+<td>/api/device/childList</td>
+<td>get</td>
+</tr>
+<tr>
+<td>11</td>
+<td>设备列表-批量分配项目接口</td>
+<td>/api/device/projectBelong</td>
+<td>put</td>
+</tr>
+<tr>
+<td>12</td>
+<td>设备列表-批量取消分配项目接口</td>
+<td>/api/device/cancelProjectBelong</td>
+<td>put</td>
+</tr>
+<tr>
+<td>13</td>
+<td>设备详情-基本信息接口</td>
+<td>/api/device/basicInfo</td>
+<td>get</td>
+</tr>
+<tr>
+<td>14</td>
+<td>设备详情-监测数据接口</td>
+<td>/api/device/monitoringDataInfo</td>
+<td>get</td>
+</tr>
+<tr>
+<td>15</td>
+<td>设备详情-服务调用分页接口</td>
+<td>/api/device/serviceQueryList</td>
+<td>get</td>
+</tr>
+<tr>
+<td>16</td>
+<td>设备详情-事件管理分页接口</td>
+<td>/api/device/eventList</td>
+<td>get</td>
+</tr>
+<tr>
+<td>17</td>
+<td>设备详情-属性下拉接口</td>
+<td>/api/product/propertyList</td>
+<td>get</td>
+</tr>
+<tr>
+<td>18</td>
+<td>设备详情-事件类型</td>
+<td>/ap/product/eventTypeList</td>
+<td>get</td>
+</tr>
+<tr>
+<td>19</td>
+<td>设备详情-事件名称下拉</td>
+<td>/api/product/eventNameLIst</td>
+<td>get</td>
+</tr>
+<tr>
+<td>20</td>
+<td>设备详情-服务下拉</td>
+<td>/api/product/serviceList</td>
+<td>get</td>
+</tr>
+<tr>
+<td>20</td>
+<td>规则引擎-规则列表分页接口</td>
+<td>/api/ruleEngine/queryList</td>
+<td>get</td>
+</tr>
+<tr>
+<td>21</td>
+<td>规则引擎-规则列表-批量删除接口</td>
+<td>/api/ruleEngine/deleteBatch</td>
+<td>delete</td>
+</tr>
+<tr>
+<td>22</td>
+<td>规则引擎-规则列表-批量启用停用接口</td>
+<td>/api/ruleEngine/updateStateBatch</td>
+<td>put</td>
+</tr>
+<tr>
+<td>22</td>
+<td>规则引擎-新增规则/编辑规则接口</td>
+<td>/api/ruleEngine/submit</td>
+<td>post</td>
+</tr>
+<tr>
+<td>23</td>
+<td>规则引擎-详情接口</td>
+<td>/api/ruleEngine/detail</td>
+<td>get</td>
+</tr>
+<tr>
+<td>24</td>
+<td>规则引擎-触发器类型下拉</td>
+<td>/api/ruleEngine/triggerTypeList</td>
+<td>get</td>
+</tr>
+<tr>
+<td>25</td>
+<td>规则引擎-触发方式下拉</td>
+<td>/api/ruleEngine/triggerModeList</td>
+<td>get</td>
+</tr>
+<tr>
+<td>26</td>
+<td>规则引擎-属性下拉</td>
+<td>/api/ruleEngine/propertyList</td>
+<td>get</td>
+</tr>
+<tr>
+<td>27</td>
+<td>规则引擎-设备属性状态下拉</td>
+<td>/api/ruleEngine/propertyStateList</td>
+<td>get</td>
+</tr>
+<tr>
+<td>28</td>
+<td>规则引擎-重复方式下拉</td>
+<td>/api/ruleEngine/repetition Mode</td>
+<td>get</td>
+</tr>
+<tr>
+<td>29</td>
+<td>规则引擎-执行类型下拉</td>
+<td>/api/ruleEngine/executeType</td>
+<td>get</td>
+</tr>
+<tr>
+<td>30</td>
+<td>规则引擎-服务下拉</td>
+<td>/api/ruleEngine/serviceList</td>
+<td>get</td>
+</tr>
+<tr>
+<td>31</td>
+<td>规则引擎-空间树形接口</td>
+<td>/api/ruleEngine/workSpqceTree</td>
+<td>get</td>
+</tr>
+<tr>
+<td>32</td>
+<td>执行记录列表</td>
+<td>/api/ruleEngine/executionRecordList</td>
+<td>get</td>
+</tr>
+<tr>
+<td>33</td>
+<td>规则引擎触发执行逻辑</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>33</td>
+<td>分组列表分页</td>
+<td>/api/group/queryList</td>
+<td>get</td>
+</tr>
+<tr>
+<td>34</td>
+<td>编辑/创建分组</td>
+<td>/api/group/submit</td>
+<td>post</td>
+</tr>
+<tr>
+<td>35</td>
+<td>删除分组</td>
+<td>/api/group/delete</td>
+<td>delete</td>
+</tr>
+<tr>
+<td>36</td>
+<td>批量删除分组</td>
+<td>/api/group/delete-batch</td>
+<td>delete</td>
+</tr>
+<tr>
+<td>37</td>
+<td>分组设备列表</td>
+<td>/api/group/deviceList</td>
+<td>get</td>
+</tr>
+<tr>
+<td>38</td>
+<td>关联设备</td>
+<td>/api/group/deviceBygroup</td>
+<td>put</td>
+</tr>
+<tr>
+<td>39</td>
+<td>取消关联设备</td>
+<td>/api/group/cancel-deviceBygroup</td>
+<td>put</td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<h3>8.2 北向接口</h3>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th>id</th>
+<th>接口名称</th>
+<th>path</th>
+<th>接口类型</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>获取某个产品在某个项目下的设备列表分页</td>
+<td>/api/northward/productDeviceList</td>
+<td>get</td>
+</tr>
+<tr>
+<td>2</td>
+<td>获取设备详情</td>
+<td>/api/northward/deviceDetail</td>
+<td>get</td>
+</tr>
+<tr>
+<td>3</td>
+<td>编辑设备</td>
+<td>/api/northward/deviceUpdate</td>
+<td>put</td>
+</tr>
+<tr>
+<td>4</td>
+<td>设备启用</td>
+<td>/api/northward/deviceStart</td>
+<td>put</td>
+</tr>
+<tr>
+<td>5</td>
+<td>设备禁用</td>
+<td>/api/northward/deviceCancel</td>
+<td>put</td>
+</tr>
+<tr>
+<td>6</td>
+<td>获取设备数据历史记录分页</td>
+<td>/api/northward/deviceLnstructSend</td>
+<td>get</td>
+</tr>
+<tr>
+<td>7</td>
+<td>获取服务指令下发记录分页</td>
+<td>/api/northward/deviceLnstructSendList</td>
+<td>get</td>
+</tr>
+<tr>
+<td>8</td>
+<td>调用设备服务</td>
+<td>/api/northward/deviceUse</td>
+<td>post</td>
+</tr>
+<tr>
+<td>9</td>
+<td>获取物模型</td>
+<td>/api/northward/thingList</td>
+<td>get</td>
+</tr>
+<tr>
+<td>10</td>
+<td>设备事件推送</td>
+<td>/api/northward/deviceActionSend</td>
+<td>post</td>
+</tr>
+<tr>
+<td>11</td>
+<td>设备属性值推送</td>
+<td>/api/northward/deviceProperty Send</td>
+<td>post</td>
+</tr>
+<tr>
+<td>12</td>
+<td>获取设备事件历史记录</td>
+<td>/api/northward/deviceHistoryList</td>
+<td>get</td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<h3>8.3 南向接口</h3>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th>id</th>
+<th>接口名称</th>
+<th>path</th>
+<th>接口类型</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>设备属性值上报</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>2</td>
+<td>设备事件上报</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>3</td>
+<td>设备最新状态上报</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>4</td>
+<td>设备注册</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>5</td>
+<td>设备批量注册</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>6</td>
+<td>设备注销</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>7</td>
+<td>设备启用</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>8</td>
+<td>设备禁用</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>9</td>
+<td>设备命令下发</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>10</td>
+<td>查询设备列表</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>11</td>
+<td>查询设备最新状态</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>12</td>
+<td>查询设备最新属性值</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>13</td>
+<td>模拟南向数据</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>14</td>
+<td>绑定上级设备</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>15</td>
+<td>设备命令执行结果回调接口</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>16</td>
+<td>设备心跳上报</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<h2>九、物模型</h2>
+<h3>9.1 数据类型</h3>
+<h4>(1) int32</h4>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-s">"dataType"</span>: {
+        <span class="pl-s">"type"</span>: <span class="pl-s">"int"</span>,
+        <span class="pl-s">"specs"</span>: {
+          <span class="pl-s">"min"</span>: <span class="pl-s">"3"</span>,
+          <span class="pl-s">"max"</span>: <span class="pl-s">"10"</span>,
+          <span class="pl-s">"unit"</span>: <span class="pl-s">"mm/hour"</span>,
+          <span class="pl-s">"unitName"</span>: <span class="pl-s">"降雨量"</span>,
+          <span class="pl-s">"step"</span>: <span class="pl-s">"2"</span>
+        }
+      }</pre></div>
+<h4>(2) float</h4>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-s">"dataType"</span>: {
+        <span class="pl-s">"type"</span>: <span class="pl-s">"float"</span>,
+        <span class="pl-s">"specs"</span>: {
+          <span class="pl-s">"min"</span>: <span class="pl-s">"-3.1"</span>,
+          <span class="pl-s">"max"</span>: <span class="pl-s">"6"</span>,
+          <span class="pl-s">"unit"</span>: <span class="pl-s">"dS/m"</span>,
+          <span class="pl-s">"unitName"</span>: <span class="pl-s">"土壤EC值"</span>,
+          <span class="pl-s">"step"</span>: <span class="pl-s">"1.3"</span>
+        }
+      }</pre></div>
+<h4>(3) double</h4>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-s">"dataType"</span>: {
+        <span class="pl-s">"type"</span>: <span class="pl-s">"double"</span>,
+        <span class="pl-s">"specs"</span>: {
+          <span class="pl-s">"min"</span>: <span class="pl-s">"4.3"</span>,
+          <span class="pl-s">"max"</span>: <span class="pl-s">"75"</span>,
+          <span class="pl-s">"unit"</span>: <span class="pl-s">"r/min"</span>,
+          <span class="pl-s">"unitName"</span>: <span class="pl-s">"转每分钟"</span>,
+          <span class="pl-s">"step"</span>: <span class="pl-s">"1.65"</span>
+        }
+      }</pre></div>
+<h4>(4) enum</h4>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-s">"dataType"</span>: {
+        <span class="pl-s">"type"</span>: <span class="pl-s">"enum"</span>,
+        <span class="pl-s">"specs"</span>: {
+          <span class="pl-s">"0"</span>: <span class="pl-s">"在线"</span>,
+          <span class="pl-s">"1"</span>: <span class="pl-s">"离线"</span>
+        }
+      }</pre></div>
+<h4>(5) bool</h4>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-s">"dataType"</span>: {
+        <span class="pl-s">"type"</span>: <span class="pl-s">"bool"</span>,
+        <span class="pl-s">"specs"</span>: {
+          <span class="pl-s">"0"</span>: <span class="pl-s">"关"</span>,
+          <span class="pl-s">"1"</span>: <span class="pl-s">"开"</span>
+        }
+      }</pre></div>
+<h4>(6) text</h4>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-s">"dataType"</span>: {             <span class="pl-c">//属性值数据类型信息</span>
+        <span class="pl-s">"type"</span>: <span class="pl-s">"text"</span>,          <span class="pl-c">//属性值数据类型</span>
+        <span class="pl-s">"specs"</span>: {               <span class="pl-c">//取值范围</span>
+          <span class="pl-s">"length"</span>: <span class="pl-s">"62"</span>       <span class="pl-c">//最大字符数</span>
+        }
+      }</pre></div>
+<h4>(7) date�</h4>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-s">"dataType"</span>: {
+        <span class="pl-s">"type"</span>: <span class="pl-s">"date"</span>,
+        <span class="pl-s">"specs"</span>: {}
+      }</pre></div>
+<h4>(8) struct</h4>
+<p><strong>允许数据类型（每个参数有各自的数据类型，可以不同）：int32, float, double, enum, bool, text, date</strong></p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-s">"dataType"</span>: {
+        <span class="pl-s">"type"</span>: <span class="pl-s">"struct"</span>,
+        <span class="pl-s">"specs"</span>: [
+          {
+            <span class="pl-s">"identifier"</span>: <span class="pl-s">"a"</span>,
+            <span class="pl-s">"name"</span>: <span class="pl-s">"a"</span>,
+            <span class="pl-s">"dataType"</span>: {
+              <span class="pl-s">"type"</span>: <span class="pl-s">"int"</span>,
+              <span class="pl-s">"specs"</span>: {
+                <span class="pl-s">"min"</span>: <span class="pl-s">"4"</span>,
+                <span class="pl-s">"max"</span>: <span class="pl-s">"8"</span>,
+                <span class="pl-s">"unit"</span>: <span class="pl-s">"NTU"</span>,
+                <span class="pl-s">"unitName"</span>: <span class="pl-s">"浊度"</span>,
+                <span class="pl-s">"step"</span>: <span class="pl-s">"2"</span>
+              }
+            }
+          },
+          {
+            <span class="pl-s">"identifier"</span>: <span class="pl-s">"b"</span>,
+            <span class="pl-s">"name"</span>: <span class="pl-s">"b"</span>,
+            <span class="pl-s">"dataType"</span>: {
+              <span class="pl-s">"type"</span>: <span class="pl-s">"double"</span>,
+              <span class="pl-s">"specs"</span>: {
+                <span class="pl-s">"min"</span>: <span class="pl-s">"5"</span>,
+                <span class="pl-s">"max"</span>: <span class="pl-s">"8.6"</span>,
+                <span class="pl-s">"unit"</span>: <span class="pl-s">"mg/kg"</span>,
+                <span class="pl-s">"unitName"</span>: <span class="pl-s">"毫克每千克"</span>,
+                <span class="pl-s">"step"</span>: <span class="pl-s">"1.4"</span>
+              }
+            }
+          }
+        ]
+      }</pre></div>
+<h4>(9) array</h4>
+<p><strong>允许数据类型：int32, float, double, text, struct</strong></p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-s1">示例1</span>
+<span class="pl-s">"dataType"</span>: {
+        <span class="pl-s">"type"</span>: <span class="pl-s">"array"</span>,
+        <span class="pl-s">"specs"</span>: {
+          <span class="pl-s">"size"</span>: <span class="pl-s">"10"</span>,
+          <span class="pl-s">"item"</span>: {
+            <span class="pl-s">"type"</span>: <span class="pl-s">"int"</span>
+          }
+        }
+      }
+<span class="pl-s1">示例2</span>
+<span class="pl-s">"dataType"</span>: {
+            <span class="pl-s">"type"</span>: <span class="pl-s">"array"</span>,
+            <span class="pl-s">"specs"</span>: {
+              <span class="pl-s">"size"</span>: <span class="pl-s">"10"</span>,
+              <span class="pl-s">"item"</span>: {
+                <span class="pl-s">"type"</span>: <span class="pl-s">"struct"</span>,
+                <span class="pl-s">"specs"</span>: [
+                  {
+                    <span class="pl-s">"identifier"</span>: <span class="pl-s">"a"</span>,
+                    <span class="pl-s">"name"</span>: <span class="pl-s">"a"</span>,
+                    <span class="pl-s">"dataType"</span>: {
+                      <span class="pl-s">"type"</span>: <span class="pl-s">"int"</span>,
+                      <span class="pl-s">"specs"</span>: {
+                        <span class="pl-s">"min"</span>: <span class="pl-s">"3"</span>,
+                        <span class="pl-s">"max"</span>: <span class="pl-s">"89"</span>,
+                        <span class="pl-s">"unit"</span>: <span class="pl-s">"var"</span>,
+                        <span class="pl-s">"unitName"</span>: <span class="pl-s">"乏"</span>,
+                        <span class="pl-s">"step"</span>: <span class="pl-s">"3"</span>
+                      }
+                    }
+                  },
+                  {
+                    <span class="pl-s">"identifier"</span>: <span class="pl-s">"b"</span>,
+                    <span class="pl-s">"name"</span>: <span class="pl-s">"b"</span>,
+                    <span class="pl-s">"dataType"</span>: {
+                      <span class="pl-s">"type"</span>: <span class="pl-s">"float"</span>,
+                      <span class="pl-s">"specs"</span>: {
+                        <span class="pl-s">"min"</span>: <span class="pl-s">"3.6"</span>,
+                        <span class="pl-s">"max"</span>: <span class="pl-s">"89.7"</span>,
+                        <span class="pl-s">"unit"</span>: <span class="pl-s">"dS/m"</span>,
+                        <span class="pl-s">"unitName"</span>: <span class="pl-s">"土壤EC值"</span>,
+                        <span class="pl-s">"step"</span>: <span class="pl-s">"5.6"</span>
+                      }
+                    }
+                  }
+                ]
+              }
+            }</pre></div>
+<h3>9.2 搜狗智能固资柜主柜</h3>
+<div class="highlight highlight-source-java"><pre class="notranslate">{
+  <span class="pl-s">"product"</span>: { <span class="pl-c">//产品模块</span>
+    <span class="pl-s">"version"</span>: <span class="pl-s">"1.0.0"</span>,  <span class="pl-c">//物模型版本号</span>
+    <span class="pl-s">"productKey"</span>: <span class="pl-s">"sogouAssetMajorCupboard"</span>   <span class="pl-c">//产品编码</span>
+    <span class="pl-s">"productName"</span>: <span class="pl-s">"搜狗智能固资柜主柜"</span>      <span class="pl-c">//产品名称</span>
+    <span class="pl-s">"productNo"</span>: <span class="pl-s">"0001"</span>         <span class="pl-c">//产品编号，用来自动生成设备ID</span>
+    <span class="pl-s">"nodeType"</span>: <span class="pl-s">"父节点"</span>      <span class="pl-c">//产品节点类型，影响产品列表、产品详情页个别字段</span>
+    <span class="pl-s">"fatherProductKey"</span>: "<span class="pl-s">"     //当前产品的父产品编码</span>
+<span class="pl-s">    "</span><span class="pl-s1">fatherProductName</span><span class="pl-s">": "</span><span class="pl-s">"     //当前产品的父产品名称</span>
+<span class="pl-s">    "</span><span class="pl-s1">productState</span><span class="pl-s">": "</span><span class="pl-c1">0</span><span class="pl-s">"、"</span><span class="pl-c1">1</span><span class="pl-s">"     //产品发布状态，0代表开发中，1代表已发布，已发布产品不允许修改物模型</span>
+<span class="pl-s">  },</span>
+<span class="pl-s">  "</span><span class="pl-s1">properties</span><span class="pl-s">":  [  //属性</span>
+<span class="pl-s">    {</span>
+<span class="pl-s">      "</span><span class="pl-s1">identifier</span><span class="pl-s">": "</span><span class="pl-s1">firmwareVer</span><span class="pl-s">",      //属性编码</span>
+<span class="pl-s">      "</span><span class="pl-s1">name</span><span class="pl-s">": "</span><span class="pl-s1">固件版本号</span><span class="pl-s">",      //属性名称</span>
+<span class="pl-s">      "</span><span class="pl-s1">accessMode</span><span class="pl-s">": "</span><span class="pl-s1">r</span><span class="pl-s">",        //读写模式，r只读,rw读写</span>
+<span class="pl-s">      "</span><span class="pl-s1">dataType</span><span class="pl-s">": {             //属性值数据类型信息</span>
+<span class="pl-s">        "</span><span class="pl-s1">type</span><span class="pl-s">": "</span><span class="pl-s1">text</span><span class="pl-s">",          //属性值数据类型</span>
+<span class="pl-s">        "</span><span class="pl-s1">specs</span><span class="pl-s">": {               //取值范围</span>
+<span class="pl-s">          "</span><span class="pl-s1">length</span><span class="pl-s">": "</span><span class="pl-c1">62</span><span class="pl-s">"       //最大字符数</span>
+<span class="pl-s">        }</span>
+<span class="pl-s">      }</span>
+<span class="pl-s">    },</span>
+<span class="pl-s">    {</span>
+<span class="pl-s">      "</span><span class="pl-s1">identifier</span><span class="pl-s">": "</span><span class="pl-s1">onlineState</span><span class="pl-s">",</span>
+<span class="pl-s">      "</span><span class="pl-s1">name</span><span class="pl-s">": "</span><span class="pl-s1">在线状态</span><span class="pl-s">",</span>
+<span class="pl-s">      "</span><span class="pl-s1">accessMode</span><span class="pl-s">": "</span><span class="pl-s1">r</span><span class="pl-s">",</span>
+<span class="pl-s">      "</span><span class="pl-s1">dataType</span><span class="pl-s">": {</span>
+<span class="pl-s">        "</span><span class="pl-s1">type</span><span class="pl-s">": "</span><span class="pl-s1">enum</span><span class="pl-s">",</span>
+<span class="pl-s">        "</span><span class="pl-s1">specs</span><span class="pl-s">": {</span>
+<span class="pl-s">          "</span><span class="pl-c1">0</span><span class="pl-s">": "</span><span class="pl-s1">在线</span><span class="pl-s">",</span>
+<span class="pl-s">          "</span><span class="pl-c1">1</span><span class="pl-s">": "</span><span class="pl-s1">离线</span><span class="pl-s">"</span>
+<span class="pl-s">        }</span>
+<span class="pl-s">      }</span>
+<span class="pl-s">    }</span>
+<span class="pl-s">  ],</span>
+<span class="pl-s">  "</span><span class="pl-s1">events</span><span class="pl-s">": [</span>
+<span class="pl-s">  ],</span>
+<span class="pl-s">  "</span><span class="pl-s1">services</span>": [
+  ]
+}</pre></div>
+<h3>9.3 搜狗智能固资柜副柜(14门)</h3>
+<div class="highlight highlight-source-java"><pre class="notranslate">{
+  <span class="pl-s">"product"</span>: {
+    <span class="pl-s">"version"</span>: <span class="pl-s">"1.0.0"</span>,
+    <span class="pl-s">"productKey"</span>: <span class="pl-s">"sogouAssetMinorCupboard"</span>
+    <span class="pl-s">"productName"</span>: <span class="pl-s">"搜狗智能固资柜副柜(14门)"</span>
+    <span class="pl-s">"productNo"</span>: <span class="pl-s">"0002"</span>
+    <span class="pl-s">"nodeType"</span>: <span class="pl-s">"子节点"</span>
+    <span class="pl-s">"fatherProductKey"</span>: <span class="pl-s">"sogouAssetMajorCupboard"</span>
+    <span class="pl-s">"fatherProductName"</span>: <span class="pl-s">"搜狗智能固资柜主柜"</span>
+    <span class="pl-s">"productState"</span>: <span class="pl-s">"0"</span>、<span class="pl-s">"1"</span>
+  },
+  <span class="pl-s">"properties"</span>: [
+    {
+      <span class="pl-s">"identifier"</span>: <span class="pl-s">"onlineState"</span>,
+      <span class="pl-s">"name"</span>: <span class="pl-s">"在线状态"</span>,
+      <span class="pl-s">"accessMode"</span>: <span class="pl-s">"r"</span>,
+      <span class="pl-s">"dataType"</span>: {
+        <span class="pl-s">"type"</span>: <span class="pl-s">"enum"</span>,
+        <span class="pl-s">"specs"</span>: {
+          <span class="pl-s">"0"</span>: <span class="pl-s">"在线"</span>,
+          <span class="pl-s">"1"</span>: <span class="pl-s">"离线"</span>
+        }
+      }
+    },
+    {
+      <span class="pl-s">"identifier"</span>: <span class="pl-s">"dooropenState"</span>,
+      <span class="pl-s">"name"</span>: <span class="pl-s">"柜门开关状态"</span>,
+      <span class="pl-s">"accessMode"</span>: <span class="pl-s">"r"</span>,
+      <span class="pl-s">"dataType"</span>: {
+        <span class="pl-s">"type"</span>: <span class="pl-s">"struct"</span>,
+        <span class="pl-s">"specs"</span>: [
+          {
+            <span class="pl-s">"identifier"</span>: <span class="pl-s">"doorNum"</span>,
+            <span class="pl-s">"name"</span>: <span class="pl-s">"柜门编号"</span>,
+            <span class="pl-s">"dataType"</span>: {
+              <span class="pl-s">"type"</span>: <span class="pl-s">"int"</span>,
+              <span class="pl-s">"specs"</span>: {
+                <span class="pl-s">"min"</span>: <span class="pl-s">"1"</span>,
+                <span class="pl-s">"max"</span>: <span class="pl-s">"14"</span>,
+                <span class="pl-s">"unit"</span>: <span class="pl-s">""</span>,
+                <span class="pl-s">"unitName"</span>: <span class="pl-s">""</span>,
+                <span class="pl-s">"step"</span>: <span class="pl-s">"1"</span>
+              }
+            }
+          },
+          {
+            <span class="pl-s">"identifier"</span>: <span class="pl-s">"state"</span>,
+            <span class="pl-s">"name"</span>: <span class="pl-s">"状态"</span>,
+            <span class="pl-s">"dataType"</span>: {
+              <span class="pl-s">"type"</span>: <span class="pl-s">"enum"</span>,
+              <span class="pl-s">"specs"</span>: {
+                <span class="pl-s">"0"</span>: <span class="pl-s">"关闭"</span>,
+                <span class="pl-s">"1"</span>: <span class="pl-s">"打开"</span>
+              }
+            }
+          }
+        ]
+      }
+    }
+  ],
+  <span class="pl-s">"events"</span>: [    
+  ],
+  <span class="pl-s">"services"</span>: [           <span class="pl-c">//服务</span>
+    {
+      <span class="pl-s">"identifier"</span>: <span class="pl-s">"door1open"</span>,          <span class="pl-c">//服务编码</span>
+      <span class="pl-s">"name"</span>: <span class="pl-s">"柜门1开门"</span>,             <span class="pl-c">//服务名称</span>
+      <span class="pl-s">"callType"</span>: <span class="pl-s">"async"</span>,             <span class="pl-c">//服务调用方式：异步</span>
+      <span class="pl-s">"method"</span>: <span class="pl-s">"thing.service.door1open"</span>,        <span class="pl-c">//调用方法</span>
+      <span class="pl-s">"inputData"</span>: [       <span class="pl-c">//输入参数，数组，可为空</span>
+       {
+          <span class="pl-s">"identifier"</span>: <span class="pl-s">"doorNum"</span>,
+          <span class="pl-s">"name"</span>: <span class="pl-s">"柜门编号"</span>,
+          <span class="pl-s">"dataType"</span>: {
+            <span class="pl-s">"type"</span>: <span class="pl-s">"int"</span>,
+              <span class="pl-s">"specs"</span>: {
+              <span class="pl-s">"min"</span>: <span class="pl-s">"1"</span>,
+              <span class="pl-s">"max"</span>: <span class="pl-s">"14"</span>,
+              <span class="pl-s">"unit"</span>: <span class="pl-s">""</span>,
+              <span class="pl-s">"unitName"</span>: <span class="pl-s">""</span>,
+              <span class="pl-s">"step"</span>: <span class="pl-s">"1"</span>
+            }
+          }
+        }
+      ],                    
+      <span class="pl-s">"outputData"</span>: [                   <span class="pl-c">//输出参数</span>
+        {
+          <span class="pl-s">"identifier"</span>: <span class="pl-s">"issueResult"</span>,       <span class="pl-c">//参数编码</span>
+          <span class="pl-s">"name"</span>: <span class="pl-s">"指令下发状态"</span>,        <span class="pl-c">//参数名称</span>
+          <span class="pl-s">"dataType"</span>: {                   <span class="pl-c">//参数数据类型信息</span>
+            <span class="pl-s">"type"</span>: <span class="pl-s">"enum"</span>,             <span class="pl-c">//参数数据类型</span>
+            <span class="pl-s">"specs"</span>: {                     <span class="pl-c">//取值范围</span>
+              <span class="pl-s">"0"</span>: <span class="pl-s">"失败"</span>,                 <span class="pl-c">//枚举值key-value</span>
+              <span class="pl-s">"1"</span>: <span class="pl-s">"成功"</span>                  <span class="pl-c">//枚举值key-value</span>
+            }
+          }
+        }
+      ]
+    }
+  ]
+}</pre></div>
+<h3>9.4 搜狗门磁</h3>
+<div class="highlight highlight-source-java"><pre class="notranslate">{
+  <span class="pl-s">"product"</span>: {
+    <span class="pl-s">"version"</span>: <span class="pl-s">"1.0.0"</span>,
+    <span class="pl-s">"productKey"</span>: <span class="pl-s">"sogouDoorSensor"</span>
+    <span class="pl-s">"productName"</span>: <span class="pl-s">"搜狗门磁"</span>
+    <span class="pl-s">"productNo"</span>: <span class="pl-s">"0003"</span>
+    <span class="pl-s">"nodeType"</span>: <span class="pl-s">"非级联设备"</span>
+    <span class="pl-s">"fatherProductKey"</span>: <span class="pl-s">""</span>
+    <span class="pl-s">"fatherProductName"</span>: <span class="pl-s">""</span>
+    <span class="pl-s">"productState"</span>: <span class="pl-s">"0"</span>、<span class="pl-s">"1"</span>
+},
+  <span class="pl-s">"properties"</span>: [
+   {
+      <span class="pl-s">"identifier"</span>: <span class="pl-s">"onlineState"</span>,
+      <span class="pl-s">"name"</span>: <span class="pl-s">"在线状态"</span>,
+      <span class="pl-s">"accessMode"</span>: <span class="pl-s">"r"</span>,
+      <span class="pl-s">"dataType"</span>: {
+        <span class="pl-s">"type"</span>: <span class="pl-s">"enum"</span>,
+        <span class="pl-s">"specs"</span>: {
+          <span class="pl-s">"0"</span>: <span class="pl-s">"在线"</span>,
+          <span class="pl-s">"1"</span>: <span class="pl-s">"离线"</span>
+        }
+      }
+    },
+    {
+      <span class="pl-s">"identifier"</span>: <span class="pl-s">"openState"</span>,
+      <span class="pl-s">"name"</span>: <span class="pl-s">"开关状态"</span>,
+      <span class="pl-s">"accessMode"</span>: <span class="pl-s">"r"</span>,
+      <span class="pl-s">"dataType"</span>: {
+        <span class="pl-s">"type"</span>: <span class="pl-s">"enum"</span>,
+        <span class="pl-s">"specs"</span>: {
+          <span class="pl-s">"0"</span>: <span class="pl-s">"关闭"</span>,
+          <span class="pl-s">"1"</span>: <span class="pl-s">"打开"</span>
+        }
+      }
+    },
+    {
+      <span class="pl-s">"identifier"</span>: <span class="pl-s">"batteryQua"</span>,
+      <span class="pl-s">"name"</span>: <span class="pl-s">"电池电量"</span>,
+      <span class="pl-s">"accessMode"</span>: <span class="pl-s">"r"</span>,
+      <span class="pl-s">"dataType"</span>: {
+        <span class="pl-s">"type"</span>: <span class="pl-s">"int"</span>,
+        <span class="pl-s">"specs"</span>: {
+          <span class="pl-s">"min"</span>: <span class="pl-s">"0"</span>,
+          <span class="pl-s">"max"</span>: <span class="pl-s">"100"</span>,
+          <span class="pl-s">"unit"</span>: <span class="pl-s">"%"</span>,
+          <span class="pl-s">"unitName"</span>: <span class="pl-s">"百分比"</span>,
+          <span class="pl-s">"step"</span>: <span class="pl-s">"1"</span>
+        }
+      }
+    }  
+  ],
+  <span class="pl-s">"events"</span>: [
+  ],
+  <span class="pl-s">"services"</span>: [
+   ]
+}</pre></div>
+<h3>9.5 IT访客机</h3>
+<div class="highlight highlight-source-java"><pre class="notranslate">{
+  <span class="pl-s">"product"</span>: {
+    <span class="pl-s">"version"</span>: <span class="pl-s">"1.0.0"</span>,
+    <span class="pl-s">"productKey"</span>: <span class="pl-s">"itVistorMachine"</span>
+    <span class="pl-s">"productName"</span>: <span class="pl-s">"IT访客机"</span>
+    <span class="pl-s">"productNo"</span>: <span class="pl-s">"0004"</span>
+    <span class="pl-s">"nodeType"</span>: <span class="pl-s">"非级联设备"</span>
+    <span class="pl-s">"fatherProductKey"</span>: <span class="pl-s">""</span>
+    <span class="pl-s">"fatherProductName"</span>: <span class="pl-s">""</span>
+    <span class="pl-s">"productState"</span>: <span class="pl-s">"0"</span>、<span class="pl-s">"1"</span>
+},
+  <span class="pl-s">"properties"</span>: [
+    {
+      <span class="pl-s">"identifier"</span>: <span class="pl-s">"state"</span>,
+      <span class="pl-s">"name"</span>: <span class="pl-s">"状态"</span>,
+      <span class="pl-s">"accessMode"</span>: <span class="pl-s">"r"</span>,
+      <span class="pl-s">"dataType"</span>: {
+        <span class="pl-s">"type"</span>: <span class="pl-s">"struct"</span>,
+        <span class="pl-s">"specs"</span>: [
+        {
+          <span class="pl-s">"identifier"</span>: <span class="pl-s">"onlineState"</span>,
+          <span class="pl-s">"name"</span>: <span class="pl-s">"在线状态"</span>,
+          <span class="pl-s">"dataType"</span>: {
+            <span class="pl-s">"type"</span>: <span class="pl-s">"enum"</span>,
+            <span class="pl-s">"specs"</span>: {
+              <span class="pl-s">"0"</span>: <span class="pl-s">"在线"</span>,
+              <span class="pl-s">"1"</span>: <span class="pl-s">"离线"</span>
+            }
+          }
+        },
+        {
+          <span class="pl-s">"identifier"</span>: <span class="pl-s">"printerOnlineState"</span>,
+          <span class="pl-s">"name"</span>: <span class="pl-s">"打印机连接状态"</span>,
+          <span class="pl-s">"dataType"</span>: {
+            <span class="pl-s">"type"</span>: <span class="pl-s">"enum"</span>,
+            <span class="pl-s">"specs"</span>: {
+              <span class="pl-s">"0"</span>: <span class="pl-s">"未连接"</span>,
+              <span class="pl-s">"1"</span>: <span class="pl-s">"已连接"</span>
+            }
+          }
+        },
+        {
+          <span class="pl-s">"identifier"</span>: <span class="pl-s">"devState"</span>,
+          <span class="pl-s">"name"</span>: <span class="pl-s">"设备状态"</span>,
+          <span class="pl-s">"dataType"</span>: {
+            <span class="pl-s">"type"</span>: <span class="pl-s">"enum"</span>,
+            <span class="pl-s">"specs"</span>: {
+              <span class="pl-s">"1"</span>: <span class="pl-s">"上线使用中"</span>,
+              <span class="pl-s">"2"</span>: <span class="pl-s">"上线故障"</span>,
+              <span class="pl-s">"3"</span>: <span class="pl-s">"下线"</span>
+            }
+          }
+        },
+        {
+          <span class="pl-s">"identifier"</span>: <span class="pl-s">"firmwareVer"</span>,
+          <span class="pl-s">"name"</span>: <span class="pl-s">"固件版本号"</span>,
+          <span class="pl-s">"dataType"</span>: {
+            <span class="pl-s">"type"</span>: <span class="pl-s">"text"</span>,          <span class="pl-c">//属性值数据类型</span>
+            <span class="pl-s">"specs"</span>: {               <span class="pl-c">//取值范围</span>
+              <span class="pl-s">"length"</span>: <span class="pl-s">"62"</span>
+            }
+          }
+        },
+        {
+          <span class="pl-s">"identifier"</span>: <span class="pl-s">"lastHeartbeat"</span>,
+          <span class="pl-s">"name"</span>: <span class="pl-s">"心跳时间"</span>,
+          <span class="pl-s">"dataType"</span>: {
+            <span class="pl-s">"type"</span>: <span class="pl-s">"date"</span>,
+            <span class="pl-s">"specs"</span>: {               
+            }
+          }
+        }
+      ]
+    }
+  ],
+  <span class="pl-s">"events"</span>: [
+    {
+      <span class="pl-s">"identifier"</span>: <span class="pl-s">"heartbeatBreak"</span>,
+      <span class="pl-s">"name"</span>: <span class="pl-s">"心跳中断"</span>,
+      <span class="pl-s">"type"</span>: <span class="pl-s">"error"</span>,             <span class="pl-c">//事件类型，详见prd</span>
+      <span class="pl-s">"outputData"</span>: []
+    },
+    {
+      <span class="pl-s">"identifier"</span>: <span class="pl-s">"printerOffline"</span>,
+      <span class="pl-s">"name"</span>: <span class="pl-s">"打印机连接断开"</span>,
+      <span class="pl-s">"type"</span>: <span class="pl-s">"error"</span>,
+      <span class="pl-s">"outputData"</span>: []
+    },
+    {
+      <span class="pl-s">"identifier"</span>: <span class="pl-s">"devError"</span>,
+      <span class="pl-s">"name"</span>: <span class="pl-s">"设备故障"</span>,
+      <span class="pl-s">"type"</span>: <span class="pl-s">"error"</span>,
+      <span class="pl-s">"outputData"</span>: [
+        {
+          <span class="pl-s">"identifier"</span>: <span class="pl-s">"errorCode"</span>,       <span class="pl-c">//参数编码</span>
+          <span class="pl-s">"name"</span>: <span class="pl-s">"故障码"</span>,        <span class="pl-c">//参数名称</span>
+          <span class="pl-s">"dataType"</span>: {                   <span class="pl-c">//参数数据类型信息</span>
+            <span class="pl-s">"type"</span>: <span class="pl-s">"enum"</span>,             <span class="pl-c">//参数数据类型</span>
+            <span class="pl-s">"specs"</span>: {                     <span class="pl-c">//取值范围</span>
+              <span class="pl-s">"0"</span>: <span class="pl-s">"恢复正常"</span>,                 <span class="pl-c">//枚举值key-value</span>
+              <span class="pl-s">"1"</span>: <span class="pl-s">"打印机连接断开"</span>                  <span class="pl-c">//枚举值key-value</span>
+              <span class="pl-s">"2"</span>: <span class="pl-s">"打印机缺墨"</span>                  <span class="pl-c">//枚举值key-value</span>
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      <span class="pl-s">"identifier"</span>: <span class="pl-s">"testHeartbeatBreak"</span>,
+      <span class="pl-s">"name"</span>: <span class="pl-s">"测试心跳中断"</span>,
+      <span class="pl-s">"type"</span>: <span class="pl-s">"info"</span>,             <span class="pl-c">//事件类型，详见prd</span>
+      <span class="pl-s">"outputData"</span>: [
+        {
+          <span class="pl-s">"identifier"</span>: <span class="pl-s">"lastHeartbeat1"</span>,
+          <span class="pl-s">"name"</span>: <span class="pl-s">"心跳时间1"</span>,
+          <span class="pl-s">"dataType"</span>: {
+            <span class="pl-s">"type"</span>: <span class="pl-s">"date"</span>,
+            <span class="pl-s">"specs"</span>: {               
+            }
+          }
+        },
+        {
+          <span class="pl-s">"identifier"</span>: <span class="pl-s">"lastHeartbeat2"</span>,
+          <span class="pl-s">"name"</span>: <span class="pl-s">"心跳时间2"</span>,
+          <span class="pl-s">"dataType"</span>: {
+            <span class="pl-s">"type"</span>: <span class="pl-s">"date"</span>,
+            <span class="pl-s">"specs"</span>: {               
+            }
+          }
+        }
+      ]
+    },
+    {
+      <span class="pl-s">"identifier"</span>: <span class="pl-s">"testPrinterOffline"</span>,
+      <span class="pl-s">"name"</span>: <span class="pl-s">"测试打印机连接断开"</span>,
+      <span class="pl-s">"type"</span>: <span class="pl-s">"alert"</span>,
+      <span class="pl-s">"outputData"</span>: []
+    }
+  ],
+  <span class="pl-s">"services"</span>: [
+  ]
+}</pre></div></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+
+</div>
+    <div id="footer"><div id="footer1">Copyright © <span id="copyrightYear"></span> <a href="https://shuaiwang888.github.io/appStore-Blog.github.io">Blog Title</a></div>
+<div id="footer2">
+    <span id="runday"></span><span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>
+</div>
+
+<script>
+var now=new Date();
+document.getElementById("copyrightYear").innerHTML=now.getFullYear();
+
+if(""!=""){
+    var startSite=new Date("");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";
+}
+</script></div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z', 'copy': 'M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z', 'check': 'M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","shuaiwang888/appStore-Blog.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const createClipboardHTML = (codeContent, additionalClasses = '') => `
+        <pre class="notranslate"><code class="notranslate">${codeContent}</code></pre>
+        <div class="clipboard-container position-absolute right-0 top-0 ${additionalClasses}">
+            <clipboard-copy class="ClipboardButton btn m-2 p-0" role="button" style="display: inherit;">
+                <svg height="16" width="16" class="octicon octicon-copy m-2"><path d="${IconList["copy"]}"></path></svg>
+                <svg height="16" width="16" class="octicon octicon-check color-fg-success m-2 d-none"><path d="${IconList["check"]}"></path></svg>
+            </clipboard-copy>
+            <div class="copy-feedback">Copied!</div>
+        </div>
+    `;
+
+    const handleCodeElements = (selector = '') => {
+        document.querySelectorAll(selector).forEach(codeElement => {
+            const codeContent = codeElement.innerHTML;
+            const newStructure = document.createElement('div');
+            newStructure.className = 'snippet-clipboard-content position-relative overflow-auto';
+            newStructure.innerHTML = createClipboardHTML(codeContent);
+
+            const parentElement = codeElement.parentElement;
+            if (selector.includes('highlight')) {
+                parentElement.insertBefore(newStructure, codeElement.nextSibling);
+                parentElement.removeChild(codeElement);
+            } else {
+                parentElement.parentElement.replaceChild(newStructure, parentElement);
+            }
+        });
+    };
+
+    handleCodeElements('pre.notranslate > code.notranslate');
+    handleCodeElements('div.highlight > pre.notranslate');
+
+    let currentFeedback = null;
+    document.querySelectorAll('clipboard-copy').forEach(copyButton => {
+        copyButton.addEventListener('click', () => {
+            const codeContent = copyButton.closest('.snippet-clipboard-content').innerText;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = codeContent;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            const copyIcon = copyButton.querySelector('.octicon-copy');
+            const checkIcon = copyButton.querySelector('.octicon-check');
+            const copyFeedback = copyButton.nextElementSibling;
+
+            if (currentFeedback && currentFeedback !== copyFeedback) {currentFeedback.style.display = 'none';}
+            currentFeedback = copyFeedback;
+
+            copyIcon.classList.add('d-none');
+            checkIcon.classList.remove('d-none');
+            copyFeedback.style.display = 'block';
+            copyButton.style.borderColor = 'var(--color-success-fg)';
+
+            setTimeout(() => {
+                copyIcon.classList.remove('d-none');
+                checkIcon.classList.add('d-none');
+                copyFeedback.style.display = 'none';
+                copyButton.style.borderColor = '';
+            }, 2000);
+        });
+    });
+});
+
+</script>
+
+
+</html>
