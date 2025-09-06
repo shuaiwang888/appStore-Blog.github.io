@@ -1,5 +1,11 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>Blog Title</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link><description>Blog description</description><copyright>Blog Title</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://github.githubassets.com/favicons/favicon.svg</url><title>avatar</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link></image><lastBuildDate>Wed, 18 Jun 2025 11:00:30 +0000</lastBuildDate><managingEditor>Blog Title</managingEditor><ttl>60</ttl><webMaster>Blog Title</webMaster><item><title>RAG</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/RAG.html</link><description># 大模型知识问答RAG
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>Blog Title</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link><description>Blog description</description><copyright>Blog Title</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://github.githubassets.com/favicons/favicon.svg</url><title>avatar</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link></image><lastBuildDate>Sat, 06 Sep 2025 08:49:59 +0000</lastBuildDate><managingEditor>Blog Title</managingEditor><ttl>60</ttl><webMaster>Blog Title</webMaster><item><title>Java中那18 把锁</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/Java-zhong-na-18%20-ba-suo.html</link><description>### [互斥锁、自旋锁、读写锁、悲观锁、乐观锁的应用场景](https://mp.weixin.qq.com/s/6QrQ0TZVqSQq26Rms0_mvA)
+
+## 一、乐观锁和悲观锁
+
+### 1. 悲观锁
+
+悲观锁对应于生活中悲观的人，悲观的人总是想着事情往坏的方向发展。</description><guid isPermaLink="true">https://shuaiwang888.github.io/appStore-Blog.github.io/post/Java-zhong-na-18%20-ba-suo.html</guid><pubDate>Sat, 06 Sep 2025 08:49:24 +0000</pubDate></item><item><title>RAG</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/RAG.html</link><description># 大模型知识问答RAG
 
 ## 一、RAG
 

@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark" data-light-theme="light" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
+    
+    <link rel="icon" href="https://github.githubassets.com/favicons/favicon.svg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="### [互斥锁、自旋锁、读写锁、悲观锁、乐观锁的应用场景](https://mp.weixin.qq.com/s/6QrQ0TZVqSQq26Rms0_mvA)
+
+## 一、乐观锁和悲观锁
+
+### 1. 悲观锁
+
+悲观锁对应于生活中悲观的人，悲观的人总是想着事情往坏的方向发展。">
+<meta property="og:title" content="Java中那18 把锁">
+<meta property="og:description" content="### [互斥锁、自旋锁、读写锁、悲观锁、乐观锁的应用场景](https://mp.weixin.qq.com/s/6QrQ0TZVqSQq26Rms0_mvA)
+
+## 一、乐观锁和悲观锁
+
+### 1. 悲观锁
+
+悲观锁对应于生活中悲观的人，悲观的人总是想着事情往坏的方向发展。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://shuaiwang888.github.io/appStore-Blog.github.io/post/Java-zhong-na-18%20-ba-suo.html">
+<meta property="og:image" content="https://github.githubassets.com/favicons/favicon.svg">
+<title>Java中那18 把锁</title>
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+.copy-feedback {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    color: var(--color-fg-on-emphasis);
+    background-color: var(--color-fg-muted);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
+</style>
+
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">Java中那18 把锁</h1>
+<div class="title-right">
+    <a href="https://shuaiwang888.github.io/appStore-Blog.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/shuaiwang888/appStore-Blog.github.io/issues/3" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><h3><a href="https://mp.weixin.qq.com/s/6QrQ0TZVqSQq26Rms0_mvA" rel="nofollow">互斥锁、自旋锁、读写锁、悲观锁、乐观锁的应用场景</a></h3>
+<h2>一、乐观锁和悲观锁</h2>
+<h3>1. 悲观锁</h3>
+<p>悲观锁对应于生活中悲观的人，悲观的人总是想着事情往坏的方向发展。<strong>一个共享数据加了悲观锁，那线程每次想操作这个数据前都会假设其他线程也可能会操作这个数据，所以每次操作前都会上锁，这样其他线程想操作这个数据拿不到锁只能阻塞了。</strong></p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/2324d337798f12331f7dd02f89b10d7857c5807d431c578fa60053b437763f42/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f62376562366131346364626634323230616431343436376435613965663361622e706e67"><img src="https://camo.githubusercontent.com/2324d337798f12331f7dd02f89b10d7857c5807d431c578fa60053b437763f42/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f62376562366131346364626634323230616431343436376435613965663361622e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/b7eb6a14cdbf4220ad14467d5a9ef3ab.png" style="max-width: 100%;"></a></p>
+<p>在 Java 语言中 <code class="notranslate">synchronized</code> 和 <code class="notranslate">ReentrantLock</code> 等就是典型的悲观锁，还有一些使用了 synchronized 关键字的容器类如 HashTable 等也是悲观锁的应用。</p>
+<h3>2. 乐观锁</h3>
+<p>乐观锁 对应于生活中乐观的人，乐观的人总是想着事情往好的方向发展。<strong>乐观锁操作数据时不会上锁，只是在更新的时候会判断一下在此期间是否有其他线程去更新这个数据。</strong></p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/7fe9dd5c6ea98a0d8b48089066a93b61d4f86b08b80edc2ca1cd1f2dc39a097a/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f63333433373739333630303334346666616237396138386639663261636331302e706e67"><img src="https://camo.githubusercontent.com/7fe9dd5c6ea98a0d8b48089066a93b61d4f86b08b80edc2ca1cd1f2dc39a097a/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f63333433373739333630303334346666616237396138386639663261636331302e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/c3437793600344ffab79a88f9f2acc10.png" style="max-width: 100%;"></a></p>
+<p>乐观锁可以使用版本号机制和CAS算法实现。在 Java 语言中 <code class="notranslate">java.util.concurrent.atomic</code> 包下的原子类就是使用 <code class="notranslate">CAS</code> 乐观锁实现的。</p>
+<p><strong>两种锁的使用场景</strong></p>
+<ol>
+<li>
+<p>悲观锁和乐观锁没有孰优孰劣，有其各自适应的场景。</p>
+</li>
+<li>
+<p>乐观锁适用于写比较少（冲突比较小）的场景，因为不用上锁、释放锁，省去了锁的开销，从而提升了吞吐量。</p>
+</li>
+<li>
+<p>如果是写多读少的场景，即冲突比较严重，线程间竞争激励，使用乐观锁就是导致线程不断进行重试，这样可能还降低了性能，这种场景下使用悲观锁就比较合适。</p>
+</li>
+</ol>
+<h2>二、独占锁和共享锁</h2>
+<h3>1. 独占锁</h3>
+<p>独占锁是指锁一次只能被一个线程所持有。如果一个线程对数据加上排他锁后，那么其他线程不能再对该数据加任何类型的锁。获得独占锁的线程即能读数据又能修改数据。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/9a3885e52deeb26d1781e52b5bd9297ad22875d80c6a0ec0608bc6e33acfacf8/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f66316164343139393139613434323134623739353166303939303534313163322e706e67"><img src="https://camo.githubusercontent.com/9a3885e52deeb26d1781e52b5bd9297ad22875d80c6a0ec0608bc6e33acfacf8/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f66316164343139393139613434323134623739353166303939303534313163322e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/f1ad419919a44214b7951f09905411c2.png" style="max-width: 100%;"></a></p>
+<p>JDK中的<code class="notranslate">synchronized</code>和<code class="notranslate">java.util.concurrent(JUC)</code>包中<code class="notranslate">Lock</code>的实现类就是独占锁。</p>
+<h3>2. 共享锁</h3>
+<p>共享锁是指锁可被多个线程所持有。如果一个线程对数据加上共享锁后，那么其他线程只能对数据再加共享锁，不能加独占锁。获得共享锁的线程只能读数据，不能修改数据。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/a687bb6ff0e513fc84adc112974c06e34b18ba3ba82e897587721128eea53038/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f32363735353462393162653334633563626335353331323239626631643838302e706e67"><img src="https://camo.githubusercontent.com/a687bb6ff0e513fc84adc112974c06e34b18ba3ba82e897587721128eea53038/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f32363735353462393162653334633563626335353331323239626631643838302e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/267554b91be34c5cbc5531229bf1d880.png" style="max-width: 100%;"></a></p>
+<p>在 JDK 中 <code class="notranslate">ReentrantReadWriteLock</code> 就是一种共享锁。</p>
+<h2>三、互斥锁和读写锁</h2>
+<h3>1. 互斥锁</h3>
+<p>互斥锁是独占锁的一种常规实现，是指某一资源同时只允许一个访问者对其进行访问，具有唯一性和排它性。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/9b1a51b6f37740c7a61e92b422dd1fa27d97bd2949233572632d2ba934fbd28d/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f33373461636239326237666234363132616565636532323333663633613066622e706e67"><img src="https://camo.githubusercontent.com/9b1a51b6f37740c7a61e92b422dd1fa27d97bd2949233572632d2ba934fbd28d/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f33373461636239326237666234363132616565636532323333663633613066622e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/374acb92b7fb4612aeece2233f63a0fb.png" style="max-width: 100%;"></a></p>
+<p>互斥锁一次只能一个线程拥有互斥锁，其他线程只有等待。</p>
+<h3>2. 读写锁</h3>
+<p>读写锁是共享锁的一种具体实现。读写锁管理一组锁，一个是只读的锁，一个是写锁。</p>
+<p><strong>读锁可以在没有写锁的时候被多个线程同时持有，而写锁是独占的。写锁的优先级要高于读锁，一个获得了读锁的线程必须能看到前一个释放的写锁所更新的内容。</strong></p>
+<p>读写锁相比于互斥锁并发程度更高，每次只有一个写线程，但是同时可以有多个线程并发读。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/62bfdaefad7cec2a96291bdb5a475ce39f51b69fce80eae9efb0d5bcc9b9c53a/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f63323130396463326335613634613565623639396565346131666461336334352e706e67"><img src="https://camo.githubusercontent.com/62bfdaefad7cec2a96291bdb5a475ce39f51b69fce80eae9efb0d5bcc9b9c53a/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f63323130396463326335613634613565623639396565346131666461336334352e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/c2109dc2c5a64a5eb699ee4a1fda3c45.png" style="max-width: 100%;"></a></p>
+<p>在 JDK 中定义了一个读写锁的接口：ReadWriteLock</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-k">interface</span> <span class="pl-smi">ReadWriteLock</span> {
+    <span class="pl-c">/**</span>
+<span class="pl-c">     * 获取读锁</span>
+<span class="pl-c">     */</span>
+    <span class="pl-smi">Lock</span> <span class="pl-en">readLock</span>();
+
+    <span class="pl-c">/**</span>
+<span class="pl-c">     * 获取写锁</span>
+<span class="pl-c">     */</span>
+    <span class="pl-smi">Lock</span> <span class="pl-en">writeLock</span>();
+}</pre></div>
+<p><code class="notranslate">ReentrantReadWriteLock</code> 实现了<code class="notranslate">ReadWriteLock</code>接口，具体实现这里不展开，后续会深入源码解析。</p>
+<h2>四、公平锁和非公平锁</h2>
+<h3>1. 公平锁</h3>
+<p>公平锁是指多个线程按照申请锁的顺序来获取锁，这里类似排队买票，先来的人先买，后来的人在队尾排着，这是公平的。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/60ca0b0cebdb6f11eac1d8792b658904f97d4d10d07f77262239fe945e54490a/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f62616330353766333232633234376136616363386437653835346665386533632e706e67"><img src="https://camo.githubusercontent.com/60ca0b0cebdb6f11eac1d8792b658904f97d4d10d07f77262239fe945e54490a/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f62616330353766333232633234376136616363386437653835346665386533632e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/bac057f322c247a6acc8d7e854fe8e3c.png" style="max-width: 100%;"></a></p>
+<p><strong>在 java 中可以通过构造函数初始化公平锁</strong></p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c">/**</span>
+<span class="pl-c">* 创建一个可重入锁，true 表示公平锁，false 表示非公平锁。默认非公平锁</span>
+<span class="pl-c">*/</span>
+<span class="pl-smi">Lock</span> <span class="pl-s1">lock</span> = <span class="pl-k">new</span> <span class="pl-smi">ReentrantLock</span>(<span class="pl-c1">true</span>);</pre></div>
+<h3>2. 非公平锁</h3>
+<p>非公平锁是指多个线程获取锁的顺序并不是按照申请锁的顺序，有可能后申请的线程比先申请的线程优先获取锁，在高并发环境下，有可能造成优先级翻转，或者饥饿的状态（某个线程一直得不到锁）。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/96ff71abc7db7375c9f14f9f1c459c84029ca2b25bb973d21358713664bb0f3b/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f33613830306638313833303334313635623633646439343963313036653339382e706e67"><img src="https://camo.githubusercontent.com/96ff71abc7db7375c9f14f9f1c459c84029ca2b25bb973d21358713664bb0f3b/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f33613830306638313833303334313635623633646439343963313036653339382e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/3a800f8183034165b63dd949c106e398.png" style="max-width: 100%;"></a></p>
+<p>在 java 中 <code class="notranslate">synchronized</code> 关键字是非公平锁，<code class="notranslate">ReentrantLock</code> 默认也是非公平锁。</p>
+<h2>五、可重入锁</h2>
+<p>可重入锁又称之为递归锁，<strong>是指同一个线程在外层方法获取了锁，在进入内层方法会自动获取锁。</strong></p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/7ed96815a9ddd754a3689af974b01a486a394bf843cf3d61121931dfed6a4de2/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f34326362326137666631333034363631393266613439613237376663303862372e706e67"><img src="https://camo.githubusercontent.com/7ed96815a9ddd754a3689af974b01a486a394bf843cf3d61121931dfed6a4de2/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f34326362326137666631333034363631393266613439613237376663303862372e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/42cb2a7ff130466192fa49a277fc08b7.png" style="max-width: 100%;"></a></p>
+<p>对于Java ReentrantLock而言, 他的名字就可以看出是一个可重入锁。对于Synchronized而言，也是一个可重入锁。</p>
+<p>敲黑板：<strong>可重入锁的一个好处是可一定程度避免死锁。</strong></p>
+<p>以 synchronized 为例，看一下下面的代码：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-k">synchronized</span> <span class="pl-smi">void</span> <span class="pl-en">mehtodA</span>() <span class="pl-k">throws</span> <span class="pl-smi">Exception</span>{
+ <span class="pl-c">// Do some magic tings</span>
+ <span class="pl-en">mehtodB</span>();
+}
+
+<span class="pl-k">public</span> <span class="pl-k">synchronized</span> <span class="pl-smi">void</span> <span class="pl-en">mehtodB</span>() <span class="pl-k">throws</span> <span class="pl-smi">Exception</span>{
+ <span class="pl-c">// Do some magic tings</span>
+}</pre></div>
+<p>上面的代码中 methodA 调用 methodB，如果一个线程调用methodA 已经获取了锁再去调用 methodB 就不需要再次获取锁了，这就是可重入锁的特性。如果不是可重入锁的话，mehtodB 可能不会被当前线程执行，可能造成死锁。</p>
+<h2>六、自旋锁</h2>
+<p>自旋锁是指线程在没有获得锁时不是被直接挂起，而是执行一个忙循环，这个忙循环就是所谓的自旋。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/89a6c9685d97fee1acbc4ec830067c945a02ddce584124bdb8e3a222c70b6222/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f34323234363131306537613334633636393838363538303762353065636563392e706e67"><img src="https://camo.githubusercontent.com/89a6c9685d97fee1acbc4ec830067c945a02ddce584124bdb8e3a222c70b6222/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f34323234363131306537613334633636393838363538303762353065636563392e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/42246110e7a34c6698865807b50ecec9.png" style="max-width: 100%;"></a></p>
+<p><strong>自旋锁的目的是为了减少线程被挂起的几率，因为线程的挂起和唤醒也都是耗资源的操作。</strong></p>
+<p>如果锁被另一个线程占用的时间比较长，即使自旋了之后当前线程还是会被挂起，忙循环就会变成浪费系统资源的操作，反而降低了整体性能。因此自旋锁是不适应锁占用时间长的并发情况的。</p>
+<p>在 Java 中，AtomicInteger 类有自旋的操作，我们看一下代码：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-k">final</span> <span class="pl-smi">int</span> <span class="pl-en">getAndAddInt</span>(<span class="pl-smi">Object</span> <span class="pl-s1">o</span>, <span class="pl-smi">long</span> <span class="pl-s1">offset</span>, <span class="pl-smi">int</span> <span class="pl-s1">delta</span>) {
+    <span class="pl-smi">int</span> <span class="pl-s1">v</span>;
+    <span class="pl-k">do</span> {
+        <span class="pl-s1">v</span> = <span class="pl-en">getIntVolatile</span>(<span class="pl-s1">o</span>, <span class="pl-s1">offset</span>);
+    } <span class="pl-k">while</span> (!<span class="pl-en">compareAndSwapInt</span>(<span class="pl-s1">o</span>, <span class="pl-s1">offset</span>, <span class="pl-s1">v</span>, <span class="pl-s1">v</span> + <span class="pl-s1">delta</span>));
+    <span class="pl-k">return</span> <span class="pl-s1">v</span>;
+}</pre></div>
+<p>CAS 操作如果失败就会一直循环获取当前 value 值然后重试。</p>
+<p>另外自适应自旋锁也需要了解一下:</p>
+<ul>
+<li>在JDK1.6又引入了自适应自旋，这个就比较智能了，自旋时间不再固定，由前一次在同一个锁上的自旋时间以及锁的拥有者的状态来决定。如果虚拟机认为这次自旋也很有可能再次成功那就会次序较多的时间，如果自旋很少成功，那以后可能就直接省略掉自旋过程，避免浪费处理器资源。</li>
+</ul>
+<h2>七、分段锁</h2>
+<p>分段锁 是一种锁的设计，并不是具体的一种锁。</p>
+<p>分段锁设计目的是将锁的粒度进一步细化，当操作不需要更新整个数组的时候，就仅仅针对数组中的一项进行加锁操作。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/afd476a2f54c2d3b9fe2449a9981fa971d57840b7a2560660a91ecce418fc4bc/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f34346338346564313362363034346635383166383631396139353037343961612e706e67"><img src="https://camo.githubusercontent.com/afd476a2f54c2d3b9fe2449a9981fa971d57840b7a2560660a91ecce418fc4bc/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f34346338346564313362363034346635383166383631396139353037343961612e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/44c84ed13b6044f581f8619a950749aa.png" style="max-width: 100%;"></a></p>
+<p>在 Java 语言中 <code class="notranslate">CurrentHashMap</code> 底层就用了分段锁，使用<code class="notranslate">Segment</code>，就可以进行并发使用了。</p>
+<h2>八、锁升级（无锁|偏向锁|轻量级锁|重量级锁）</h2>
+<p>JDK1.6 为了提升性能减少获得锁和释放锁所带来的消耗，引入了4种锁的状态：无锁、偏向锁、轻量级锁和重量级锁，它会随着多线程的竞争情况逐渐升级，但不能降级。</p>
+<h3>1. 无锁</h3>
+<p>无锁状态其实就是上面讲的乐观锁，这里不再赘述。</p>
+<h3>2. 偏向锁</h3>
+<p>Java偏向锁(Biased Locking)是指它会偏向于第一个访问锁的线程，如果在运行过程中，只有一个线程访问加锁的资源，不存在多线程竞争的情况，那么线程是不需要重复获取锁的，这种情况下，就会给线程加一个偏向锁。</p>
+<p>偏向锁的实现是通过控制对象Mark Word的标志位来实现的，如果当前是可偏向状态，需要进一步判断对象头存储的线程 ID 是否与当前线程 ID 一致，如果一致直接进入。</p>
+<h3>3. 轻量级锁</h3>
+<p>当线程竞争变得比较激烈时，偏向锁就会升级为轻量级锁，轻量级锁认为虽然竞争是存在的，但是理想情况下竞争的程度很低，通过自旋方式等待上一个线程释放锁。</p>
+<h3>4. 重量级锁</h3>
+<p>如果线程并发进一步加剧，线程的自旋超过了一定次数，或者一个线程持有锁，一个线程在自旋，又来了第三个线程访问时（反正就是竞争继续加大了），轻量级锁就会膨胀为重量级锁，重量级锁会使除了此时拥有锁的线程以外的线程都阻塞。</p>
+<p>升级到重量级锁其实就是互斥锁了，一个线程拿到锁，其余线程都会处于阻塞等待状态。</p>
+<p>在 Java 中，synchronized 关键字内部实现原理就是锁升级的过程：无锁 --&gt; 偏向锁 --&gt; 轻量级锁 --&gt; 重量级锁。这一过程在后续讲解 synchronized 关键字的原理时会详细介绍。</p>
+<h2>九、锁优化技术（锁粗化、锁消除）</h2>
+<h3>1. 锁粗化</h3>
+<p>锁粗化就是将多个同步块的数量减少，并将单个同步块的作用范围扩大，本质上就是将多次上锁、解锁的请求合并为一次同步请求。</p>
+<p>举个例子，一个循环体中有一个代码同步块，每次循环都会执行加锁解锁操作。</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">private</span> <span class="pl-k">static</span> <span class="pl-k">final</span> <span class="pl-smi">Object</span> <span class="pl-c1">LOCK</span> = <span class="pl-k">new</span> <span class="pl-smi">Object</span>();
+
+<span class="pl-k">for</span>(<span class="pl-smi">int</span> <span class="pl-s1">i</span> = <span class="pl-c1">0</span>;<span class="pl-s1">i</span> &lt; <span class="pl-c1">100</span>; <span class="pl-s1">i</span>++) {
+    <span class="pl-k">synchronized</span>(<span class="pl-c1">LOCK</span>){
+        <span class="pl-c">// do some magic things</span>
+    }
+}</pre></div>
+<p>经过锁粗化后就变成下面这个样子了：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"> <span class="pl-k">synchronized</span>(<span class="pl-c1">LOCK</span>){
+     <span class="pl-k">for</span>(<span class="pl-smi">int</span> <span class="pl-s1">i</span> = <span class="pl-c1">0</span>;<span class="pl-s1">i</span> &lt; <span class="pl-c1">100</span>; <span class="pl-s1">i</span>++) {
+        <span class="pl-c">// do some magic things</span>
+    }
+}</pre></div>
+<h3>2. 锁消除</h3>
+<p>锁消除是指虚拟机编译器在运行时检测到了共享数据没有竞争的锁，从而将这些锁进行消除。</p>
+<p>举个例子让大家更好理解。</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-smi">String</span> <span class="pl-en">test</span>(<span class="pl-smi">String</span> <span class="pl-s1">s1</span>, <span class="pl-smi">String</span> <span class="pl-s1">s2</span>){
+    <span class="pl-smi">StringBuffer</span> <span class="pl-s1">stringBuffer</span> = <span class="pl-k">new</span> <span class="pl-smi">StringBuffer</span>();
+    <span class="pl-s1">stringBuffer</span>.<span class="pl-en">append</span>(<span class="pl-s1">s1</span>);
+    <span class="pl-s1">stringBuffer</span>.<span class="pl-en">append</span>(<span class="pl-s1">s2</span>);
+    <span class="pl-k">return</span> <span class="pl-s1">stringBuffer</span>.<span class="pl-en">toString</span>();
+}</pre></div>
+<p>上面代码中有一个 test 方法，主要作用是将字符串 s1 和字符串 s2 串联起来。</p>
+<p>test 方法中三个变量s1, s2, stringBuffer， 它们都是局部变量，局部变量是在栈上的，栈是线程私有的，所以就算有多个线程访问 test 方法也是线程安全的。</p>
+<p>我们都知道 StringBuffer 是线程安全的类，append 方法是同步方法，但是 test 方法本来就是线程安全的，为了提升效率，虚拟机帮我们消除了这些同步锁，这个过程就被称为<strong>锁消除</strong>。</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-smi">StringBuffer</span>.<span class="pl-smi">class</span>
+
+<span class="pl-c">// append 是同步方法</span>
+<span class="pl-s1">public</span> <span class="pl-k">synchronized</span> <span class="pl-smi">StringBuffer</span> <span class="pl-en">append</span>(<span class="pl-smi">String</span> <span class="pl-s1">str</span>) {
+    <span class="pl-s1">toStringCache</span> = <span class="pl-c1">null</span>;
+    <span class="pl-en">super</span>.<span class="pl-en">append</span>(<span class="pl-s1">str</span>);
+    <span class="pl-k">return</span> <span class="pl-smi">this</span>;
+}</pre></div>
+<h2>一张图总结</h2>
+<p>前面讲了 Java 语言中各种各种的锁，最后再通过六个问题统一总结一下：</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/5d74029796a5c963d56f3d5dd018533481bd1cb868b98f7bd439bf08645f872c/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f32343762326462616530376234626334386338366161373132633265373566362e706e67"><img src="https://camo.githubusercontent.com/5d74029796a5c963d56f3d5dd018533481bd1cb868b98f7bd439bf08645f872c/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f32343762326462616530376234626334386338366161373132633265373566362e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/247b2dbae07b4bc48c86aa712c2e75f6.png" style="max-width: 100%;"></a></p></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+
+</div>
+    <div id="footer"><div id="footer1">Copyright © <span id="copyrightYear"></span> <a href="https://shuaiwang888.github.io/appStore-Blog.github.io">Blog Title</a></div>
+<div id="footer2">
+    <span id="runday"></span><span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>
+</div>
+
+<script>
+var now=new Date();
+document.getElementById("copyrightYear").innerHTML=now.getFullYear();
+
+if(""!=""){
+    var startSite=new Date("");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";
+}
+</script></div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z', 'copy': 'M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z', 'check': 'M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","shuaiwang888/appStore-Blog.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const createClipboardHTML = (codeContent, additionalClasses = '') => `
+        <pre class="notranslate"><code class="notranslate">${codeContent}</code></pre>
+        <div class="clipboard-container position-absolute right-0 top-0 ${additionalClasses}">
+            <clipboard-copy class="ClipboardButton btn m-2 p-0" role="button" style="display: inherit;">
+                <svg height="16" width="16" class="octicon octicon-copy m-2"><path d="${IconList["copy"]}"></path></svg>
+                <svg height="16" width="16" class="octicon octicon-check color-fg-success m-2 d-none"><path d="${IconList["check"]}"></path></svg>
+            </clipboard-copy>
+            <div class="copy-feedback">Copied!</div>
+        </div>
+    `;
+
+    const handleCodeElements = (selector = '') => {
+        document.querySelectorAll(selector).forEach(codeElement => {
+            const codeContent = codeElement.innerHTML;
+            const newStructure = document.createElement('div');
+            newStructure.className = 'snippet-clipboard-content position-relative overflow-auto';
+            newStructure.innerHTML = createClipboardHTML(codeContent);
+
+            const parentElement = codeElement.parentElement;
+            if (selector.includes('highlight')) {
+                parentElement.insertBefore(newStructure, codeElement.nextSibling);
+                parentElement.removeChild(codeElement);
+            } else {
+                parentElement.parentElement.replaceChild(newStructure, parentElement);
+            }
+        });
+    };
+
+    handleCodeElements('pre.notranslate > code.notranslate');
+    handleCodeElements('div.highlight > pre.notranslate');
+
+    let currentFeedback = null;
+    document.querySelectorAll('clipboard-copy').forEach(copyButton => {
+        copyButton.addEventListener('click', () => {
+            const codeContent = copyButton.closest('.snippet-clipboard-content').innerText;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = codeContent;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            const copyIcon = copyButton.querySelector('.octicon-copy');
+            const checkIcon = copyButton.querySelector('.octicon-check');
+            const copyFeedback = copyButton.nextElementSibling;
+
+            if (currentFeedback && currentFeedback !== copyFeedback) {currentFeedback.style.display = 'none';}
+            currentFeedback = copyFeedback;
+
+            copyIcon.classList.add('d-none');
+            checkIcon.classList.remove('d-none');
+            copyFeedback.style.display = 'block';
+            copyButton.style.borderColor = 'var(--color-success-fg)';
+
+            setTimeout(() => {
+                copyIcon.classList.remove('d-none');
+                checkIcon.classList.add('d-none');
+                copyFeedback.style.display = 'none';
+                copyButton.style.borderColor = '';
+            }, 2000);
+        });
+    });
+});
+
+</script>
+
+
+</html>
