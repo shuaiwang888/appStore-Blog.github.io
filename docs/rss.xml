@@ -1,5 +1,20 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>Blog Title</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link><description>Blog description</description><copyright>Blog Title</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://github.githubassets.com/favicons/favicon.svg</url><title>avatar</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link></image><lastBuildDate>Sat, 06 Sep 2025 09:16:06 +0000</lastBuildDate><managingEditor>Blog Title</managingEditor><ttl>60</ttl><webMaster>Blog Title</webMaster><item><title>利用 Lua 脚本在 Redis 中实现秒杀商品减库存</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/li-yong-%20Lua%20-jiao-ben-zai-%20Redis%20-zhong-shi-xian-miao-sha-shang-pin-jian-ku-cun.html</link><description>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>Blog Title</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link><description>Blog description</description><copyright>Blog Title</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://github.githubassets.com/favicons/favicon.svg</url><title>avatar</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link></image><lastBuildDate>Sat, 06 Sep 2025 09:16:37 +0000</lastBuildDate><managingEditor>Blog Title</managingEditor><ttl>60</ttl><webMaster>Blog Title</webMaster><item><title>MySql逻辑结构简介</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/MySql-luo-ji-jie-gou-jian-jie.html</link><description>**今天安装了数据库，系统学习mysql数据库的底层结构！**
+
+**结构示意图：**
+
+![image.png](/upload/2022/01/image-369162918f234105b19c2c3aecb6dc1c.png)
+
+**如上图，可把数据库的结构分成四层，见下图及文字说明：**
+
+![image.png](/upload/2022/01/image-c8af28dc8134459bac1158c755bc3cab.png)
+
+**简洁图**
+
+![](https://img-blog.csdnimg.cn/b776572121094706ad0c4a0de0240b16.png)
+
+### 一、连接层
+- 提供客户端和连接服务，包含本地Sock通信和大多数基于客户端/服务端工具实现的**类似于TCP/IP的通信**，主要完成一些类似于**连接处理、授权认证、及相关的安全方案**，在该层上引入了线程池的概念，为通过认证安全接入的客户端提供线程，同样在该层上可以实现基于SSL的安全链接。</description><guid isPermaLink="true">https://shuaiwang888.github.io/appStore-Blog.github.io/post/MySql-luo-ji-jie-gou-jian-jie.html</guid><pubDate>Sat, 06 Sep 2025 09:16:07 +0000</pubDate></item><item><title>利用 Lua 脚本在 Redis 中实现秒杀商品减库存</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/li-yong-%20Lua%20-jiao-ben-zai-%20Redis%20-zhong-shi-xian-miao-sha-shang-pin-jian-ku-cun.html</link><description>
 ### 一、情景描述 
 
 公司开展商品秒杀活动，共有 A、B、C、D 四个商品提供秒杀抢购，每件商品限售 5 件，售完即止。</description><guid isPermaLink="true">https://shuaiwang888.github.io/appStore-Blog.github.io/post/li-yong-%20Lua%20-jiao-ben-zai-%20Redis%20-zhong-shi-xian-miao-sha-shang-pin-jian-ku-cun.html</guid><pubDate>Sat, 06 Sep 2025 09:15:38 +0000</pubDate></item><item><title>JVM垃圾回收</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/JVM-la-ji-hui-shou.html</link><description>&lt;!-- @import '[TOC]' {cmd='toc' depthFrom=1 depthTo=6 orderedList=false} --&gt;
