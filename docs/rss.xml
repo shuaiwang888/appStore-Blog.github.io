@@ -1,5 +1,19 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>Blog Title</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link><description>Blog description</description><copyright>Blog Title</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://github.githubassets.com/favicons/favicon.svg</url><title>avatar</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link></image><lastBuildDate>Sat, 06 Sep 2025 09:25:09 +0000</lastBuildDate><managingEditor>Blog Title</managingEditor><ttl>60</ttl><webMaster>Blog Title</webMaster><item><title>分布式事务六种解决方案</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/fen-bu-shi-shi-wu-liu-zhong-jie-jue-fang-an.html</link><description>## 一、前言
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>Blog Title</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link><description>Blog description</description><copyright>Blog Title</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://github.githubassets.com/favicons/favicon.svg</url><title>avatar</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link></image><lastBuildDate>Sat, 06 Sep 2025 09:25:57 +0000</lastBuildDate><managingEditor>Blog Title</managingEditor><ttl>60</ttl><webMaster>Blog Title</webMaster><item><title>Spring Cloud Alibaba 笔记</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/Spring%20Cloud%20Alibaba%20-bi-ji.html</link><description># Spring Cloud Alibaba
+
+## 一、注册中心-Nacos（AP）
+
+### 1、[官方wiki](https://nacos.io/zh-cn/docs/what-is-nacos.html)
+
+### 2、主要功能
+![](https://img-blog.csdnimg.cn/1013e6f1566b4d569ce994e3dcaab86c.png)
+
+服务的注册与发现是由 `Nacos discovery` 组件来实现的！ 其核心功能：
+1. 服务的注册： Nacos-client发送REST请求向Nacos-server注册自己的服务，包括ip地址、端口、健康检查URL等元信息，收到后存在一个双层的内存map注册表中，当然你也可以存在MySQL关系型数据库中！
+2. 服务的心跳：默认5s一次；
+3. 服务同步：Nacos集群中的互相同步服务实例；
+4. 服务发现：消费者在调用提供者时，也会发REST请求定时拉取注册服务清单，并且缓存在本地；
+5. 服务健康检查：Nacos 提供对服务的实时的健康检查，阻止向不健康的主机或服务实例发送请求。</description><guid isPermaLink="true">https://shuaiwang888.github.io/appStore-Blog.github.io/post/Spring%20Cloud%20Alibaba%20-bi-ji.html</guid><pubDate>Sat, 06 Sep 2025 09:25:27 +0000</pubDate></item><item><title>分布式事务六种解决方案</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/fen-bu-shi-shi-wu-liu-zhong-jie-jue-fang-an.html</link><description>## 一、前言
 事务想必大家并不陌生，至于什么是 ACID，也是老生常谈了。</description><guid isPermaLink="true">https://shuaiwang888.github.io/appStore-Blog.github.io/post/fen-bu-shi-shi-wu-liu-zhong-jie-jue-fang-an.html</guid><pubDate>Sat, 06 Sep 2025 09:24:41 +0000</pubDate></item><item><title>深入浅出搞懂Nginx</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/shen-ru-qian-chu-gao-dong-Nginx.html</link><description>## 1. 什么是Nginx？
 
 
