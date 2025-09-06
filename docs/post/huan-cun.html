@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark" data-light-theme="light" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
+    
+    <link rel="icon" href="https://github.githubassets.com/favicons/favicon.svg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="### [一、在项目中缓存是如何使用的？缓存如果使用不当会造成什么后果？](https://github.com/doocs/advanced-java/blob/main/docs/high-concurrency/why-cache.md)
+
+1. 结合项目阐述缓存的使用，主要就是有**高性能、高并发**这两个用途；
+2. 高性能：比如商品详情页中，第一次查询后，后面的一段时间内是不会有什么大的改变的，所以使用缓存可以提高后面的查询速度；
+3. 高并发：MySQL单机最高支撑2000QPS，而Redis基于内存可以几万QPS，说白了就是 **Key-Value** 式操作，可以在Redis中进行预扣减；
+4. 其中会出现的不良后果：**[缓存与数据库双写不一致](https://github.com/doocs/advanced-java/blob/main/docs/high-concurrency/redis-consistence.md)；[缓存雪崩、缓存穿透、缓存击穿](https://github.com/doocs/advanced-java/blob/main/docs/high-concurrency/redis-caching-avalanche-and-caching-penetration.md)；[缓存并发竞争](https://github.com/doocs/advanced-java/blob/main/docs/high-concurrency/redis-cas.md)；**
+
+
+### [二、Redis 和 Memcached 有什么区别？Redis 的线程模型是什么？为什么单线程的 Redis 比多线程的 Memcached 效率要高得多？](https://github.com/doocs/advanced-java/blob/main/docs/high-concurrency/redis-single-thread-model.md)
+
+1. Redis是单线程工作模型，支持更多复杂的数据结构，而且其原生的支持集群模式，支持数据的持久化、使用惰性删除与定期删除、支持Lua脚本；
+2. Redis的线程模型：Redis 内部使用文件事件处理器 `file event handler` ，这个文件事件处理器是单线程的，所以 Redis 才叫做单线程的模型。">
+<meta property="og:title" content="缓存">
+<meta property="og:description" content="### [一、在项目中缓存是如何使用的？缓存如果使用不当会造成什么后果？](https://github.com/doocs/advanced-java/blob/main/docs/high-concurrency/why-cache.md)
+
+1. 结合项目阐述缓存的使用，主要就是有**高性能、高并发**这两个用途；
+2. 高性能：比如商品详情页中，第一次查询后，后面的一段时间内是不会有什么大的改变的，所以使用缓存可以提高后面的查询速度；
+3. 高并发：MySQL单机最高支撑2000QPS，而Redis基于内存可以几万QPS，说白了就是 **Key-Value** 式操作，可以在Redis中进行预扣减；
+4. 其中会出现的不良后果：**[缓存与数据库双写不一致](https://github.com/doocs/advanced-java/blob/main/docs/high-concurrency/redis-consistence.md)；[缓存雪崩、缓存穿透、缓存击穿](https://github.com/doocs/advanced-java/blob/main/docs/high-concurrency/redis-caching-avalanche-and-caching-penetration.md)；[缓存并发竞争](https://github.com/doocs/advanced-java/blob/main/docs/high-concurrency/redis-cas.md)；**
+
+
+### [二、Redis 和 Memcached 有什么区别？Redis 的线程模型是什么？为什么单线程的 Redis 比多线程的 Memcached 效率要高得多？](https://github.com/doocs/advanced-java/blob/main/docs/high-concurrency/redis-single-thread-model.md)
+
+1. Redis是单线程工作模型，支持更多复杂的数据结构，而且其原生的支持集群模式，支持数据的持久化、使用惰性删除与定期删除、支持Lua脚本；
+2. Redis的线程模型：Redis 内部使用文件事件处理器 `file event handler` ，这个文件事件处理器是单线程的，所以 Redis 才叫做单线程的模型。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://shuaiwang888.github.io/appStore-Blog.github.io/post/huan-cun.html">
+<meta property="og:image" content="https://github.githubassets.com/favicons/favicon.svg">
+<title>缓存</title>
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+.copy-feedback {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    color: var(--color-fg-on-emphasis);
+    background-color: var(--color-fg-muted);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
+</style>
+
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">缓存</h1>
+<div class="title-right">
+    <a href="https://shuaiwang888.github.io/appStore-Blog.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/shuaiwang888/appStore-Blog.github.io/issues/56" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><h3><a href="https://github.com/doocs/advanced-java/blob/main/docs/high-concurrency/why-cache.md">一、在项目中缓存是如何使用的？缓存如果使用不当会造成什么后果？</a></h3>
+<ol>
+<li>结合项目阐述缓存的使用，主要就是有<strong>高性能、高并发</strong>这两个用途；</li>
+<li>高性能：比如商品详情页中，第一次查询后，后面的一段时间内是不会有什么大的改变的，所以使用缓存可以提高后面的查询速度；</li>
+<li>高并发：MySQL单机最高支撑2000QPS，而Redis基于内存可以几万QPS，说白了就是 <strong>Key-Value</strong> 式操作，可以在Redis中进行预扣减；</li>
+<li>其中会出现的不良后果：<strong><a href="https://github.com/doocs/advanced-java/blob/main/docs/high-concurrency/redis-consistence.md">缓存与数据库双写不一致</a>；<a href="https://github.com/doocs/advanced-java/blob/main/docs/high-concurrency/redis-caching-avalanche-and-caching-penetration.md">缓存雪崩、缓存穿透、缓存击穿</a>；<a href="https://github.com/doocs/advanced-java/blob/main/docs/high-concurrency/redis-cas.md">缓存并发竞争</a>；</strong></li>
+</ol>
+<h3><a href="https://github.com/doocs/advanced-java/blob/main/docs/high-concurrency/redis-single-thread-model.md">二、Redis 和 Memcached 有什么区别？Redis 的线程模型是什么？为什么单线程的 Redis 比多线程的 Memcached 效率要高得多？</a></h3>
+<ol>
+<li>Redis是单线程工作模型，支持更多复杂的数据结构，而且其原生的支持集群模式，支持数据的持久化、使用惰性删除与定期删除、支持Lua脚本；</li>
+<li>Redis的线程模型：Redis 内部使用文件事件处理器 <code class="notranslate">file event handler</code> ，这个文件事件处理器是单线程的，所以 Redis 才叫做单线程的模型。</li>
+<li>文件事件处理器的结构分为4个部分：多个socket、IO多路复用程序、文件事件分派器、事件处理器（连接应答处理器、命令请求处理器、命令回复处理器）；</li>
+<li><strong>原理：文件事件处理器采用 IO 多路复用机制同时监听多个 socket，多个 socket 可能会并发产生不同的操作，每个操作对应不同的文件事件，再将产生事件的 socket 压入内存队列中，事件分派器每次从队列中取出一个 socket，根据 socket 的事件类型交给对应的事件处理器进行处理。</strong></li>
+<li>客户端与 Redis 的一次通信过程？</li>
+<li>Redis 6.0 引入多线程用来处理网络数据的读写与协议解析，执行命令仍是单线程（Redis的瓶颈为网络IO和内存，CPU不是）；</li>
+</ol>
+<h3><a href="https://github.com/doocs/advanced-java/blob/main/docs/high-concurrency/redis-data-types.md">三、Redis 都有哪些数据类型？分别在哪些场景下使用比较合适？</a></h3>
+<ol>
+<li>String：最简单的类型，就是普通的 set 和 get，做简单的 KV 缓存。</li>
+<li>Hash：这个是类似 map 的一种结构，这个一般就是可以将结构化的数据，比如一个对象（前提是这个对象没嵌套其他的对象）给缓存在 Redis 里，然后每次读写缓存的时候，可以就操作 hash 里的某个字段。</li>
+<li>List：通过 list 存储一些列表型的数据结构，类似粉丝列表、文章的评论列表之类。通过 lrange 命令，读取某个闭区间内的元素，可以基于 list 实现分页查询，可以做类似微博那种下拉不断分页的东西，性能高！</li>
+<li>Set：可以基于 Redis 的Set数据结构进行全局的去重，基于 set 玩儿交集、并集、差集的操作，比如共同好友等；</li>
+<li>Sorted Set： 排序的 set，去重但可以排序，写进去的时候给一个分数，自动根据分数排序。</li>
+<li>Bitmaps：存储的是连续的二进制数字（0 和 1），实现布隆过滤器；</li>
+</ol>
+<h3><a href="https://github.com/doocs/advanced-java/blob/main/docs/high-concurrency/redis-expiration-policies-and-lru.md">四、Redis 的过期策略都有哪些？手写一下 LRU 代码实现？</a></h3>
+<ol>
+<li>Redis 过期策略是：定期删除（每隔 100ms ）+ 惰性删除。</li>
+<li>上述仍有问题，走内存淘汰机制；</li>
+</ol>
+<ul>
+<li>Noeviction：当内存不足以容纳新写入数据时，直接报错（不推荐）；</li>
+<li>allkeys-lru：当内存不足以容纳新写入数据时，移除最近最少使用的 key（这个是最常用的）。</li>
+<li>allkeys-random：当内存不足以容纳新写入数据时，随机移除某个Key；</li>
+<li>volatile-lru：当内存不足以容纳新写入数据时，在设置了过期时间的键空间中，移除最近最少使用的 key（一般不适合）。</li>
+<li>volatile-ttl：当内存不足以容纳新写入数据时，在设置了过期时间的键空间中，有更早过期时间的 key 优先移除。</li>
+</ul>
+<ol start="3">
+<li>手写一个 LRU 算法</li>
+</ol>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">LRUCache</span> {
+    <span class="pl-smi">int</span> <span class="pl-s1">cap</span>;
+    <span class="pl-smi">LinkedHashMap</span>&lt;<span class="pl-smi">Integer</span>, <span class="pl-smi">Integer</span>&gt; <span class="pl-s1">cache</span> = <span class="pl-k">new</span> <span class="pl-smi">LinkedHashMap</span>&lt;&gt;();
+    <span class="pl-k">public</span> <span class="pl-smi">LRUCache</span>(<span class="pl-smi">int</span> <span class="pl-s1">capacity</span>) {
+        <span class="pl-smi">this</span>.<span class="pl-s1">cap</span> = <span class="pl-s1">capacity</span>;
+    }
+
+    <span class="pl-k">public</span> <span class="pl-smi">int</span> <span class="pl-en">get</span>(<span class="pl-smi">int</span> <span class="pl-s1">key</span>) {
+        <span class="pl-k">if</span> (!<span class="pl-s1">cache</span>.<span class="pl-en">containsKey</span>(<span class="pl-s1">key</span>)) {
+            <span class="pl-k">return</span> -<span class="pl-c1">1</span>;
+        }
+        <span class="pl-en">makeRecently</span>(<span class="pl-s1">key</span>);
+        <span class="pl-k">return</span> <span class="pl-s1">cache</span>.<span class="pl-en">get</span>(<span class="pl-s1">key</span>);
+    }
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">put</span>(<span class="pl-smi">int</span> <span class="pl-s1">key</span>, <span class="pl-smi">int</span> <span class="pl-s1">value</span>) {
+        <span class="pl-k">if</span> (<span class="pl-s1">cache</span>.<span class="pl-en">containsKey</span>(<span class="pl-s1">key</span>)) {
+            <span class="pl-s1">cache</span>.<span class="pl-en">put</span>(<span class="pl-s1">key</span>, <span class="pl-s1">value</span>);
+            <span class="pl-en">makeRecently</span>(<span class="pl-s1">key</span>);
+            <span class="pl-k">return</span>;
+        }
+
+        <span class="pl-k">if</span> (<span class="pl-s1">cache</span>.<span class="pl-en">size</span>() &gt;= <span class="pl-smi">this</span>.<span class="pl-s1">cap</span>) {
+            <span class="pl-smi">int</span> <span class="pl-s1">oldKey</span> = <span class="pl-s1">cache</span>.<span class="pl-en">keySet</span>().<span class="pl-en">iterator</span>().<span class="pl-en">next</span>();
+            <span class="pl-s1">cache</span>.<span class="pl-en">remove</span>(<span class="pl-s1">oldKey</span>);
+        }
+        <span class="pl-s1">cache</span>.<span class="pl-en">put</span>(<span class="pl-s1">key</span>, <span class="pl-s1">value</span>);
+    }
+    <span class="pl-k">private</span> <span class="pl-smi">void</span> <span class="pl-en">makeRecently</span>(<span class="pl-smi">int</span> <span class="pl-s1">key</span>) {
+        <span class="pl-smi">int</span> <span class="pl-s1">val</span> = <span class="pl-s1">cache</span>.<span class="pl-en">get</span>(<span class="pl-s1">key</span>);
+        <span class="pl-s1">cache</span>.<span class="pl-en">remove</span>(<span class="pl-s1">key</span>);
+        <span class="pl-s1">cache</span>.<span class="pl-en">put</span>(<span class="pl-s1">key</span>, <span class="pl-s1">val</span>);
+    }
+}</pre></div>
+<h3><a href="https://github.com/doocs/advanced-java/blob/main/docs/high-concurrency/how-to-ensure-high-concurrency-and-high-availability-of-redis.md">五、如何保证 Redis 高并发、高可用？Redis 的主从复制原理能介绍一下么？Redis 的哨兵原理能介绍一下么？</a></h3>
+<ol>
+<li>高并发的实现使用:  <a href="https://github.com/doocs/advanced-java/blob/main/docs/high-concurrency/how-to-ensure-high-concurrency-and-high-availability-of-redis.md">主从结构-replication</a>;</li>
+<li>高可用的实现使用：<a href="https://github.com/doocs/advanced-java/blob/main/docs/high-concurrency/redis-sentinel.md">哨兵集群-sentinel</a>;</li>
+</ol>
+<h3><a href="https://github.com/doocs/advanced-java/blob/main/docs/high-concurrency/redis-master-slave.md">六、Redis 主从架构是怎样的？</a></h3>
+<ol>
+<li>主从架构：一主多从，主负责写，并且将数据复制到其它的 slave 节点，从节点负责读，所有的读请求全部走从节点，支撑读高并发。（Redis replication -&gt; 主从架构 -&gt; 读写分离 -&gt; 水平扩容支撑读高并发）</li>
+<li>Redis replication的核心机制？</li>
+<li>如果采用了主从架构，那么建议必须<strong>开启 master node 的持久化</strong>(也就是对master节点开启持久化)，不建议用 slave node 作为 master node 的数据热备（怕奔溃之后slave节点复制master的数据造成数据丢失）；</li>
+<li><strong>Redis 主从复制的核心原理：</strong> 如果这是 slave node 初次连接到 master node，那么会触发一次 <code class="notranslate">full resynchronization</code> <strong>全量复制</strong>。此时 master 会启动一个后台线程，开始生成一份 <code class="notranslate">RDB</code> 快照文件，同时还会将从客户端 client 新收到的所有写命令缓存在内存中。 RDB 文件生成完毕后， master 会将这个 RDB 发送给 slave，slave 会先写入本地磁盘，然后再从本地磁盘加载到内存中，接着 master 会将内存中缓存的写命令发送到 slave，slave 也会同步这些数据。slave node 如果跟 master node 有网络故障，断开了连接，会自动重连，连接之后 master node 仅会复制给 slave 部分缺少的数据（增量复制）。</li>
+<li><strong>无磁盘化复制：</strong> master 在内存中直接创建 RDB ，然后发送给 slave，不会在自己本地落地磁盘了。只需要在配置文件中开启 repl-diskless-sync yes 即可。</li>
+<li><strong>过期 key 处理：</strong> slave 不会过期 key，只会等待 master 过期 key。如果 master 过期了一个 key，或者通过 LRU 淘汰了一个 key，那么会 <strong>模拟一条 del 命令发送给 slave</strong>。</li>
+</ol>
+<h3><a href="https://github.com/doocs/advanced-java/blob/main/docs/high-concurrency/redis-persistence.md">七、Redis 的持久化有哪几种方式？不同的持久化机制都有什么优缺点？持久化机制具体底层是如何实现的？</a></h3>
+<ol>
+<li>持久化主要是做灾难恢复、数据恢复；</li>
+<li>方式有两种：<strong>RDB 持久化机制</strong>，是对 Redis 中的数据执行周期性的持久化；<strong>AOF 机制</strong>对每条写入命令作为日志，以 append-only 的模式写入一个日志文件中，在 Redis 重启的时候，可以通过回放 AOF 日志中的写入指令来重新构建整个数据集。</li>
+<li>RDB 优缺点：</li>
+</ol>
+<ul>
+<li>RDB 会生成多个数据文件，每个数据文件都代表了某一个时刻中 Redis 的数据，这种多个数据文件的方式，非常适合做冷备（发送到远程的云服务器上）</li>
+<li>RDB 对 Redis 对外提供的读写服务影响非常小，可以让 Redis 保持高性能，因为 Redis 主进程只需要 fork 一个子进程；</li>
+<li>相对于 AOF 持久化机制来说，直接基于 RDB 数据文件来重启和恢复 Redis 进程，更加快速。</li>
+<li>重启和恢复 Redis 进程，更加快速。</li>
+<li>如果想要在 Redis 故障时尽可能少的丢失数据，那么 RDB 没有 AOF 好。一般来说，RDB 数据快照文件，都是每隔 5 分钟，或者更长时间生成一次；</li>
+<li>RDB 每次在 fork 子进程来执行 RDB 快照数据文件生成的时候，如果数据文件特别大，可能会导致对客户端提供的服务暂停数毫秒，或者甚至数秒。</li>
+</ul>
+<ol start="4">
+<li>AOF 优缺点：</li>
+</ol>
+<ul>
+<li>AOF 可以更好的保护数据不丢失，一般 AOF 会每隔 1 秒，通过一个后台线程执行一次 fsync 操作，最多丢失 1 秒钟的数据。</li>
+<li>AOF 日志文件以 append-only 模式写入(追加的方式写数据)，所以没有任何磁盘寻址的开销，写入性能非常高；</li>
+<li>AOF 日志文件的命令通过可读较强的方式进行记录，这个特性非常适合做灾难性的误删除的紧急恢复；</li>
+<li>对于同一份数据来说，AOF 日志文件通常比 RDB 数据快照文件更大。</li>
+<li>AOF 开启后，支持的写 QPS 会比 RDB 支持的写 QPS 低，因为 AOF 一般会配置成每秒 fsync 一次日志文件，当然，每秒一次 fsync 性能也还是很高的。（如果实时写入，那么 QPS 会大降，Redis 性能会大大降低）</li>
+</ul>
+<ol start="5">
+<li>RDB 和 AOF 到底该如何选择：</li>
+</ol>
+<ul>
+<li>不要仅仅使用 RDB，因为那样会导致你丢失很多数据；</li>
+<li>也不要仅仅使用 AOF，因为那样有两个问题：第一，你通过 AOF 做冷备，没有 RDB 做冷备来的恢复速度更快；第二，RDB 每次简单粗暴生成数据快照，更加健壮，可以避免 AOF 这种复杂的备份和恢复机制的 bug；</li>
+<li>Redis 支持<strong>同时开启开启两种持久化方式</strong>，我们可以综合使用 AOF 和 RDB 两种持久化机制，<strong>用 AOF 来保证数据不丢失，作为数据恢复的第一选择</strong>；<strong>用 RDB 来做不同程度的冷备</strong>，在 AOF 文件都丢失或损坏不可用的时候，还可以使用 RDB 来进行快速的数据恢复。</li>
+</ul>
+<h3><a href="https://github.com/doocs/advanced-java/blob/main/docs/high-concurrency/redis-cluster.md">八、Redis 集群模式的工作原理能说一下么？在集群模式下，Redis 的 key 是如何寻址的？分布式寻址都有哪些算法？了解一致性 hash 算法吗？如何动态增加和删除一个节点？</a></h3>
+<ol>
+<li>如果你的数据量很少，<strong>主要是承载高并发高性能的场景</strong>，比如你的缓存一般就几个 G，单机就足够了，可以使用 replication，一个 master 多个 slaves，要几个 slave 跟你要求的读吞吐量有关，然后自己搭建一个 sentinel 集群去保证 Redis 主从架构的高可用性。（现在商城项目就是一主两从）；</li>
+<li>Redis cluster，<strong>主要是针对海量数据+高并发+高可用的场景。</strong> Redis cluster 支撑 N 个 Redis master node，每个 master node 都可以挂载多个 slave node。这样整个 Redis 就可以横向扩容了。如果你要支撑更大数据量的缓存，那就横向扩容更多的 master 节点，每个 master 节点就能存放更多的数据了。</li>
+<li>Redis cluster：自动将数据进行分片，每个 master 上放一部分数据；提供内置的高可用支持，部分 master 不可用时，还是可以继续工作的；</li>
+<li>节点间的内部通信机制：Redis cluster 节点间采用 gossip 协议进行通信（所有节点都持有一份元数据，不同的节点如果出现了元数据的变更，就不断将元数据发送给其它的节点，让其它节点也进行元数据的变更。）</li>
+<li>gossip 好处在于，<strong>元数据的更新比较分散</strong>，不是集中在一个地方，更新请求会陆陆续续打到所有节点上去更新，降低了压力；不好在于，<strong>元数据的更新有延时</strong>，可能导致集群中的一些操作会有一些滞后。</li>
+<li>Redis的key的分布式寻址算法：1⃣️hash 算法（大量缓存重建）；2⃣️一致性 hash 算法（自动缓存迁移）+ 虚拟节点（自动负载均衡）；3⃣️Redis cluster 的 hash slot 算法；</li>
+<li><strong>hash 算法：</strong> 来了一个 key，首先计算 hash 值，然后对节点数取模。然后打在不同的 master 节点上。一旦某一个 master 节点宕机，所有请求过来，都会基于最新的剩余 master 节点数去取模，尝试去取数据。这会导致大部分的请求过来，全部无法拿到有效的缓存，导致大量的流量涌入数据库。</li>
+<li><strong>一致性 hash 算法：</strong></li>
+</ol>
+<ul>
+<li>一致性 hash 算法将整个 hash 值空间组织成一个虚拟的圆环，整个空间按顺时针方向组织，下一步将各个 master 节点（使用服务器的 ip 或主机名）进行 hash。这样就能确定每个节点在其哈希环上的位置。</li>
+<li>来了一个 key，首先计算 hash 值，并确定此数据在环上的位置，从此位置沿环顺时针“行走”，遇到的第一个 master 节点就是 key 所在位置。</li>
+<li>如果一个节点挂了，受影响的数据仅仅是此节点到环空间前一个节点（沿着逆时针方向行走遇到的第一个节点）之间的数据，其它不受影响。增加一个节点也同理。</li>
+<li>一致性哈希算法在节点太少时，容易因为节点分布不均匀而造成缓存热点的问题。为了解决这种热点问题，一致性 hash 算法引入了虚拟节点机制，即对每一个节点计算多个 hash，每个计算结果位置都放置一个虚拟节点。这样就实现了数据的均匀分布，负载均衡。</li>
+</ul>
+<ol start="9">
+<li><strong>hash slot 算法：</strong> Redis cluster 有固定的 16384 个 hash slot，对每个 key 计算 CRC16 值，然后对 16384 取模，可以获取 key 对应的 hash slot。Redis cluster 中每个 master 都会持有部分 slot；任何一台机器宕机，另外两个节点，不影响的。因为 key 找的是 hash slot，不是机器。</li>
+<li><strong>Redis cluster 的高可用与主备切换原理，几乎跟哨兵是类似的。</strong></li>
+</ol>
+<ul>
+<li>判断节点宕机：如果一个节点认为另外一个节点宕机，那么就是 pfail ，主观宕机。如果多个节点都认为另外一个节点宕机了，那么就是 fail ，客观宕机，跟哨兵的原理几乎一样，sdown，odown。</li>
+<li>从节点过滤：对宕机的 master node，从其所有的 slave node 中，选择一个切换成 master node。检查每个 slave node 与 master node 断开连接的时间，如果超过了 cluster-node-timeout * cluster-slave-validity-factor ，那么就没有资格切换成 master 。</li>
+<li>从节点选举：每个从节点，都根据自己对 master 复制数据的 offset，来设置一个选举时间，offset 越大（复制数据越多）的从节点，选举时间越靠前，优先进行选举。</li>
+</ul>
+<h3><a href="https://github.com/doocs/advanced-java/blob/main/docs/high-concurrency/redis-caching-avalanche-and-caching-penetration.md">九、了解什么是 Redis 的雪崩、穿透和击穿？Redis 崩溃之后会怎么样？系统该如何应对这种情况？如何处理 Redis 的穿透？</a></h3>
+<ol>
+<li>缓存雪崩和击穿(Cache Avalanche)</li>
+</ol>
+<ul>
+<li>场景：缓存在同一时间大面积的失效或者缓存机器发生了全部宕机，后面的请求都直接落到了数据库上，造成数据库短时间内承受大量请求；</li>
+<li>解决：事前采用采用 Redis cluster 集群 / 主从+哨兵，避免单机出现问题整个缓存服务都没办法使用，或者设置不同的失效时间以及必要key设置永不失效；事中采用本地 ehcache 缓存 + hystrix 限流&amp;降级，避免 MySQL 被打死；事采用Redis 持久化，一旦重启，自动从磁盘上加载数据，快速恢复缓存数据。</li>
+</ul>
+<ol start="2">
+<li>缓存穿透(Cache Penetration)</li>
+</ol>
+<ul>
+<li>场景：大量请求的 key 根本不存在于缓存中，导致请求直接到了数据库上，根本没有经过缓存这一层，比如黑客发出的恶意攻击。</li>
+<li>解决：1⃣️每次系统 A 从数据库中只要没查到，就写一个空值到缓存里去，比如 set -999 UNKNOWN 。然后设置一个过期时间，这样的话，下次有相同的 key 来访问的时候，在缓存失效之前，都可以直接从缓存中取数据。2⃣️如果每次使用不同的不存在的id来攻击，就可以使用布隆过滤器，将数据库中所有可能的数据哈希映射到布隆过滤器中。</li>
+</ul>
+<p><a href="https://mp.weixin.qq.com/s/knz-j-m8bTg5GnKc7oeZLg" rel="nofollow">缓存雪崩、击穿、穿透</a></p>
+<h3><a href="https://github.com/doocs/advanced-java/blob/main/docs/high-concurrency/redis-consistence.md">十、如何保证缓存与数据库的双写一致性？</a></h3>
+<ol>
+<li>如果你的系统是严格要求 “缓存+数据库” 必须保持一致性的话，即：读请求和写请求串行化，串到一个内存队列里去，但是它也会导致系统的吞吐量大幅度降低。</li>
+<li>最经典的缓存+数据库读写的模式，就是 Cache Aside Pattern（旁路缓存模式）：读的时候，先读缓存，缓存没有的话，就读数据库，然后取出数据后放入缓存，同时返回响应；更新的时候，先更新数据库，然后再删除缓存。</li>
+<li>最初级的缓存不一致问题及解决方案？</li>
+</ol>
+<ul>
+<li>问题：先更新数据库，再删除缓存。如果删除缓存失败了，那么会导致数据库中是新数据，缓存中是旧数据，数据就出现了不一致。</li>
+<li>解决一：先删除缓存，再更新数据库。如果数据库更新失败了，那么数据库中是旧数据，缓存中是空的，那么数据不会不一致。因为读的时候缓存没有，所以去读了数据库中的旧数据，然后更新到缓存中。</li>
+<li>解决二：延时双删，依旧是先更新数据库，再删除缓存，唯一不同的是，我们把这个删除的动作，在不久之后再执行一次，比如 5s 之后。</li>
+</ul>
+<ol start="4">
+<li>比较复杂的数据不一致问题分析？</li>
+</ol>
+<ul>
+<li>场景：数据发生了变更，先删除了缓存，然后要去修改数据库，此时还没修改。一个请求过来，去读缓存，发现缓存空了，去查询数据库，查到了修改前的旧数据，放到了缓存中。随后数据变更的程序完成了数据库的修改。完了，数据库和缓存中的数据不一样了；</li>
+<li>解决：更新数据的时候，根据数据的唯一标识，将操作路由之后，发送到一个 jvm 内部队列中。读取数据的时候，如果发现数据不在缓存中，那么将重新执行“读取数据+更新缓存”的操作，根据唯一标识路由之后，也发送到同一个 jvm 内部队列中。</li>
+<li>一个队列对应一个工作线程，每个工作线程串行拿到对应的操作，然后一条一条的执行。这样的话，一个数据变更的操作，先删除缓存，然后再去更新数据库，但是还没完成更新。此时如果一个读请求过来，没有读到缓存，那么可以先将缓存更新的请求发送到队列中，此时会在队列中积压，然后同步等待缓存更新完成。</li>
+</ul>
+<ol start="5">
+<li>高并发的场景下，该解决方案要注意的问题？</li>
+</ol>
+<ul>
+<li>读请求长时阻塞：由于读请求进行了非常轻度的异步化，所以一定要注意读超时的问题，每个读请求必须在超时时间范围内返回。</li>
+<li>读请求并发量过高；</li>
+<li>多服务实例部署的请求路由；</li>
+<li>热点商品的路由问题，导致请求的倾斜；</li>
+</ul>
+<h3><a href="https://github.com/doocs/advanced-java/blob/main/docs/high-concurrency/redis-cas.md">十一、Redis 的并发竞争问题是什么？如何解决这个问题？了解 Redis 事务的 CAS 方案吗？</a></h3>
+<ol>
+<li>描述：多客户端同时并发写一个 key，可能本来应该先到的数据后到了，导致数据版本错了；或者是多客户端同时获取一个 key，修改值之后再写回去，只要顺序错了，数据就错了。</li>
+<li>而且 Redis 自己就有天然解决这个问题的 CAS 类的乐观锁方案。</li>
+<li>解决：某个时刻，多个系统实例都去更新某个 key。可以基于 zookeeper 实现分布式锁。每个系统通过 zookeeper 获取分布式锁，确保同一时间，只能有一个系统实例在操作某个 key，别人都不允许读和写。</li>
+</ol>
+<ul>
+<li>你要写入缓存的数据，都是从 mysql 里查出来的，都得写入 mysql 中，写入 mysql 中的时候必须保存一个时间戳，从 mysql 查出来的时候，时间戳也查出来。</li>
+<li>每次要写之前，<strong>先判断一下当前这个 value 的时间戳是否比缓存里的 value 的时间戳要新。如果是的话，那么可以写，否则，就不能用旧的数据覆盖新的数据。</strong></li>
+</ul>
+<h3><a href="https://github.com/doocs/advanced-java/blob/main/docs/high-concurrency/redis-production-environment.md">十二、生产环境中的 Redis 是怎么部署的？</a></h3>
+<ul>
+<li>
+<p>哨兵模式，3 台机器，1 台机器部署了 Redis 主实例，另外 2 台机器部署了 Redis 的从实例，一个主实例挂了两个从实例，1 个节点对外提供读写服务读写高峰 QPS 可能可以达到每秒 5 万。</p>
+</li>
+<li>
+<p>机器是什么配置？32G 内存+ 8 核 CPU + 1T 磁盘，但是分配给 Redis 进程的是 10g 内存，一般线上生产环境，Redis 的内存尽量不要超过 10g，超过 10g 可能会有问题。</p>
+</li>
+<li>
+<p>因为这个主实例都挂了两个从实例，所以是高可用的，主实例宕机，都会自动故障迁移，Redis 从实例会自动变成主实例继续提供读写服务。</p>
+</li>
+<li>
+<p>你往内存里写的是什么数据？每条数据的大小是多少？商品数据，每条数据是 几 kb。100 条数据是 1mb，10 万条数据是 1g。常驻内存的是 50 万条商品数据，占用内存是 5g，到总内存的 50%。目前高峰期每秒就是 几百 左右的请求量。</p>
+</li>
+</ul>
+<h3><a href="https://github.com/doocs/advanced-java/blob/main/docs/high-concurrency/redis-rehash.md">十三、有了解过 Redis rehash 的过程吗？</a></h3>
+<ol>
+<li>
+<p>Redis 主要用于存储键值对(Key-Value Pair)，而键值对的存储方式是由字典实现，而 Redis 中字典的底层又是通过哈希表来实现的。通过哈希表中的节点保存字典中的键值对。类似 Java 中的 HashMap，将 Key 通过哈希函数映射到哈希表节点位置。</p>
+</li>
+<li>
+<p>在对哈希表进行扩展或者收缩操作时，程序需要将现有哈希表包含的所有键值对 rehash 到新哈希表里面，具体过程如下：</p>
+</li>
+</ol>
+<ul>
+<li><strong>1⃣️为字典的备用哈希表分配空间</strong>：如果执行的是扩展操作，那么备用哈希表的大小为第一个大于等于需要扩容的哈希表的键值对数量<em>2 的 2"(2 的 n 次方幂);【5</em>2=10,所以备用哈希表的容量为第一个大于 10 的 2"，即 16】，同理收缩操作；</li>
+<li>在字典中维持一个索引计数器变量 rehashidx，并将它的值设置为0，表示rehash工作正式开始：<strong>2⃣️将 rehash 键值对所需的计算工作均摊到对字典的每个添加、删除、查找和更新操作上，从而避免了集中式 rehash 而带来的庞大计算量。</strong></li>
+<li><strong>3⃣️在 rehash 进行期间，每次对字典执行添加、删除、查找或者更新操作时，程序除了执行指定的操作以外，还会顺带将原哈希表在 rehashidx 索引上的所有键值对 rehash 到备用哈希表，当 rehash 工作完成之后，程序将 rehashidx 属性的值加 1。</strong></li>
+<li>随着字典操作的不断执行，<strong>4⃣️最终在某个时间点上，ht[0]的所有键值对都会被rehash至ht[1]，这时程序将rehashidx属性的值设为-1，表示rehash操作已完成。</strong></li>
+</ul>
+<blockquote>
+<p><strong>渐进式 rehash</strong>： rehash 过程在数据量非常大（几千万、亿）的情况下并不是一次性地完成的，而是渐进式地完成的。渐进式 rehash的好处在于避免对服务器造成影响。</p>
+</blockquote>
+<h3>[十四、Redis为什么这么快？]</h3>
+<ol>
+<li>单线程模型: 线程之间的轮换以及上下文切换是需要花费很多时间的。</li>
+<li>基于内存：以MySQL为例，MySQL的数据和索引都是持久化保存在磁盘上的，因此当我们使用SQL语句执行一条查询命令时，如果目标数据库的索引还没被加载到内存中，那么首先要先把索引加载到内存，再通过若干寻址定位和磁盘I/O，把数据对应的磁盘块加载到内存中，最后再读取数据。</li>
+</ol>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/9f38881898e56095ea969d87f7ba37c0d0778ab45f64fee01f929b6ac7c7b525/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f38336164343164646338633134663432393037623736353539616438643234312e706e67"><img src="https://camo.githubusercontent.com/9f38881898e56095ea969d87f7ba37c0d0778ab45f64fee01f929b6ac7c7b525/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f38336164343164646338633134663432393037623736353539616438643234312e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/83ad41ddc8c14f42907b76559ad8d241.png" style="max-width: 100%;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/c3fa18d0db12312a58d2273e99105092f853ac1895dfb427e8d0a0bcb2d2b440/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f36646436383836303961396634333631616662633262376538343735643532392e706e67"><img src="https://camo.githubusercontent.com/c3fa18d0db12312a58d2273e99105092f853ac1895dfb427e8d0a0bcb2d2b440/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f36646436383836303961396634333631616662633262376538343735643532392e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/6dd688609a9f4361afbc2b7e8475d529.png" style="max-width: 100%;"></a></p>
+<ol start="3">
+<li>使用多路I/O复用模型，非阻塞IO</li>
+<li>文件事件处理器: Redis基于 Reactor 模式开发了自己的网络事件处理器：这个处理器被称为文件事件处理器：</li>
+</ol>
+<p>下图展示了文件事件处理器的四个组成部分：套接字、I/O多路复用程序、文件事件分派器(dispatcher)、事件处理器。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/a7fcf851ab5116cb361d63ab950269e2245356e9af8935681aa61d443e4cf577/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f65373763633563613863333834326465393265363764356334303332363930302e706e67"><img src="https://camo.githubusercontent.com/a7fcf851ab5116cb361d63ab950269e2245356e9af8935681aa61d443e4cf577/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f65373763633563613863333834326465393265363764356334303332363930302e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/e77cc5ca8c3842de92e67d5c40326900.png" style="max-width: 100%;"></a></p>
+<p>I/O 多路复用程序负责监听多个套接字，并向文件事件分派器传送那些产生了事件的套接字。</p>
+<ol start="5">
+<li>数据结构简单，对数据操作也简单，Redis中的数据结构是专门进行设计的；</li>
+</ol></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+
+</div>
+    <div id="footer"><div id="footer1">Copyright © <span id="copyrightYear"></span> <a href="https://shuaiwang888.github.io/appStore-Blog.github.io">Blog Title</a></div>
+<div id="footer2">
+    <span id="runday"></span><span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>
+</div>
+
+<script>
+var now=new Date();
+document.getElementById("copyrightYear").innerHTML=now.getFullYear();
+
+if(""!=""){
+    var startSite=new Date("");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";
+}
+</script></div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z', 'copy': 'M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z', 'check': 'M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","shuaiwang888/appStore-Blog.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const createClipboardHTML = (codeContent, additionalClasses = '') => `
+        <pre class="notranslate"><code class="notranslate">${codeContent}</code></pre>
+        <div class="clipboard-container position-absolute right-0 top-0 ${additionalClasses}">
+            <clipboard-copy class="ClipboardButton btn m-2 p-0" role="button" style="display: inherit;">
+                <svg height="16" width="16" class="octicon octicon-copy m-2"><path d="${IconList["copy"]}"></path></svg>
+                <svg height="16" width="16" class="octicon octicon-check color-fg-success m-2 d-none"><path d="${IconList["check"]}"></path></svg>
+            </clipboard-copy>
+            <div class="copy-feedback">Copied!</div>
+        </div>
+    `;
+
+    const handleCodeElements = (selector = '') => {
+        document.querySelectorAll(selector).forEach(codeElement => {
+            const codeContent = codeElement.innerHTML;
+            const newStructure = document.createElement('div');
+            newStructure.className = 'snippet-clipboard-content position-relative overflow-auto';
+            newStructure.innerHTML = createClipboardHTML(codeContent);
+
+            const parentElement = codeElement.parentElement;
+            if (selector.includes('highlight')) {
+                parentElement.insertBefore(newStructure, codeElement.nextSibling);
+                parentElement.removeChild(codeElement);
+            } else {
+                parentElement.parentElement.replaceChild(newStructure, parentElement);
+            }
+        });
+    };
+
+    handleCodeElements('pre.notranslate > code.notranslate');
+    handleCodeElements('div.highlight > pre.notranslate');
+
+    let currentFeedback = null;
+    document.querySelectorAll('clipboard-copy').forEach(copyButton => {
+        copyButton.addEventListener('click', () => {
+            const codeContent = copyButton.closest('.snippet-clipboard-content').innerText;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = codeContent;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            const copyIcon = copyButton.querySelector('.octicon-copy');
+            const checkIcon = copyButton.querySelector('.octicon-check');
+            const copyFeedback = copyButton.nextElementSibling;
+
+            if (currentFeedback && currentFeedback !== copyFeedback) {currentFeedback.style.display = 'none';}
+            currentFeedback = copyFeedback;
+
+            copyIcon.classList.add('d-none');
+            checkIcon.classList.remove('d-none');
+            copyFeedback.style.display = 'block';
+            copyButton.style.borderColor = 'var(--color-success-fg)';
+
+            setTimeout(() => {
+                copyIcon.classList.remove('d-none');
+                checkIcon.classList.add('d-none');
+                copyFeedback.style.display = 'none';
+                copyButton.style.borderColor = '';
+            }, 2000);
+        });
+    });
+});
+
+</script>
+
+
+</html>

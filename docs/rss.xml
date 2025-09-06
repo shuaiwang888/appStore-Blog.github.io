@@ -1,5 +1,16 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>Blog Title</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link><description>Blog description</description><copyright>Blog Title</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://github.githubassets.com/favicons/favicon.svg</url><title>avatar</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link></image><lastBuildDate>Sat, 06 Sep 2025 09:25:57 +0000</lastBuildDate><managingEditor>Blog Title</managingEditor><ttl>60</ttl><webMaster>Blog Title</webMaster><item><title>Spring Cloud Alibaba 笔记</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/Spring%20Cloud%20Alibaba%20-bi-ji.html</link><description># Spring Cloud Alibaba
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>Blog Title</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link><description>Blog description</description><copyright>Blog Title</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://github.githubassets.com/favicons/favicon.svg</url><title>avatar</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link></image><lastBuildDate>Sat, 06 Sep 2025 09:26:50 +0000</lastBuildDate><managingEditor>Blog Title</managingEditor><ttl>60</ttl><webMaster>Blog Title</webMaster><item><title>缓存</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/huan-cun.html</link><description>### [一、在项目中缓存是如何使用的？缓存如果使用不当会造成什么后果？](https://github.com/doocs/advanced-java/blob/main/docs/high-concurrency/why-cache.md)
+
+1. 结合项目阐述缓存的使用，主要就是有**高性能、高并发**这两个用途；
+2. 高性能：比如商品详情页中，第一次查询后，后面的一段时间内是不会有什么大的改变的，所以使用缓存可以提高后面的查询速度；
+3. 高并发：MySQL单机最高支撑2000QPS，而Redis基于内存可以几万QPS，说白了就是 **Key-Value** 式操作，可以在Redis中进行预扣减；
+4. 其中会出现的不良后果：**[缓存与数据库双写不一致](https://github.com/doocs/advanced-java/blob/main/docs/high-concurrency/redis-consistence.md)；[缓存雪崩、缓存穿透、缓存击穿](https://github.com/doocs/advanced-java/blob/main/docs/high-concurrency/redis-caching-avalanche-and-caching-penetration.md)；[缓存并发竞争](https://github.com/doocs/advanced-java/blob/main/docs/high-concurrency/redis-cas.md)；**
+
+
+### [二、Redis 和 Memcached 有什么区别？Redis 的线程模型是什么？为什么单线程的 Redis 比多线程的 Memcached 效率要高得多？](https://github.com/doocs/advanced-java/blob/main/docs/high-concurrency/redis-single-thread-model.md)
+
+1. Redis是单线程工作模型，支持更多复杂的数据结构，而且其原生的支持集群模式，支持数据的持久化、使用惰性删除与定期删除、支持Lua脚本；
+2. Redis的线程模型：Redis 内部使用文件事件处理器 `file event handler` ，这个文件事件处理器是单线程的，所以 Redis 才叫做单线程的模型。</description><guid isPermaLink="true">https://shuaiwang888.github.io/appStore-Blog.github.io/post/huan-cun.html</guid><pubDate>Sat, 06 Sep 2025 09:26:16 +0000</pubDate></item><item><title>Spring Cloud Alibaba 笔记</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/Spring%20Cloud%20Alibaba%20-bi-ji.html</link><description># Spring Cloud Alibaba
 
 ## 一、注册中心-Nacos（AP）
 
