@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark" data-light-theme="light" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
+    
+    <link rel="icon" href="https://github.githubassets.com/favicons/favicon.svg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="
+## Kafka面试题总结
+
+### 一、Kafka 是什么？主要应用场景有哪些？
+
+> **如何回答：1.kafka由哪几部分组成？2.应用的场景？（异步，解耦，消峰）3.引入后产生的一列问题和注意事项？**
+
+Kafka 是一个分布式流式处理平台。">
+<meta property="og:title" content="Kafka常见面试总结">
+<meta property="og:description" content="
+## Kafka面试题总结
+
+### 一、Kafka 是什么？主要应用场景有哪些？
+
+> **如何回答：1.kafka由哪几部分组成？2.应用的场景？（异步，解耦，消峰）3.引入后产生的一列问题和注意事项？**
+
+Kafka 是一个分布式流式处理平台。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://shuaiwang888.github.io/appStore-Blog.github.io/post/Kafka-chang-jian-mian-shi-zong-jie.html">
+<meta property="og:image" content="https://github.githubassets.com/favicons/favicon.svg">
+<title>Kafka常见面试总结</title>
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+.copy-feedback {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    color: var(--color-fg-on-emphasis);
+    background-color: var(--color-fg-muted);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
+</style>
+
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">Kafka常见面试总结</h1>
+<div class="title-right">
+    <a href="https://shuaiwang888.github.io/appStore-Blog.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/shuaiwang888/appStore-Blog.github.io/issues/28" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><h2>Kafka面试题总结</h2>
+<h3>一、Kafka 是什么？主要应用场景有哪些？</h3>
+<blockquote>
+<p><strong>如何回答：1.kafka由哪几部分组成？2.应用的场景？（异步，解耦，消峰）3.引入后产生的一列问题和注意事项？</strong></p>
+</blockquote>
+<p>Kafka 是一个分布式流式处理平台。这到底是什么意思呢？</p>
+<p>流平台具有三个关键功能：</p>
+<ol>
+<li><strong>消息队列</strong>：发布和订阅消息流，这个功能类似于消息队列，这也是 Kafka 也被归类为消息队列的原因。</li>
+<li><strong>容错的持久方式存储记录消息流</strong>： Kafka 会把消息持久化到磁盘，有效避免了消息丢失的风险。</li>
+<li><strong>流式处理平台：</strong> 在消息发布的时候进行处理，Kafka 提供了一个完整的流式处理类库。</li>
+</ol>
+<p>Kafka 主要有两大应用场景：</p>
+<ol>
+<li><strong>消息队列</strong> ：建立实时流数据管道，以可靠地在系统或应用程序之间获取数据。</li>
+<li><strong>数据处理：</strong> 构建实时的流数据处理程序来转换或处理数据流。</li>
+</ol>
+<h3>二、和其他消息队列相比,Kafka的优势在哪里？</h3>
+<p>我们现在经常提到 Kafka 的时候就已经默认它是一个非常优秀的消息队列了，我们也会经常拿它跟 RocketMQ、RabbitMQ 对比。我觉得 Kafka 相比其他消息队列主要的优势如下：</p>
+<ol>
+<li><strong>极致的性能</strong> ：基于 Scala 和 Java 语言开发，设计中大量使用了批量处理和异步的思想，最高可以每秒处理千万级别的消息。</li>
+<li><strong>生态系统兼容性无可匹敌</strong> ：Kafka 与周边生态系统的兼容性是最好的没有之一，尤其在大数据和流计算领域。</li>
+</ol>
+<p>实际上在早期的时候 Kafka 并不是一个合格的消息队列，早期的 Kafka 在消息队列领域就像是一个衣衫褴褛的孩子一样，功能不完备并且有一些小问题比如丢失消息、不保证消息可靠性等等。当然，这也和 LinkedIn 最早开发 Kafka 用于处理海量的日志有很大关系，哈哈哈，人家本来最开始就不是为了作为消息队列滴，谁知道后面误打误撞在消息队列领域占据了一席之地。</p>
+<p>随着后续的发展，这些短板都被 Kafka 逐步修复完善。所以，<strong>Kafka 作为消息队列不可靠这个说法已经过时！</strong></p>
+<h3>三、队列模型了解吗？Kafka 的消息模型知道吗？</h3>
+<p>消息队列有两种模型：队列模型和发布/订阅模型。</p>
+<h4>队列模型：早期的消息模型</h4>
+<p>生产者往某个队列里面发送消息，一个队列可以存储多个生产者的消息，一个队列也可以有多个消费者， 但是消费者之间是竞争关系，即每条消息只能被一个消费者消费。</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/%E9%98%9F%E5%88%97%E6%A8%A1%E5%9E%8B23-55565364ea6449cb9c8dbd090a51890c.png"><img src="/upload/2021/10/%E9%98%9F%E5%88%97%E6%A8%A1%E5%9E%8B23-55565364ea6449cb9c8dbd090a51890c.png" alt="队列模型23.png" style="max-width: 100%;"></a></p>
+<p><strong>使用队列（Queue）作为消息通信载体，满足生产者与消费者模式，一条消息只能被一个消费者使用，未被消费的消息在队列中保留直到被消费或超时。</strong> 比如：我们生产者发送 100 条消息的话，两个消费者来消费一般情况下两个消费者会按照消息发送的顺序各自消费一半（也就是你一个我一个的消费。）</p>
+<p><strong>队列模型存在的问题：</strong></p>
+<p>假如我们存在这样一种情况：我们需要将生产者产生的消息分发给多个消费者，并且每个消费者都能接收到完整的消息内容。</p>
+<p>这种情况，队列模型就不好解决了。很多比较杠精的人就说：我们可以为每个消费者创建一个单独的队列，让生产者发送多份。这是一种非常愚蠢的做法，浪费资源不说，还违背了使用消息队列的目的。</p>
+<h4>发布-订阅模型:Kafka 消息模型</h4>
+<p>为了解决<strong>一条消息能被多个消费者消费的问题</strong>，发布/订阅模型就来了。该模型是将消息发往一个Topic即主题中，所有订阅了这个 Topic 的订阅者都能消费这条消息。</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/%E5%8F%91%E5%B8%83%E8%AE%A2%E9%98%85%E6%A8%A1%E5%9E%8B-1de22728135a45e49d5dc7683b402cd8.png"><img src="/upload/2021/10/%E5%8F%91%E5%B8%83%E8%AE%A2%E9%98%85%E6%A8%A1%E5%9E%8B-1de22728135a45e49d5dc7683b402cd8.png" alt="发布订阅模型.png" style="max-width: 100%;"></a></p>
+<p>发布订阅模型（Pub-Sub） 使用<strong>主题（Topic）</strong> 作为消息通信载体，类似于<strong>广播模式</strong>；发布者发布一条消息，该消息通过主题传递给所有的订阅者，<strong>在一条消息广播之后才订阅的用户则是收不到该条消息的</strong>。</p>
+<p><strong>在发布 - 订阅模型中，如果只有一个订阅者，那它和队列模型就基本是一样的了。所以说，发布 - 订阅模型在功能层面上是可以兼容队列模型的。</strong></p>
+<p><strong>Kafka 采用的就是发布 - 订阅模型。</strong></p>
+<blockquote>
+<p><strong>RocketMQ 的消息模型和 Kafka 基本是完全一样的。唯一的区别是 Kafka 中没有队列这个概念，与之对应的是 Partition（分区）。</strong></p>
+</blockquote>
+<h3>什么是Producer、Consumer、Broker、Topic、Partition？</h3>
+<p>Kafka 将生产者发布的消息发送到 <strong>Topic（主题）</strong> 中，需要这些消息的消费者可以订阅这些 <strong>Topic（主题）</strong>，如下图所示：</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/KafkaTopicPartitioning-11e901506fb34639afb735625bce698a.png"><img src="/upload/2021/10/KafkaTopicPartitioning-11e901506fb34639afb735625bce698a.png" alt="KafkaTopicPartitioning.png" style="max-width: 100%;"></a></p>
+<p>上面这张图也为我们引出了，Kafka 比较重要的几个概念：</p>
+<ol>
+<li><strong>Producer（生产者）</strong> : 产生消息的一方。</li>
+<li><strong>Consumer（消费者）</strong> : 消费消息的一方。</li>
+<li><strong>Broker（代理）</strong> : 可以看作是一个独立的 Kafka 实例。多个 Kafka Broker 组成一个 Kafka Cluster。</li>
+</ol>
+<p>同时，你一定也注意到每个 Broker 中又包含了 Topic 以及 Partition 这两个重要的概念：</p>
+<ul>
+<li><strong>Topic（主题）</strong> : Producer 将消息发送到特定的主题，Consumer 通过订阅特定的 Topic(主题) 来消费消息。</li>
+<li><strong>Partition（分区）</strong> : Partition 属于 Topic 的一部分。一个 Topic 可以有多个 Partition ，并且同一 Topic 下的 Partition 可以分布在不同的 Broker 上，这也就表明一个 Topic 可以横跨多个 Broker 。这正如我上面所画的图一样。</li>
+</ul>
+<blockquote>
+<p>划重点：<strong>Kafka 中的 Partition（分区） 实际上可以对应成为消息队列中的队列。这样是不是更好理解一点？</strong></p>
+</blockquote>
+<h3>Kafka 的多副本机制了解吗？带来了什么好处？</h3>
+<p>现在我们已经知道了往topic里边丢数据，实际上这些数据会分到不同的partition上，这些partition存在不同的broker上。分布式肯定会带来问题：“<strong>万一其中一台broker(Kafka服务器)出现网络抖动或者挂了，怎么办？</strong>”</p>
+<p>Kafka 为分区（Partition）引入了多副本（Replica）机制。</p>
+<p>Kafka是这样做的：我们数据存在不同的partition上，那kafka就把这些partition做备份。比如，现在我们有三个partition，分别存在三台broker上。每个partition都会备份，这些备份散落在不同的broker上。</p>
+<p>分区（Partition）中的多个副本之间会有一个叫做 leader 的家伙，其他副本称为 follower。我们发送的消息会被发送到 leader 副本，然后 follower 副本才能从 leader 副本中拉取消息进行同步。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/47eb5d2db721f1da91270f32b79acde03f02d095c5aefab0da856961bac825e6/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f65643431643734353838363434353635393833663239646466373431623664362e706e67"><img src="https://camo.githubusercontent.com/47eb5d2db721f1da91270f32b79acde03f02d095c5aefab0da856961bac825e6/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f65643431643734353838363434353635393833663239646466373431623664362e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/ed41d74588644565983f29ddf741b6d6.png" style="max-width: 100%;"></a></p>
+<ul>
+<li>
+<p>红色块的partition代表的是主分区，紫色的partition块代表的是备份分区。生产者往topic丢数据，是与主分区交互，消费者消费topic的数据，也是与主分区交互。</p>
+</li>
+<li>
+<p>备份分区仅仅用作于<strong>备份</strong>，<strong>不做读写</strong>。如果某个Broker挂了，那就会选举出其他Broker的partition来作为主分区，这就<strong>实现了高可用</strong>。</p>
+</li>
+</ul>
+<p>另外值得一提的是：<strong>当生产者把数据丢进topic时，我们知道是写在partition上的，那partition是怎么将其持久化的呢？（不持久化如果Broker中途挂了，那肯定会丢数据嘛)。</strong></p>
+<ul>
+<li>
+<p>Kafka是将partition的数据写在磁盘的(消息日志)，不过Kafka只允许追加写入(顺序访问)，避免缓慢的随机 I/O 操作。</p>
+</li>
+<li>
+<p>Kafka也不是partition一有数据就立马将数据写到磁盘上，它会先缓存一部分，等到足够多数据量或等待一定的时间再批量写入(flush)。</p>
+</li>
+</ul>
+<blockquote>
+<p>生产者和消费者只与 leader 副本交互。你可以理解为其他副本只是 leader 副本的拷贝，它们的存在只是为了保证消息存储的安全性。当 leader 副本发生故障时会从 follower 中选举出一个 leader,但是 follower 中如果有和 leader 同步程度达不到要求的参加不了 leader 的竞选。</p>
+</blockquote>
+<p>上面balabala地都是讲生产者把数据丢进topic是怎么样的，下面来讲讲消费者是怎么消费的。既然数据是保存在partition中的，那么消费者实际上也是从partition中取数据。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/bffab6600c1048531a0c093d8dad04171c90fef62373aa7296fb4347d99c2629/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f63633936393064623830643534313762613733656634313236303263376437382e706e67"><img src="https://camo.githubusercontent.com/bffab6600c1048531a0c093d8dad04171c90fef62373aa7296fb4347d99c2629/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f63633936393064623830643534313762613733656634313236303263376437382e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/cc9690db80d5417ba73ef412602c7d78.png" style="max-width: 100%;"></a></p>
+<p>生产者可以有多个，消费者也可以有多个。像上面图的情况，是一个消费者消费三个分区的数据。多个消费者可以组成一个消费者组。</p>
+<p>本来是一个消费者消费三个分区的，现在我们有消费者组，就可以每个消费者去消费一个分区（也是为了提高吞吐量）</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/eae512eb2d48757ebe5e2d9a713b8661540badf6ca4b1875da12bc649a688ed0/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f34313364383938323430366534626234393731353761306162333830336233632e706e67"><img src="https://camo.githubusercontent.com/eae512eb2d48757ebe5e2d9a713b8661540badf6ca4b1875da12bc649a688ed0/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f34313364383938323430366534626234393731353761306162333830336233632e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/413d8982406e4bb497157a0ab3803b3c.png" style="max-width: 100%;"></a></p>
+<p><strong>按图上所示的情况，这里想要说明的是：</strong></p>
+<ul>
+<li>
+<p>如果消费者组中的某个消费者挂了，那么其中一个消费者可能就要消费两个partition了</p>
+</li>
+<li>
+<p>如果只有三个partition，而消费者组有4个消费者，那么一个消费者会空闲</p>
+</li>
+<li>
+<p>如果多加入一个消费者组，无论是新增的消费者组还是原本的消费者组，都能消费topic的全部数据。（消费者组之间从逻辑上它们是独立的）</p>
+</li>
+</ul>
+<p><strong>Kafka 的多分区（Partition）以及多副本（Replica）机制有什么好处呢？</strong></p>
+<ol>
+<li>Kafka 通过给特定 Topic 指定多个 Partition, 而各个 Partition 可以分布在不同的 Broker 上, 这样便能提供比较好的并发能力（负载均衡）。</li>
+<li>Partition 可以指定对应的 Replica 数, 这也极大地提高了消息存储的安全性, 提高了容灾能力，不过也相应的增加了所需要的存储空间。</li>
+</ol>
+<h3>Zookeeper 在 Kafka 中的作用知道吗？</h3>
+<blockquote>
+<p><strong>要想搞懂 zookeeper 在 Kafka 中的作用 一定要自己搭建一个 Kafka 环境然后自己进 zookeeper 去看一下有哪些文件夹和 Kafka 有关，每个节点又保存了什么信息。</strong> 一定不要光看不实践，这样学来的也终会忘记！这部分内容参考和借鉴了这篇文章：<a href="https://www.jianshu.com/p/a036405f989c" rel="nofollow">https://www.jianshu.com/p/a036405f989c</a> 。</p>
+</blockquote>
+<p>下图就是我的本地 Zookeeper ，它成功和我本地的 Kafka 关联上（以下文件夹结构借助 idea 插件 Zookeeper tool 实现）。</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/zookeeper-kafka-bb8706a527b5450783b14498e7ae8d0d.jpg"><img src="/upload/2021/10/zookeeper-kafka-bb8706a527b5450783b14498e7ae8d0d.jpg" alt="zookeeperkafka.jpg" style="max-width: 100%;"></a></p>
+<p>ZooKeeper 主要为 Kafka 提供元数据的管理的功能。</p>
+<p>从图中我们可以看出，Zookeeper 主要为 Kafka 做了下面这些事情：</p>
+<ol>
+<li><strong>Broker 注册</strong> ：在 Zookeeper 上会有一个专门<strong>用来进行 Broker 服务器列表记录</strong>的节点。每个 Broker 在启动时，都会到 Zookeeper 上进行注册，即到 <code class="notranslate">/brokers/ids</code> 下创建属于自己的节点。每个 Broker 就会将自己的 IP 地址和端口等信息记录到该节点中去</li>
+<li><strong>Topic 注册</strong> ： 在 Kafka 中，同一个<strong>Topic 的消息会被分成多个分区</strong>并将其分布在多个 Broker 上，<strong>这些分区信息及与 Broker 的对应关系</strong>也都是由 Zookeeper 在维护。比如我创建了一个名字为 my-topic 的主题并且它有两个分区，对应到 zookeeper 中会创建这些文件夹：<code class="notranslate">/brokers/topics/my-topic/Partitions/0</code>、<code class="notranslate">/brokers/topics/my-topic/Partitions/1</code></li>
+<li><strong>负载均衡</strong> ：上面也说过了 Kafka 通过给特定 Topic 指定多个 Partition, 而各个 Partition 可以分布在不同的 Broker 上, 这样便能提供比较好的并发能力。 对于同一个 Topic 的不同 Partition，Kafka 会尽力将这些 Partition 分布到不同的 Broker 服务器上。当生产者产生消息后也会尽量投递到不同 Broker 的 Partition 里面。当 Consumer 消费的时候，Zookeeper 可以根据当前的 Partition 数量以及 Consumer 数量来实现动态负载均衡。</li>
+<li>......</li>
+</ol>
+<h3>Kafka 如何保证消息的消费顺序？</h3>
+<p>我们在使用消息队列的过程中经常有业务场景需要严格保证消息的消费顺序，比如我们同时发了 2 个消息，这 2 个消息对应的操作分别对应的数据库操作是：</p>
+<ol>
+<li>更改用户会员等级。</li>
+<li>根据会员等级计算订单价格。</li>
+</ol>
+<p>假如这两条消息的消费顺序不一样造成的最终结果就会截然不同。</p>
+<p>我们知道 Kafka 中 Partition(分区)是真正保存消息的地方，我们发送的消息都被放在了这里。而我们的 Partition(分区) 又存在于 Topic(主题) 这个概念中，并且我们可以给特定 Topic 指定多个 Partition。</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/KafkaTopicPartionsLayout-45efc71116424cf78be72ee4c255ff85.png"><img src="/upload/2021/10/KafkaTopicPartionsLayout-45efc71116424cf78be72ee4c255ff85.png" alt="KafkaTopicPartionsLayout.png" style="max-width: 100%;"></a></p>
+<p>每次添加消息到 Partition(分区) 的时候都会采用尾加法，如上图所示。 <strong>Kafka 只能为我们保证 Partition(分区) 中的消息有序。</strong></p>
+<blockquote>
+<p>消息在被追加到 Partition(分区)的时候都会分配一个特定的偏移量（offset）。Kafka 通过偏移量（offset）来保证消息在分区内的顺序性。</p>
+</blockquote>
+<p>所以，我们就有一种很简单的保证消息消费顺序的方法：<strong>1 个 Topic 只对应一个 Partition</strong>。这样当然可以解决问题，但是破坏了 Kafka 的设计初衷。</p>
+<p>Kafka 中发送 1 条消息的时候，可以指定 topic, partition, key,data（数据） 4 个参数。如果你发送消息的时候指定了 Partition 的话，所有消息都会被发送到指定的 Partition。并且，同一个 key 的消息可以保证只发送到同一个 partition，这个我们可以采用表/对象的 id 来作为 key 。</p>
+<p>总结一下，对于如何保证 Kafka 中消息消费的顺序，有了下面两种方法：</p>
+<ol>
+<li>1 个 Topic 只对应一个 Partition。</li>
+<li>（推荐）发送消息的时候指定 key/Partition。</li>
+</ol>
+<p>当然不仅仅只有上面两种方法，上面两种方法是我觉得比较好理解的，</p>
+<h3>Kafka 如何保证消息不丢失</h3>
+<h4>生产者丢失消息的情况</h4>
+<p>生产者(Producer) 调用<code class="notranslate">send</code>方法发送消息之后，消息可能因为网络问题并没有发送过去。</p>
+<p>所以，我们不能默认在调用<code class="notranslate">send</code>方法发送消息之后消息发送成功了。为了确定消息是发送成功，我们要判断消息发送的结果。但是要注意的是  Kafka 生产者(Producer) 使用  <code class="notranslate">send</code> 方法发送消息实际上是异步的操作，我们可以通过 <code class="notranslate">get()</code>方法获取调用结果，但是这样也让它变为了同步操作，示例代码如下：</p>
+<blockquote>
+<p><strong>详细代码见我的这篇文章：<a href="https://mp.weixin.qq.com/s?__biz=Mzg2OTA0Njk0OA==&amp;mid=2247486269&amp;idx=2&amp;sn=ec00417ad641dd8c3d145d74cafa09ce&amp;chksm=cea244f6f9d5cde0c8eb233fcc4cf82e11acd06446719a7af55230649863a3ddd95f78d111de&amp;token=1633957262&amp;lang=zh_CN#rd" rel="nofollow">Kafka系列第三篇！10 分钟学会如何在 Spring Boot 程序中使用 Kafka 作为消息队列?</a></strong></p>
+</blockquote>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-smi">SendResult</span>&lt;<span class="pl-smi">String</span>, <span class="pl-smi">Object</span>&gt; <span class="pl-s1">sendResult</span> = <span class="pl-s1">kafkaTemplate</span>.<span class="pl-en">send</span>(<span class="pl-s1">topic</span>, <span class="pl-s1">o</span>).<span class="pl-en">get</span>();
+<span class="pl-k">if</span> (<span class="pl-s1">sendResult</span>.<span class="pl-en">getRecordMetadata</span>() != <span class="pl-c1">null</span>) {
+  <span class="pl-s1">logger</span>.<span class="pl-en">info</span>(<span class="pl-s">"生产者成功发送消息到"</span> + <span class="pl-s1">sendResult</span>.<span class="pl-en">getProducerRecord</span>().<span class="pl-en">topic</span>() + <span class="pl-s">"-&gt; "</span> + <span class="pl-smi">sendRe</span>
+              <span class="pl-s1">sult</span>.<span class="pl-en">getProducerRecord</span>().<span class="pl-en">value</span>().<span class="pl-en">toString</span>());
+}</pre></div>
+<p>但是一般不推荐这么做！可以采用为其添加回调函数的形式，示例代码如下：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate">        <span class="pl-smi">ListenableFuture</span>&lt;<span class="pl-smi">SendResult</span>&lt;<span class="pl-smi">String</span>, <span class="pl-smi">Object</span>&gt;&gt; <span class="pl-s1">future</span> = <span class="pl-s1">kafkaTemplate</span>.<span class="pl-en">send</span>(<span class="pl-s1">topic</span>, <span class="pl-s1">o</span>);
+        <span class="pl-s1">future</span>.<span class="pl-en">addCallback</span>(<span class="pl-s1">result</span> -&gt; <span class="pl-s1">logger</span>.<span class="pl-en">info</span>(<span class="pl-s">"生产者成功发送消息到topic:{} partition:{}的消息"</span>, <span class="pl-s1">result</span>.<span class="pl-en">getRecordMetadata</span>().<span class="pl-en">topic</span>(), <span class="pl-s1">result</span>.<span class="pl-en">getRecordMetadata</span>().<span class="pl-en">partition</span>()),
+                <span class="pl-s1">ex</span> -&gt; <span class="pl-s1">logger</span>.<span class="pl-en">error</span>(<span class="pl-s">"生产者发送消失败，原因：{}"</span>, <span class="pl-s1">ex</span>.<span class="pl-en">getMessage</span>()));</pre></div>
+<p>如果消息发送失败的话，我们检查失败的原因之后重新发送即可！</p>
+<p><strong>另外这里推荐为 Producer 的<code class="notranslate">retries </code>（重试次数）设置一个比较合理的值，一般是 3 ，但是为了保证消息不丢失的话一般会设置比较大一点。设置完成之后，当出现网络问题之后能够自动重试消息发送，避免消息丢失。另外，建议还要设置重试间隔，因为间隔太小的话重试的效果就不明显了，网络波动一次你3次一下子就重试完了</strong></p>
+<h4>消费者丢失消息的情况</h4>
+<p>我们知道消息在被追加到 Partition(分区)的时候都会分配一个特定的偏移量（offset）。偏移量（offset)表示 Consumer 当前消费到的 Partition(分区)的所在的位置。Kafka 通过偏移量（offset）可以保证消息在分区内的顺序性。</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/kafka-offset-6efab8498e33473fa10f0da2c37581bb.jpg"><img src="/upload/2021/10/kafka-offset-6efab8498e33473fa10f0da2c37581bb.jpg" alt="kafkaoffset.jpg" style="max-width: 100%;"></a></p>
+<p>当消费者拉取到了分区的某个消息之后，消费者会自动提交了 offset。自动提交的话会有一个问题，试想一下，当消费者刚拿到这个消息准备进行真正消费的时候，突然挂掉了，消息实际上并没有被消费，但是 offset 却被自动提交了。</p>
+<p><strong>解决办法也比较粗暴，我们手动关闭自动提交 offset，每次在真正消费完消息之后再自己手动提交 offset 。</strong> 但是，细心的朋友一定会发现，这样会带来消息被重新消费的问题。比如你刚刚消费完消息之后，还没提交 offset，结果自己挂掉了，那么这个消息理论上就会被消费两次。</p>
+<h4>Kafka 弄丢了消息</h4>
+<p>我们知道 Kafka 为分区（Partition）引入了多副本（Replica）机制。分区（Partition）中的多个副本之间会有一个叫做 leader 的家伙，其他副本称为 follower。我们发送的消息会被发送到 leader 副本，然后 follower 副本才能从 leader 副本中拉取消息进行同步。生产者和消费者只与 leader 副本交互。你可以理解为其他副本只是 leader 副本的拷贝，它们的存在只是为了保证消息存储的安全性。</p>
+<p><strong>试想一种情况：假如 leader 副本所在的 broker 突然挂掉，那么就要从 follower 副本重新选出一个 leader ，但是 leader 的数据还有一些没有被 follower 副本的同步的话，就会造成消息丢失。</strong></p>
+<p><strong>设置 acks = all</strong></p>
+<p>解决办法就是我们设置  <strong>acks = all</strong>。acks 是 Kafka 生产者(Producer)  很重要的一个参数。</p>
+<p>acks 的默认值即为1，代表我们的消息被leader副本接收之后就算被成功发送。当我们配置 <strong>acks = all</strong> 代表则所有副本都要接收到该消息之后该消息才算真正成功被发送。</p>
+<p><strong>设置 replication.factor &gt;= 3</strong></p>
+<p>为了保证 leader 副本能有 follower 副本能同步消息，我们一般会为 topic 设置 <strong>replication.factor &gt;= 3</strong>。这样就可以保证每个 分区(partition) 至少有 3 个副本。虽然造成了数据冗余，但是带来了数据的安全性。</p>
+<p><strong>设置 min.insync.replicas &gt; 1</strong></p>
+<p>一般情况下我们还需要设置 <strong>min.insync.replicas&gt; 1</strong> ，这样配置代表消息至少要被写入到 2 个副本才算是被成功发送。<strong>min.insync.replicas</strong> 的默认值为 1 ，在实际生产中应尽量避免默认值 1。</p>
+<p>但是，为了保证整个 Kafka 服务的高可用性，你需要确保 <strong>replication.factor &gt; min.insync.replicas</strong> 。为什么呢？设想一下假如两者相等的话，只要是有一个副本挂掉，整个分区就无法正常工作了。这明显违反高可用性！一般推荐设置成 <strong>replication.factor = min.insync.replicas + 1</strong>。</p>
+<p><strong>设置 unclean.leader.election.enable = false</strong></p>
+<blockquote>
+<p><strong>Kafka 0.11.0.0版本开始 unclean.leader.election.enable 参数的默认值由原来的true 改为false</strong></p>
+</blockquote>
+<p>我们最开始也说了我们发送的消息会被发送到 leader 副本，然后 follower 副本才能从 leader 副本中拉取消息进行同步。多个 follower 副本之间的消息同步情况不一样，当我们配置了 <strong>unclean.leader.election.enable = false</strong>  的话，当 leader 副本发生故障时就不会从  follower 副本中和 leader 同步程度达不到要求的副本中选择出  leader ，这样降低了消息丢失的可能性。</p>
+<h3>Kafka 如何保证消息不重复消费</h3>
+<p>代办...</p>
+<h3>Reference</h3>
+<ul>
+<li>Kafka 官方文档： <a href="https://kafka.apache.org/documentation/" rel="nofollow">https://kafka.apache.org/documentation/</a></li>
+<li>极客时间—《Kafka核心技术与实战》第11节：无消息丢失配置怎么实现？</li>
+</ul></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+
+</div>
+    <div id="footer"><div id="footer1">Copyright © <span id="copyrightYear"></span> <a href="https://shuaiwang888.github.io/appStore-Blog.github.io">Blog Title</a></div>
+<div id="footer2">
+    <span id="runday"></span><span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>
+</div>
+
+<script>
+var now=new Date();
+document.getElementById("copyrightYear").innerHTML=now.getFullYear();
+
+if(""!=""){
+    var startSite=new Date("");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";
+}
+</script></div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z', 'copy': 'M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z', 'check': 'M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","shuaiwang888/appStore-Blog.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const createClipboardHTML = (codeContent, additionalClasses = '') => `
+        <pre class="notranslate"><code class="notranslate">${codeContent}</code></pre>
+        <div class="clipboard-container position-absolute right-0 top-0 ${additionalClasses}">
+            <clipboard-copy class="ClipboardButton btn m-2 p-0" role="button" style="display: inherit;">
+                <svg height="16" width="16" class="octicon octicon-copy m-2"><path d="${IconList["copy"]}"></path></svg>
+                <svg height="16" width="16" class="octicon octicon-check color-fg-success m-2 d-none"><path d="${IconList["check"]}"></path></svg>
+            </clipboard-copy>
+            <div class="copy-feedback">Copied!</div>
+        </div>
+    `;
+
+    const handleCodeElements = (selector = '') => {
+        document.querySelectorAll(selector).forEach(codeElement => {
+            const codeContent = codeElement.innerHTML;
+            const newStructure = document.createElement('div');
+            newStructure.className = 'snippet-clipboard-content position-relative overflow-auto';
+            newStructure.innerHTML = createClipboardHTML(codeContent);
+
+            const parentElement = codeElement.parentElement;
+            if (selector.includes('highlight')) {
+                parentElement.insertBefore(newStructure, codeElement.nextSibling);
+                parentElement.removeChild(codeElement);
+            } else {
+                parentElement.parentElement.replaceChild(newStructure, parentElement);
+            }
+        });
+    };
+
+    handleCodeElements('pre.notranslate > code.notranslate');
+    handleCodeElements('div.highlight > pre.notranslate');
+
+    let currentFeedback = null;
+    document.querySelectorAll('clipboard-copy').forEach(copyButton => {
+        copyButton.addEventListener('click', () => {
+            const codeContent = copyButton.closest('.snippet-clipboard-content').innerText;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = codeContent;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            const copyIcon = copyButton.querySelector('.octicon-copy');
+            const checkIcon = copyButton.querySelector('.octicon-check');
+            const copyFeedback = copyButton.nextElementSibling;
+
+            if (currentFeedback && currentFeedback !== copyFeedback) {currentFeedback.style.display = 'none';}
+            currentFeedback = copyFeedback;
+
+            copyIcon.classList.add('d-none');
+            checkIcon.classList.remove('d-none');
+            copyFeedback.style.display = 'block';
+            copyButton.style.borderColor = 'var(--color-success-fg)';
+
+            setTimeout(() => {
+                copyIcon.classList.remove('d-none');
+                checkIcon.classList.add('d-none');
+                copyFeedback.style.display = 'none';
+                copyButton.style.borderColor = '';
+            }, 2000);
+        });
+    });
+});
+
+</script>
+
+
+</html>

@@ -1,5 +1,12 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>Blog Title</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link><description>Blog description</description><copyright>Blog Title</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://github.githubassets.com/favicons/favicon.svg</url><title>avatar</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link></image><lastBuildDate>Sat, 06 Sep 2025 09:10:46 +0000</lastBuildDate><managingEditor>Blog Title</managingEditor><ttl>60</ttl><webMaster>Blog Title</webMaster><item><title>Redis常见问题总结</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/Redis-chang-jian-wen-ti-zong-jie.html</link><description>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>Blog Title</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link><description>Blog description</description><copyright>Blog Title</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://github.githubassets.com/favicons/favicon.svg</url><title>avatar</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link></image><lastBuildDate>Sat, 06 Sep 2025 09:11:26 +0000</lastBuildDate><managingEditor>Blog Title</managingEditor><ttl>60</ttl><webMaster>Blog Title</webMaster><item><title>Kafka常见面试总结</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/Kafka-chang-jian-mian-shi-zong-jie.html</link><description>
+## Kafka面试题总结
+
+### 一、Kafka 是什么？主要应用场景有哪些？
+
+&gt; **如何回答：1.kafka由哪几部分组成？2.应用的场景？（异步，解耦，消峰）3.引入后产生的一列问题和注意事项？**
+
+Kafka 是一个分布式流式处理平台。</description><guid isPermaLink="true">https://shuaiwang888.github.io/appStore-Blog.github.io/post/Kafka-chang-jian-mian-shi-zong-jie.html</guid><pubDate>Sat, 06 Sep 2025 09:10:56 +0000</pubDate></item><item><title>Redis常见问题总结</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/Redis-chang-jian-wen-ti-zong-jie.html</link><description>
 ### 参考文献：
 [Redis](https://github.com/CyC2018/CS-Notes/blob/master/notes/Redis.md)
 [整理好了，Redis面试题(重要)](https://mp.weixin.qq.com/s/LkIcGS9kFTXNLFlxASPYUA)
