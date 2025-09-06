@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark" data-light-theme="light" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
+    
+    <link rel="icon" href="https://github.githubassets.com/favicons/favicon.svg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="> **文章摘要：本文主要分析Producer核心流程**
+
+本文分析使用kafka-0.10.2.0的源码，书接上文[kafka生产者源码分析2-Producer初始化](http://121.199.72.143:8090/archives/kafka-sheng-chan-zhe-yuan-ma-fen-xi-2-producer-chu-shi-hua)，本篇重点分析Producer核心流程。">
+<meta property="og:title" content="kafka生产者源码分析3-Producer核心流程分析（重要）">
+<meta property="og:description" content="> **文章摘要：本文主要分析Producer核心流程**
+
+本文分析使用kafka-0.10.2.0的源码，书接上文[kafka生产者源码分析2-Producer初始化](http://121.199.72.143:8090/archives/kafka-sheng-chan-zhe-yuan-ma-fen-xi-2-producer-chu-shi-hua)，本篇重点分析Producer核心流程。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://shuaiwang888.github.io/appStore-Blog.github.io/post/kafka-sheng-chan-zhe-yuan-ma-fen-xi-3-Producer-he-xin-liu-cheng-fen-xi-%EF%BC%88-zhong-yao-%EF%BC%89.html">
+<meta property="og:image" content="https://github.githubassets.com/favicons/favicon.svg">
+<title>kafka生产者源码分析3-Producer核心流程分析（重要）</title>
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+.copy-feedback {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    color: var(--color-fg-on-emphasis);
+    background-color: var(--color-fg-muted);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
+</style>
+
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">kafka生产者源码分析3-Producer核心流程分析（重要）</h1>
+<div class="title-right">
+    <a href="https://shuaiwang888.github.io/appStore-Blog.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/shuaiwang888/appStore-Blog.github.io/issues/39" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><blockquote>
+<p><strong>文章摘要：本文主要分析Producer核心流程</strong></p>
+</blockquote>
+<p>本文分析使用kafka-0.10.2.0的源码，书接上文<a href="http://121.199.72.143:8090/archives/kafka-sheng-chan-zhe-yuan-ma-fen-xi-2-producer-chu-shi-hua" rel="nofollow">kafka生产者源码分析2-Producer初始化</a>，本篇重点分析Producer核心流程。</p>
+<h2>一、Producer发送流程</h2>
+<h3>1.1 整体流程图</h3>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2022/01/image-493ab7cc70554d72a97823857a8be0ee.png"><img src="/upload/2022/01/image-493ab7cc70554d72a97823857a8be0ee.png" alt="image.png" style="max-width: 100%;"></a></p>
+<h3>1.2 Producer的send方法</h3>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c1">@</span><span class="pl-c1">Override</span>
+ <span class="pl-k">public</span> <span class="pl-smi">Future</span>&lt;<span class="pl-smi">RecordMetadata</span>&gt; <span class="pl-en">send</span>(<span class="pl-smi">ProducerRecord</span>&lt;<span class="pl-smi">K</span>, <span class="pl-smi">V</span>&gt; <span class="pl-s1">record</span>) {
+     <span class="pl-k">return</span> <span class="pl-en">send</span>(<span class="pl-s1">record</span>, <span class="pl-c1">null</span>);
+ }
+
+<span class="pl-c1">@</span><span class="pl-c1">Override</span>
+ <span class="pl-k">public</span> <span class="pl-smi">Future</span>&lt;<span class="pl-smi">RecordMetadata</span>&gt; <span class="pl-en">send</span>(<span class="pl-smi">ProducerRecord</span>&lt;<span class="pl-smi">K</span>, <span class="pl-smi">V</span>&gt; <span class="pl-s1">record</span>, <span class="pl-smi">Callback</span> <span class="pl-s1">callback</span>) {
+     <span class="pl-c">// intercept the record, which can be potentially modified; this method does not throw exceptions</span>
+     <span class="pl-c">// 使用ProducerInterceptor对消息进行拦截或修改</span>
+     <span class="pl-smi">ProducerRecord</span>&lt;<span class="pl-smi">K</span>, <span class="pl-smi">V</span>&gt; <span class="pl-s1">interceptedRecord</span> = <span class="pl-smi">this</span>.<span class="pl-s1">interceptors</span> == <span class="pl-c1">null</span> ? <span class="pl-s1">record</span> : <span class="pl-smi">this</span>.<span class="pl-s1">interceptors</span>.<span class="pl-en">onSend</span>(<span class="pl-s1">record</span>);
+     <span class="pl-c">// TODO 核心代码</span>
+     <span class="pl-k">return</span> <span class="pl-en">doSend</span>(<span class="pl-s1">interceptedRecord</span>, <span class="pl-s1">callback</span>);
+ }</pre></div>
+<p>数据发送的最终实现还是调用了Producer的 <code class="notranslate">doSend()</code> 接口。</p>
+<h3>1.3 Producer的doSend方法</h3>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">private</span> <span class="pl-smi">Future</span>&lt;<span class="pl-smi">RecordMetadata</span>&gt; <span class="pl-en">doSend</span>(<span class="pl-smi">ProducerRecord</span>&lt;<span class="pl-smi">K</span>, <span class="pl-smi">V</span>&gt; <span class="pl-s1">record</span>, <span class="pl-smi">Callback</span> <span class="pl-s1">callback</span>) {
+    <span class="pl-smi">TopicPartition</span> <span class="pl-s1">tp</span> = <span class="pl-c1">null</span>;
+    <span class="pl-k">try</span> {
+        <span class="pl-c">// first make sure the metadata for the topic is available</span>
+        <span class="pl-c">/**</span>
+<span class="pl-c">         * 步骤一：</span>
+<span class="pl-c">         *      同步等待拉取元数据。</span>
+<span class="pl-c">         *  maxBlockTimeMs 最多能等待多久。</span>
+<span class="pl-c">         */</span>
+        <span class="pl-smi">ClusterAndWaitTime</span> <span class="pl-s1">clusterAndWaitTime</span> = <span class="pl-en">waitOnMetadata</span>(<span class="pl-s1">record</span>.<span class="pl-en">topic</span>(), <span class="pl-s1">record</span>.<span class="pl-en">partition</span>(), <span class="pl-s1">maxBlockTimeMs</span>);
+        <span class="pl-smi">long</span> <span class="pl-s1">remainingWaitMs</span> = <span class="pl-smi">Math</span>.<span class="pl-en">max</span>(<span class="pl-c1">0</span>, <span class="pl-s1">maxBlockTimeMs</span> - <span class="pl-s1">clusterAndWaitTime</span>.<span class="pl-s1">waitedOnMetadataMs</span>);
+        <span class="pl-smi">Cluster</span> <span class="pl-s1">cluster</span> = <span class="pl-s1">clusterAndWaitTime</span>.<span class="pl-s1">cluster</span>;
+        <span class="pl-c">/**</span>
+<span class="pl-c">         * 步骤二：</span>
+<span class="pl-c">         *  对消息的key和value进行序列化。</span>
+<span class="pl-c">         */</span>
+        <span class="pl-smi">byte</span>[] <span class="pl-s1">serializedKey</span>;
+        <span class="pl-k">try</span> {
+            <span class="pl-s1">serializedKey</span> = <span class="pl-s1">keySerializer</span>.<span class="pl-en">serialize</span>(<span class="pl-s1">record</span>.<span class="pl-en">topic</span>(), <span class="pl-s1">record</span>.<span class="pl-en">key</span>());
+        } <span class="pl-k">catch</span> (<span class="pl-smi">ClassCastException</span> <span class="pl-s1">cce</span>) {
+            <span class="pl-k">throw</span> <span class="pl-k">new</span> <span class="pl-smi">SerializationException</span>(<span class="pl-s">"Can't convert key of class "</span> + <span class="pl-s1">record</span>.<span class="pl-en">key</span>().<span class="pl-en">getClass</span>().<span class="pl-en">getName</span>() +
+                    <span class="pl-s">" to class "</span> + <span class="pl-s1">producerConfig</span>.<span class="pl-en">getClass</span>(<span class="pl-smi">ProducerConfig</span>.<span class="pl-c1">KEY_SERIALIZER_CLASS_CONFIG</span>).<span class="pl-en">getName</span>() +
+                    <span class="pl-s">" specified in key.serializer"</span>);
+        }
+        <span class="pl-smi">byte</span>[] <span class="pl-s1">serializedValue</span>;
+        <span class="pl-k">try</span> {
+            <span class="pl-s1">serializedValue</span> = <span class="pl-s1">valueSerializer</span>.<span class="pl-en">serialize</span>(<span class="pl-s1">record</span>.<span class="pl-en">topic</span>(), <span class="pl-s1">record</span>.<span class="pl-en">value</span>());
+        } <span class="pl-k">catch</span> (<span class="pl-smi">ClassCastException</span> <span class="pl-s1">cce</span>) {
+            <span class="pl-k">throw</span> <span class="pl-k">new</span> <span class="pl-smi">SerializationException</span>(<span class="pl-s">"Can't convert value of class "</span> + <span class="pl-s1">record</span>.<span class="pl-en">value</span>().<span class="pl-en">getClass</span>().<span class="pl-en">getName</span>() +
+                    <span class="pl-s">" to class "</span> + <span class="pl-s1">producerConfig</span>.<span class="pl-en">getClass</span>(<span class="pl-smi">ProducerConfig</span>.<span class="pl-c1">VALUE_SERIALIZER_CLASS_CONFIG</span>).<span class="pl-en">getName</span>() +
+                    <span class="pl-s">" specified in value.serializer"</span>);
+        }
+        <span class="pl-c">/**</span>
+<span class="pl-c">         * 步骤三：</span>
+<span class="pl-c">         *  根据分区器选择消息应该发送的分区。</span>
+<span class="pl-c">         *</span>
+<span class="pl-c">         *  因为前面我们已经获取到了元数据</span>
+<span class="pl-c">         *  这儿我们就可以根据元数据的信息</span>
+<span class="pl-c">         *  计算一下，我们应该要把这个数据发送到哪个分区上面。</span>
+<span class="pl-c">         */</span>
+        <span class="pl-smi">int</span> <span class="pl-s1">partition</span> = <span class="pl-en">partition</span>(<span class="pl-s1">record</span>, <span class="pl-s1">serializedKey</span>, <span class="pl-s1">serializedValue</span>, <span class="pl-s1">cluster</span>);
+        <span class="pl-c">/**</span>
+<span class="pl-c">         *</span>
+<span class="pl-c">      * 计算消息记录的总大小</span>
+<span class="pl-c">      * Records.LOG_OVERHEAD = SIZE_LENGTH（值为4） + OFFSET_LENGTH（值为8）</span>
+<span class="pl-c">      * Records.LOG_OVERHEAD有SIZE_LENGTH和OFFSET_LENGTH两个字段，分别表示存放消息长度和消息偏移量所需要的字节数</span>
+<span class="pl-c">      */</span>
+        <span class="pl-smi">int</span> <span class="pl-s1">serializedSize</span> = <span class="pl-smi">Records</span>.<span class="pl-c1">LOG_OVERHEAD</span> + <span class="pl-smi">Record</span>.<span class="pl-en">recordSize</span>(<span class="pl-s1">serializedKey</span>, <span class="pl-s1">serializedValue</span>);
+
+        <span class="pl-c">/**</span>
+<span class="pl-c">         * 步骤四：</span>
+<span class="pl-c">         *  确认一下消息的大小是否超过了最大值。</span>
+<span class="pl-c">         *  KafkaProdcuer初始化的时候，指定了一个参数，代表的是Producer这儿最大能发送的是一条消息能有多大</span>
+<span class="pl-c">         *  默认最大是1M，我们一般都会去修改它。</span>
+<span class="pl-c">         */</span>
+        <span class="pl-en">ensureValidRecordSize</span>(<span class="pl-s1">serializedSize</span>);
+        <span class="pl-c">/**</span>
+<span class="pl-c">         * 步骤五：</span>
+<span class="pl-c">         *  根据元数据信息，封装分区对象</span>
+<span class="pl-c">         */</span>
+        <span class="pl-s1">tp</span> = <span class="pl-k">new</span> <span class="pl-smi">TopicPartition</span>(<span class="pl-s1">record</span>.<span class="pl-en">topic</span>(), <span class="pl-s1">partition</span>);
+        <span class="pl-smi">long</span> <span class="pl-s1">timestamp</span> = <span class="pl-s1">record</span>.<span class="pl-en">timestamp</span>() == <span class="pl-c1">null</span> ? <span class="pl-s1">time</span>.<span class="pl-en">milliseconds</span>() : <span class="pl-s1">record</span>.<span class="pl-en">timestamp</span>();
+        <span class="pl-s1">log</span>.<span class="pl-en">trace</span>(<span class="pl-s">"Sending record {} with callback {} to topic {} partition {}"</span>, <span class="pl-s1">record</span>, <span class="pl-s1">callback</span>, <span class="pl-s1">record</span>.<span class="pl-en">topic</span>(), <span class="pl-s1">partition</span>);
+        <span class="pl-c">// producer callback will make sure to call both 'callback' and interceptor callback</span>
+        <span class="pl-c">/**</span>
+<span class="pl-c">         * 步骤六：</span>
+<span class="pl-c">         *  给每一条消息都绑定他的回调函数。因为我们使用的是异步的方式发送的消息。</span>
+<span class="pl-c">         */</span>
+        <span class="pl-smi">Callback</span> <span class="pl-s1">interceptCallback</span> = <span class="pl-smi">this</span>.<span class="pl-s1">interceptors</span> == <span class="pl-c1">null</span> ? <span class="pl-s1">callback</span> : <span class="pl-k">new</span> <span class="pl-smi">InterceptorCallback</span>&lt;&gt;(<span class="pl-s1">callback</span>, <span class="pl-smi">this</span>.<span class="pl-s1">interceptors</span>, <span class="pl-s1">tp</span>);
+        <span class="pl-c">/**</span>
+<span class="pl-c">         * 步骤七：</span>
+<span class="pl-c">         *  把消息放入accumulator（32M的一个内存）</span>
+<span class="pl-c">         *  然后有accumulator把消息封装成为一个批次一个批次的去发送。</span>
+<span class="pl-c">         */</span>
+        <span class="pl-smi">RecordAccumulator</span>.<span class="pl-smi">RecordAppendResult</span> <span class="pl-s1">result</span> = <span class="pl-s1">accumulator</span>.<span class="pl-en">append</span>(<span class="pl-s1">tp</span>, <span class="pl-s1">timestamp</span>, <span class="pl-s1">serializedKey</span>, <span class="pl-s1">serializedValue</span>, <span class="pl-s1">interceptCallback</span>, <span class="pl-s1">remainingWaitMs</span>);
+        <span class="pl-c">// 如果达到批次要求</span>
+        <span class="pl-k">if</span> (<span class="pl-s1">result</span>.<span class="pl-s1">batchIsFull</span> || <span class="pl-s1">result</span>.<span class="pl-s1">newBatchCreated</span>) {
+            <span class="pl-s1">log</span>.<span class="pl-en">trace</span>(<span class="pl-s">"Waking up the sender since topic {} partition {} is either full or getting a new batch"</span>, <span class="pl-s1">record</span>.<span class="pl-en">topic</span>(), <span class="pl-s1">partition</span>);
+            <span class="pl-c">/**</span>
+<span class="pl-c">             * 步骤八:</span>
+<span class="pl-c">             *  唤醒sender线程。他才是真正发送数据的线程。</span>
+<span class="pl-c">             */</span>
+            <span class="pl-smi">this</span>.<span class="pl-s1">sender</span>.<span class="pl-en">wakeup</span>();
+        }
+        <span class="pl-k">return</span> <span class="pl-s1">result</span>.<span class="pl-s1">future</span>;
+        <span class="pl-c">// handling exceptions and record the errors;</span>
+        <span class="pl-c">// for API exceptions return them in the future,</span>
+        <span class="pl-c">// for other exceptions throw directly</span>
+    } <span class="pl-k">catch</span> (<span class="pl-smi">ApiException</span> <span class="pl-s1">e</span>) {
+        <span class="pl-s1">log</span>.<span class="pl-en">debug</span>(<span class="pl-s">"Exception occurred during message send:"</span>, <span class="pl-s1">e</span>);
+        <span class="pl-k">if</span> (<span class="pl-s1">callback</span> != <span class="pl-c1">null</span>)
+            <span class="pl-s1">callback</span>.<span class="pl-en">onCompletion</span>(<span class="pl-c1">null</span>, <span class="pl-s1">e</span>);
+        <span class="pl-smi">this</span>.<span class="pl-s1">errors</span>.<span class="pl-en">record</span>();
+        <span class="pl-k">if</span> (<span class="pl-smi">this</span>.<span class="pl-s1">interceptors</span> != <span class="pl-c1">null</span>)
+            <span class="pl-smi">this</span>.<span class="pl-s1">interceptors</span>.<span class="pl-en">onSendError</span>(<span class="pl-s1">record</span>, <span class="pl-s1">tp</span>, <span class="pl-s1">e</span>);
+        <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-smi">FutureFailure</span>(<span class="pl-s1">e</span>);
+    } <span class="pl-k">catch</span> (<span class="pl-smi">InterruptedException</span> <span class="pl-s1">e</span>) {
+        <span class="pl-smi">this</span>.<span class="pl-s1">errors</span>.<span class="pl-en">record</span>();
+        <span class="pl-k">if</span> (<span class="pl-smi">this</span>.<span class="pl-s1">interceptors</span> != <span class="pl-c1">null</span>)
+            <span class="pl-smi">this</span>.<span class="pl-s1">interceptors</span>.<span class="pl-en">onSendError</span>(<span class="pl-s1">record</span>, <span class="pl-s1">tp</span>, <span class="pl-s1">e</span>);
+        <span class="pl-k">throw</span> <span class="pl-k">new</span> <span class="pl-smi">InterruptException</span>(<span class="pl-s1">e</span>);
+    } <span class="pl-k">catch</span> (<span class="pl-smi">BufferExhaustedException</span> <span class="pl-s1">e</span>) {
+        <span class="pl-smi">this</span>.<span class="pl-s1">errors</span>.<span class="pl-en">record</span>();
+        <span class="pl-smi">this</span>.<span class="pl-s1">metrics</span>.<span class="pl-en">sensor</span>(<span class="pl-s">"buffer-exhausted-records"</span>).<span class="pl-en">record</span>();
+        <span class="pl-k">if</span> (<span class="pl-smi">this</span>.<span class="pl-s1">interceptors</span> != <span class="pl-c1">null</span>)
+            <span class="pl-smi">this</span>.<span class="pl-s1">interceptors</span>.<span class="pl-en">onSendError</span>(<span class="pl-s1">record</span>, <span class="pl-s1">tp</span>, <span class="pl-s1">e</span>);
+        <span class="pl-k">throw</span> <span class="pl-s1">e</span>;
+    } <span class="pl-k">catch</span> (<span class="pl-smi">KafkaException</span> <span class="pl-s1">e</span>) {
+        <span class="pl-smi">this</span>.<span class="pl-s1">errors</span>.<span class="pl-en">record</span>();
+        <span class="pl-k">if</span> (<span class="pl-smi">this</span>.<span class="pl-s1">interceptors</span> != <span class="pl-c1">null</span>)
+            <span class="pl-smi">this</span>.<span class="pl-s1">interceptors</span>.<span class="pl-en">onSendError</span>(<span class="pl-s1">record</span>, <span class="pl-s1">tp</span>, <span class="pl-s1">e</span>);
+        <span class="pl-k">throw</span> <span class="pl-s1">e</span>;
+    } <span class="pl-k">catch</span> (<span class="pl-smi">Exception</span> <span class="pl-s1">e</span>) {
+        <span class="pl-c">// we notify interceptor about all exceptions, since onSend is called before anything else in this method</span>
+        <span class="pl-k">if</span> (<span class="pl-smi">this</span>.<span class="pl-s1">interceptors</span> != <span class="pl-c1">null</span>)
+            <span class="pl-smi">this</span>.<span class="pl-s1">interceptors</span>.<span class="pl-en">onSendError</span>(<span class="pl-s1">record</span>, <span class="pl-s1">tp</span>, <span class="pl-s1">e</span>);
+        <span class="pl-k">throw</span> <span class="pl-s1">e</span>;
+    }
+}</pre></div>
+<p><strong>doSend() 大致流程分为如下的8个步骤：</strong></p>
+<ol>
+<li>确认数据要发送到的 topic 的 metadata 是可用的（如果该 partition 的 leader 存在则是可用的，如果开启权限时，client 有相应的权限），如果没有 topic 的 metadata 信息，就需要获取相应的 metadata；</li>
+<li>序列化 record 的 key 和 value；</li>
+<li>获取该 record 要发送到的 partition（可以指定，也可以根据算法计算）；</li>
+<li>确认一下消息的大小是否超过最大值（默认是1M）；</li>
+<li>根据元数据信息，封装分区对象；</li>
+<li>给每一个消息都绑定回调函数；</li>
+<li>向 accumulator 中追加 record 数据，数据会先进行缓存（默认32M）；</li>
+<li>如果追加完数据后，对应的 RecordBatch 已经达到了 batch.size 的大小（或者batch 的剩余空间不足以添加下一条 Record），则唤醒 sender 线程发送数据。</li>
+</ol>
+<p>数据发送主要分为上面的八个步骤，下面对着几部分进行消息分析。</p>
+<h2>二、发送过程详解</h2>
+<h3>2.1 同步阻塞获取metadata信息</h3>
+<blockquote>
+<p><strong>如果你要往一个topic里发送消息，必须是得有这个topic的元数据的，你必须要知道这个topic有哪些分区，然后根据Partitioner组件去选择一个分区，然后知道这个分区对应的leader所在的broker，才能跟那个broker建立连接，发送消息。调用同步阻塞的方法，去等待先得获取到那个topic对应的元数据，如果此时客户端还没缓存那个topic的元数据，那么一定会发送网络请求到broker去拉取那个topic的元数据过来，但是下一次就可以直接根据缓存好的元数据来发送了，这块后面讲有一篇文章进行详细讲解。</strong></p>
+</blockquote>
+<h3>2.2 对消息的key和value序列化</h3>
+<p>发送消息的key和value可以是各种各样的类型，比如说String、Double、Boolean，或者是自定义的对象，但是如果要发送消息到broker，必须对这个key和value进行序列化，把那些类型的数据转换成byte[]字节数组的形式。kafka内部提供序列化和反序列化如下：</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2022/01/image-3b454a26fbd74c63aeb3408966dc58fb.png"><img src="/upload/2022/01/image-3b454a26fbd74c63aeb3408966dc58fb.png" alt="image.png" style="max-width: 100%;"></a></p>
+<p>如果这些序列化不能满足我们的需求，可以自定义序列化和反序列化。</p>
+<h3>2.3 获取分区 partition 值</h3>
+<p><strong>关于 partition 值的计算，分为三种情况：</strong></p>
+<ol>
+<li>指明 partition 的情况下，直接将指明的值直接作为 partiton 值；</li>
+<li>没有指明 partition 值但有 key 的情况下，将 key 的 hash 值与 topic 的 partition 数进行取余得到 partition 值；</li>
+<li>既没有 partition 值又没有 key 值的情况下，第一次调用时随机生成一个整数（后面每次调用在这个整数上自增），将这个值与 topic 可用的 partition 总数取余得到 partition 值，也就是常说的 round-robin 算法。</li>
+</ol>
+<p>具体实现如下：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">private</span> <span class="pl-smi">int</span> <span class="pl-en">partition</span>(<span class="pl-smi">ProducerRecord</span>&lt;<span class="pl-smi">K</span>, <span class="pl-smi">V</span>&gt; <span class="pl-s1">record</span>, <span class="pl-smi">byte</span>[] <span class="pl-s1">serializedKey</span>, <span class="pl-smi">byte</span>[] <span class="pl-s1">serializedValue</span>, <span class="pl-smi">Cluster</span> <span class="pl-s1">cluster</span>) {
+   <span class="pl-c">// 如果你的这个消息已经分配了分区号，那直接就用这个分区号就可以了</span>
+   <span class="pl-c">// 但是正常情况下，消息是没有分区号的。</span>
+   <span class="pl-smi">Integer</span> <span class="pl-s1">partition</span> = <span class="pl-s1">record</span>.<span class="pl-en">partition</span>();
+   <span class="pl-k">return</span> <span class="pl-s1">partition</span> != <span class="pl-c1">null</span> ?
+        <span class="pl-s1">partition</span> :
+       <span class="pl-c">// 使用分区器进行选择合适的分区</span>
+        <span class="pl-s1">partitioner</span>.<span class="pl-en">partition</span>(
+                <span class="pl-s1">record</span>.<span class="pl-en">topic</span>(), <span class="pl-s1">record</span>.<span class="pl-en">key</span>(), <span class="pl-s1">serializedKey</span>, <span class="pl-s1">record</span>.<span class="pl-en">value</span>(), <span class="pl-s1">serializedValue</span>, <span class="pl-s1">cluster</span>);
+}</pre></div>
+<p>Producer 默认使用的 partitioner 是 <code class="notranslate">org.apache.kafka.clients.producer.internals.DefaultPartitioner</code>，用户也可以自定义 partition 的策略，下面是这个类两个方法的具体实现：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-smi">int</span> <span class="pl-en">partition</span>(<span class="pl-smi">String</span> <span class="pl-s1">topic</span>, <span class="pl-smi">Object</span> <span class="pl-s1">key</span>, <span class="pl-smi">byte</span>[] <span class="pl-s1">keyBytes</span>, <span class="pl-smi">Object</span> <span class="pl-s1">value</span>, <span class="pl-smi">byte</span>[] <span class="pl-s1">valueBytes</span>, <span class="pl-smi">Cluster</span> <span class="pl-s1">cluster</span>) {
+    <span class="pl-c">// 获取集群中指定topic的分区信息</span>
+    <span class="pl-smi">List</span>&lt;<span class="pl-smi">PartitionInfo</span>&gt; <span class="pl-s1">partitions</span> = <span class="pl-s1">cluster</span>.<span class="pl-en">partitionsForTopic</span>(<span class="pl-s1">topic</span>);
+    <span class="pl-smi">int</span> <span class="pl-s1">numPartitions</span> = <span class="pl-s1">partitions</span>.<span class="pl-en">size</span>();
+    <span class="pl-k">if</span> (<span class="pl-s1">keyBytes</span> == <span class="pl-c1">null</span>) {
+        <span class="pl-c">//策略一： 如果发送消息的时候，没有指定key 轮询</span>
+        <span class="pl-c">// 获取counter并自增，counter是个原子类</span>
+        <span class="pl-smi">int</span> <span class="pl-s1">nextValue</span> = <span class="pl-en">nextValue</span>(<span class="pl-s1">topic</span>);
+        <span class="pl-c">// 获取可用分区</span>
+        <span class="pl-smi">List</span>&lt;<span class="pl-smi">PartitionInfo</span>&gt; <span class="pl-s1">availablePartitions</span> = <span class="pl-s1">cluster</span>.<span class="pl-en">availablePartitionsForTopic</span>(<span class="pl-s1">topic</span>);
+        <span class="pl-k">if</span> (<span class="pl-s1">availablePartitions</span>.<span class="pl-en">size</span>() &gt; <span class="pl-c1">0</span>) {
+            <span class="pl-smi">int</span> <span class="pl-s1">part</span> = <span class="pl-smi">Utils</span>.<span class="pl-en">toPositive</span>(<span class="pl-s1">nextValue</span>) % <span class="pl-s1">availablePartitions</span>.<span class="pl-en">size</span>();
+            <span class="pl-k">return</span> <span class="pl-s1">availablePartitions</span>.<span class="pl-en">get</span>(<span class="pl-s1">part</span>).<span class="pl-en">partition</span>();
+        } <span class="pl-k">else</span> {
+            <span class="pl-c">// no partitions are available, give a non-available partition</span>
+            <span class="pl-c">// 没有可用分区，直接给一个不可用分区</span>
+            <span class="pl-k">return</span> <span class="pl-smi">Utils</span>.<span class="pl-en">toPositive</span>(<span class="pl-s1">nextValue</span>) % <span class="pl-s1">numPartitions</span>;
+        }
+    } <span class="pl-k">else</span> {
+        <span class="pl-c">/** 策略二：这个地方就是指定了key</span>
+<span class="pl-c">         *  hash the keyBytes to choose a partition</span>
+<span class="pl-c">         *  直接对key取一个hash值 % 分区的总数取模</span>
+<span class="pl-c">         *  如果是同一个key，计算出来的分区肯定是同一个分区。</span>
+<span class="pl-c">         *  如果我们想要让消息能发送到同一个分区上面，那么我们就</span>
+<span class="pl-c">         *  必须指定key. 这一点非常重要</span>
+<span class="pl-c">         *  murmur2是一种高效率低碰撞的Hash算法</span>
+<span class="pl-c">        */</span>
+        <span class="pl-k">return</span> <span class="pl-smi">Utils</span>.<span class="pl-en">toPositive</span>(<span class="pl-smi">Utils</span>.<span class="pl-en">murmur2</span>(<span class="pl-s1">keyBytes</span>)) % <span class="pl-s1">numPartitions</span>;
+    }
+}   </pre></div>
+<h3>2.4 校验消息是否超过最大值</h3>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">private</span> <span class="pl-smi">void</span> <span class="pl-en">ensureValidRecordSize</span>(<span class="pl-smi">int</span> <span class="pl-s1">size</span>) {
+    <span class="pl-c">//如果一条消息的大小超过了 1M，那么就会报错</span>
+    <span class="pl-k">if</span> (<span class="pl-s1">size</span> &gt; <span class="pl-smi">this</span>.<span class="pl-s1">maxRequestSize</span>)
+        <span class="pl-k">throw</span> <span class="pl-k">new</span> <span class="pl-smi">RecordTooLargeException</span>(<span class="pl-s">"The message is "</span> + <span class="pl-s1">size</span> +
+                                          <span class="pl-s">" bytes when serialized which is larger than the maximum request size you have configured with the "</span> +
+                                          <span class="pl-smi">ProducerConfig</span>.<span class="pl-c1">MAX_REQUEST_SIZE_CONFIG</span> +
+                                          <span class="pl-s">" configuration."</span>);
+    <span class="pl-c">//如果你的一条消息的大小超过32M也会报错。</span>
+    <span class="pl-k">if</span> (<span class="pl-s1">size</span> &gt; <span class="pl-smi">this</span>.<span class="pl-s1">totalMemorySize</span>)
+        <span class="pl-k">throw</span> <span class="pl-k">new</span> <span class="pl-smi">RecordTooLargeException</span>(<span class="pl-s">"The message is "</span> + <span class="pl-s1">size</span> +
+                                          <span class="pl-s">" bytes when serialized which is larger than the total memory buffer you have configured with the "</span> +
+                                          <span class="pl-smi">ProducerConfig</span>.<span class="pl-c1">BUFFER_MEMORY_CONFIG</span> +
+                                          <span class="pl-s">" configuration."</span>);
+}</pre></div>
+<p><strong>maxRequestSize 和 totalMemorySize这两个参数都是可以配置的!</strong></p>
+<h3>2.5 封装TopicPartition分区对象</h3>
+<p>就是根据分区封装 <code class="notranslate">TopicPartition</code> 对象，不再赘述。</p>
+<h3>2.6 设置回调函数</h3>
+<p><strong>设置好自定义的callback回调函数以及对应的interceptor拦截器的回调函数!</strong></p>
+<h3>2.7 向accumulator 写数据</h3>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-smi">RecordAppendResult</span> <span class="pl-en">append</span>(<span class="pl-smi">TopicPartition</span> <span class="pl-s1">tp</span>,
+                                     <span class="pl-smi">long</span> <span class="pl-s1">timestamp</span>,
+                                     <span class="pl-smi">byte</span>[] <span class="pl-s1">key</span>,
+                                     <span class="pl-smi">byte</span>[] <span class="pl-s1">value</span>,
+                                     <span class="pl-smi">Callback</span> <span class="pl-s1">callback</span>,
+                                     <span class="pl-smi">long</span> <span class="pl-s1">maxTimeToBlock</span>) <span class="pl-k">throws</span> <span class="pl-smi">InterruptedException</span> {
+        <span class="pl-c">// We keep track of the number of appending thread to make sure we do not miss batches in</span>
+        <span class="pl-c">// abortIncompleteBatches().</span>
+        <span class="pl-c">// 统计正在向RecordAccumulator中追加数据的线程数</span>
+        <span class="pl-s1">appendsInProgress</span>.<span class="pl-en">incrementAndGet</span>();
+        <span class="pl-k">try</span> {
+            <span class="pl-c">// check if we have an in-progress batch</span>
+
+            <span class="pl-c">/**</span>
+<span class="pl-c">             * 步骤一：先根据分区找到应该插入到哪个队列里面。</span>
+<span class="pl-c">             * 如果有已经存在的队列，那么我们就使用存在队列</span>
+<span class="pl-c">             * 如果队列不存在，那么我们新创建一个队列</span>
+<span class="pl-c">             *</span>
+<span class="pl-c">             * 我们肯定是有了存储批次的队列，但是大家一定要知道一个事</span>
+<span class="pl-c">             * 我们代码第一次执行到这儿，获取其实就是一个空的队列。</span>
+<span class="pl-c">             *</span>
+<span class="pl-c">             * 现在代码第二次执行进来。</span>
+<span class="pl-c">             * 假设 分区还是之前的那个分区。</span>
+<span class="pl-c">             *</span>
+<span class="pl-c">             * 这个方法里面我们之前分析，里面就是针对batchs进行的操作</span>
+<span class="pl-c">             * 里面kafka自己封装了一个数据结构：CopyOnWriteMap (这个数据结构本来就是线程安全的)</span>
+<span class="pl-c">             */</span>
+            <span class="pl-smi">Deque</span>&lt;<span class="pl-smi">RecordBatch</span>&gt; <span class="pl-s1">dq</span> = <span class="pl-en">getOrCreateDeque</span>(<span class="pl-s1">tp</span>);
+            <span class="pl-c">// 同步操作，以Deque为锁</span>
+            <span class="pl-c">/**</span>
+<span class="pl-c">             * 假设我们现在有线程一，线程二，线程三</span>
+<span class="pl-c">             */</span>
+            <span class="pl-k">synchronized</span> (<span class="pl-s1">dq</span>) {
+                <span class="pl-c">// 检查生产者是否已经关闭了</span>
+                <span class="pl-c">//首先进来的是第一个线程</span>
+                <span class="pl-k">if</span> (<span class="pl-s1">closed</span>)
+                    <span class="pl-k">throw</span> <span class="pl-k">new</span> <span class="pl-smi">IllegalStateException</span>(<span class="pl-s">"Cannot send after the producer is closed."</span>);
+                <span class="pl-c">/**</span>
+<span class="pl-c">                 * 步骤二：</span>
+<span class="pl-c">                 *      尝试往队列里面的批次里添加数据</span>
+<span class="pl-c">                 *</span>
+<span class="pl-c">                 *      一开始添加数据肯定是失败的，我们目前只是有了队列</span>
+<span class="pl-c">                 *      数据是需要存储在批次对象里面（这个批次对象是需要分配内存的）</span>
+<span class="pl-c">                 *      我们目前还没有分配内存，所以如果按场景驱动的方式，</span>
+<span class="pl-c">                 *      代码第一次运行到这儿其实是不成功的。</span>
+<span class="pl-c">                 */</span>
+                <span class="pl-smi">RecordAppendResult</span> <span class="pl-s1">appendResult</span> = <span class="pl-en">tryAppend</span>(<span class="pl-s1">timestamp</span>, <span class="pl-s1">key</span>, <span class="pl-s1">value</span>, <span class="pl-s1">callback</span>, <span class="pl-s1">dq</span>);
+                <span class="pl-c">//第一次进来的时候appendResult的值就为null</span>
+                <span class="pl-k">if</span> (<span class="pl-s1">appendResult</span> != <span class="pl-c1">null</span>)
+                    <span class="pl-k">return</span> <span class="pl-s1">appendResult</span>;
+            }<span class="pl-c">//释放锁</span>
+
+            <span class="pl-c">// we don't have an in-progress record batch try to allocate a new batch</span>
+            <span class="pl-c">/**</span>
+<span class="pl-c">             * 步骤三：计算一个批次的大小</span>
+<span class="pl-c">             * 在消息的大小和批次的大小之间取一个最大值，用这个值作为当前这个批次的大小。</span>
+<span class="pl-c">             * 有可能我们的一个消息的大小比一个设定好的批次的大小还要大。</span>
+<span class="pl-c">             * 默认一个批次的大小是16K。</span>
+<span class="pl-c">             * 所以我们看到这段代码以后，应该给我们一个启示。</span>
+<span class="pl-c">             * 如果我们生产者发送数的时候，如果我们的消息的大小都是超过16K，</span>
+<span class="pl-c">             * 说明其实就是一条消息就是一个批次，那也就是说消息是一条一条被发送出去的。</span>
+<span class="pl-c">             * 那如果是这样的话，批次这个概念的设计就没有意义了</span>
+<span class="pl-c">             * 所以大家一定要根据自己公司的数据大小的情况去设置批次的大小。</span>
+<span class="pl-c">             */</span>
+            <span class="pl-smi">int</span> <span class="pl-s1">size</span> = <span class="pl-smi">Math</span>.<span class="pl-en">max</span>(<span class="pl-smi">this</span>.<span class="pl-s1">batchSize</span>, <span class="pl-smi">Records</span>.<span class="pl-c1">LOG_OVERHEAD</span> + <span class="pl-smi">Record</span>.<span class="pl-en">recordSize</span>(<span class="pl-s1">key</span>, <span class="pl-s1">value</span>));
+            <span class="pl-s1">log</span>.<span class="pl-en">trace</span>(<span class="pl-s">"Allocating a new {} byte message buffer for topic {} partition {}"</span>, <span class="pl-s1">size</span>, <span class="pl-s1">tp</span>.<span class="pl-en">topic</span>(), <span class="pl-s1">tp</span>.<span class="pl-en">partition</span>());
+            <span class="pl-c">/**</span>
+<span class="pl-c">             * 步骤四：</span>
+<span class="pl-c">             *  根据批次的大小去分配内存</span>
+<span class="pl-c">             *</span>
+<span class="pl-c">             *  线程一，线程二，线程三，执行到这儿都会申请内存</span>
+<span class="pl-c">             *  假设每个线程 都申请了 16k的内存。</span>
+<span class="pl-c">             */</span>
+            <span class="pl-smi">ByteBuffer</span> <span class="pl-s1">buffer</span> = <span class="pl-s1">free</span>.<span class="pl-en">allocate</span>(<span class="pl-s1">size</span>, <span class="pl-s1">maxTimeToBlock</span>);
+            <span class="pl-k">synchronized</span> (<span class="pl-s1">dq</span>) {
+                <span class="pl-c">//假设线程一 进来了。</span>
+                <span class="pl-c">//线程二就进来了</span>
+                <span class="pl-c">// Need to check if producer is closed again after grabbing the dequeue lock.</span>
+                <span class="pl-k">if</span> (<span class="pl-s1">closed</span>)
+                    <span class="pl-k">throw</span> <span class="pl-k">new</span> <span class="pl-smi">IllegalStateException</span>(<span class="pl-s">"Cannot send after the producer is closed."</span>);
+                <span class="pl-c">/**</span>
+<span class="pl-c">                 * 步骤五：</span>
+<span class="pl-c">                 *      尝试把数据写入到批次里面。</span>
+<span class="pl-c">                 *      代码第一次执行到这儿的时候 依然还是失败的（appendResult==null）</span>
+<span class="pl-c">                 *      目前虽然已经分配了内存</span>
+<span class="pl-c">                 *      但是还没有创建批次，那我们向往批次里面写数据</span>
+<span class="pl-c">                 *      还是不能写的。</span>
+<span class="pl-c">                 *</span>
+<span class="pl-c">                 *   线程二进来执行这段代码的时候，是成功的。</span>
+<span class="pl-c">                 */</span>
+                <span class="pl-smi">RecordAppendResult</span> <span class="pl-s1">appendResult</span> = <span class="pl-en">tryAppend</span>(<span class="pl-s1">timestamp</span>, <span class="pl-s1">key</span>, <span class="pl-s1">value</span>, <span class="pl-s1">callback</span>, <span class="pl-s1">dq</span>);
+                <span class="pl-c">//失败的意思就是appendResult 还是会等于null</span>
+                <span class="pl-k">if</span> (<span class="pl-s1">appendResult</span> != <span class="pl-c1">null</span>) {
+                    <span class="pl-c">// Somebody else found us a batch, return the one we waited for! Hopefully this doesn't happen often...</span>
+                    <span class="pl-c">//释放内存</span>
+
+                    <span class="pl-c">//线程二到这儿，其实他自己已经把数据写到批次了。所以</span>
+                    <span class="pl-c">//他的内存就没有什么用了，就把内存个释放了（还给内存池了。</span>
+                    <span class="pl-s1">free</span>.<span class="pl-en">deallocate</span>(<span class="pl-s1">buffer</span>);
+                    <span class="pl-k">return</span> <span class="pl-s1">appendResult</span>;
+                }
+
+                <span class="pl-c">/**</span>
+<span class="pl-c">                 * 步骤六：</span>
+<span class="pl-c">                 *  根据内存大小封装批次</span>
+<span class="pl-c">                 *</span>
+<span class="pl-c">                 *  线程一到这儿 会根据内存封装出来一个批次。</span>
+<span class="pl-c">                 */</span>
+                <span class="pl-smi">MemoryRecordsBuilder</span> <span class="pl-s1">recordsBuilder</span> = <span class="pl-smi">MemoryRecords</span>.<span class="pl-en">builder</span>(<span class="pl-s1">buffer</span>, <span class="pl-s1">compression</span>, <span class="pl-smi">TimestampType</span>.<span class="pl-c1">CREATE_TIME</span>, <span class="pl-smi">this</span>.<span class="pl-s1">batchSize</span>);
+                <span class="pl-c">// 使用传入的TopicPartition参数和records新创建一个RecordBatch</span>
+                <span class="pl-smi">RecordBatch</span> <span class="pl-s1">batch</span> = <span class="pl-k">new</span> <span class="pl-smi">RecordBatch</span>(<span class="pl-s1">tp</span>, <span class="pl-s1">recordsBuilder</span>, <span class="pl-s1">time</span>.<span class="pl-en">milliseconds</span>());
+                <span class="pl-c">//尝试往这个批次里面写数据，到这个时候 我们的代码会执行成功。</span>
+
+                <span class="pl-c">//线程一，就往批次里面写数据，这个时候就写成功了。</span>
+                <span class="pl-smi">FutureRecordMetadata</span> <span class="pl-s1">future</span> = <span class="pl-smi">Utils</span>.<span class="pl-en">notNull</span>(<span class="pl-s1">batch</span>.<span class="pl-en">tryAppend</span>(<span class="pl-s1">timestamp</span>, <span class="pl-s1">key</span>, <span class="pl-s1">value</span>, <span class="pl-s1">callback</span>, <span class="pl-s1">time</span>.<span class="pl-en">milliseconds</span>()));
+                <span class="pl-c">/**</span>
+<span class="pl-c">                 * 步骤七：</span>
+<span class="pl-c">                 *  把这个批次放入到这个队列的队尾</span>
+<span class="pl-c">                 *</span>
+<span class="pl-c">                 *  线程一 把批次添加到队尾</span>
+<span class="pl-c">                 */</span>
+                <span class="pl-s1">dq</span>.<span class="pl-en">addLast</span>(<span class="pl-s1">batch</span>);
+                <span class="pl-s1">incomplete</span>.<span class="pl-en">add</span>(<span class="pl-s1">batch</span>);
+                <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-smi">RecordAppendResult</span>(<span class="pl-s1">future</span>, <span class="pl-s1">dq</span>.<span class="pl-en">size</span>() &gt; <span class="pl-c1">1</span> || <span class="pl-s1">batch</span>.<span class="pl-en">isFull</span>(), <span class="pl-c1">true</span>);
+            }
+        } <span class="pl-k">finally</span> {
+            <span class="pl-c">// 将记录正在追加消息的线程数的计数器减1</span>
+            <span class="pl-s1">appendsInProgress</span>.<span class="pl-en">decrementAndGet</span>();
+        }
+    }</pre></div>
+<p>（1）首先，我们先看 <code class="notranslate">getOrCreateDeque(tp)</code> 方法</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">private</span> <span class="pl-smi">Deque</span>&lt;<span class="pl-smi">RecordBatch</span>&gt; <span class="pl-en">getOrCreateDeque</span>(<span class="pl-smi">TopicPartition</span> <span class="pl-s1">tp</span>) {
+    <span class="pl-c">//直接从batches里面获取当前分区对应的存储队列</span>
+    <span class="pl-smi">Deque</span>&lt;<span class="pl-smi">RecordBatch</span>&gt; <span class="pl-s1">d</span> = <span class="pl-smi">this</span>.<span class="pl-s1">batches</span>.<span class="pl-en">get</span>(<span class="pl-s1">tp</span>);
+    <span class="pl-k">if</span> (<span class="pl-s1">d</span> != <span class="pl-c1">null</span>)
+        <span class="pl-k">return</span> <span class="pl-s1">d</span>;
+    <span class="pl-s1">d</span> = <span class="pl-k">new</span> <span class="pl-smi">ArrayDeque</span>&lt;&gt;();
+    <span class="pl-smi">Deque</span>&lt;<span class="pl-smi">RecordBatch</span>&gt; <span class="pl-s1">previous</span> = <span class="pl-smi">this</span>.<span class="pl-s1">batches</span>.<span class="pl-en">putIfAbsent</span>(<span class="pl-s1">tp</span>, <span class="pl-s1">d</span>);
+    <span class="pl-k">if</span> (<span class="pl-s1">previous</span> == <span class="pl-c1">null</span>)
+        <span class="pl-k">return</span> <span class="pl-s1">d</span>;
+    <span class="pl-k">else</span>
+        <span class="pl-k">return</span> <span class="pl-s1">previous</span>;
+}</pre></div>
+<blockquote>
+<p><strong>多个线程会并发的执行putIfAbsent方法，在这个方法里可以保证线程安全的，除非队列不存在才会设置进去，在put方法的时候是有synchronized，可以保证同一时间只有一个线程会来更新这个值，同时batches 使用自定义并发线程安全的数据结构CopyOnWriteMap&lt;&gt;(),详细代码如下：</strong></p>
+</blockquote>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c">/**</span>
+<span class="pl-c"> * A simple read-optimized map implementation that synchronizes only writes and does a full copy on each modification</span>
+<span class="pl-c"> *</span>
+<span class="pl-c"> * * 1） 这个数据结构是在高并发的情况下是线程安全的。</span>
+<span class="pl-c"> *  * 2)  采用的读写分离的思想设计的数据结构</span>
+<span class="pl-c"> *  *      每次插入（写数据）数据的时候都开辟新的内存空间</span>
+<span class="pl-c"> *  *      所以会有个小缺点，就是插入数据的时候，会比较耗费内存空间。</span>
+<span class="pl-c"> *  * 3）这样的一个数据结构，适合写少读多的场景。</span>
+<span class="pl-c"> *  *      读数据的时候性能很高。</span>
+<span class="pl-c"> *  *</span>
+<span class="pl-c"> *  * batchs这个对象存储数据的时候，就是使用的这个数据结构。</span>
+<span class="pl-c"> *  * 对于batches来说，它面对的场景就是读多写少的场景。</span>
+<span class="pl-c"> *  *</span>
+<span class="pl-c"> *  *batches：</span>
+<span class="pl-c"> *  *   读数据：</span>
+<span class="pl-c"> *  *      每生产一条消息，都会从batches里面读取数据。</span>
+<span class="pl-c"> *  *      假如每秒中生产10万条消息，是不是就意味着每秒要读取10万次。</span>
+<span class="pl-c"> *  *      所以绝对是一个高并发的场景。</span>
+<span class="pl-c"> *  *   写数据：</span>
+<span class="pl-c"> *  *     假设有100个分区，那么就是会插入100次数据。</span>
+<span class="pl-c"> *  *     并且队列只需要插入一次就可以了。</span>
+<span class="pl-c"> *  *     所以这是一个低频的操作。</span>
+<span class="pl-c"> */</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">CopyOnWriteMap</span>&lt;<span class="pl-smi">K</span>, <span class="pl-smi">V</span>&gt; <span class="pl-k">implements</span> <span class="pl-smi">ConcurrentMap</span>&lt;<span class="pl-smi">K</span>, <span class="pl-smi">V</span>&gt; {
+
+    <span class="pl-c">/**</span>
+<span class="pl-c">     * 核心的变量就是一个map</span>
+<span class="pl-c">     * 这个map有个特点，它的修饰符是volatile关键字。</span>
+<span class="pl-c">     * 在多线程的情况下，如果这个map的值发生变化，其他线程也是可见的。</span>
+<span class="pl-c">     *</span>
+<span class="pl-c">     * get</span>
+<span class="pl-c">     * put</span>
+<span class="pl-c">     */</span>
+    <span class="pl-k">private</span> <span class="pl-k">volatile</span> <span class="pl-smi">Map</span>&lt;<span class="pl-smi">K</span>, <span class="pl-smi">V</span>&gt; <span class="pl-s1">map</span>;
+
+    ...<span class="pl-smi">省略部分代码</span>
+
+    <span class="pl-c">/**</span>
+<span class="pl-c">     * 没有加锁，读取数据的时候性能很高（高并发的场景下，肯定性能很高）</span>
+<span class="pl-c">     * 并且是线程安全的。</span>
+<span class="pl-c">     * 因为人家采用的读写分离的思想。</span>
+<span class="pl-c">     * @param k</span>
+<span class="pl-c">     * @return</span>
+<span class="pl-c">     */</span>
+    <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+    <span class="pl-k">public</span> <span class="pl-smi">V</span> <span class="pl-en">get</span>(<span class="pl-smi">Object</span> <span class="pl-s1">k</span>) {
+        <span class="pl-k">return</span> <span class="pl-s1">map</span>.<span class="pl-en">get</span>(<span class="pl-s1">k</span>);
+    }
+
+    <span class="pl-c">/**</span>
+<span class="pl-c">     * 1):</span>
+<span class="pl-c">     *      整个方法使用的是synchronized关键字去修饰的，说明这个方法是线程安全。</span>
+<span class="pl-c">     *      即使加了锁，这段代码的性能依然很好，因为里面都是纯内存的操作。</span>
+<span class="pl-c">     * 2）</span>
+<span class="pl-c">     *        这种设计方式，采用的是读写分离的设计思想。</span>
+<span class="pl-c">     *        读操作和写操作 是相互不影响的。</span>
+<span class="pl-c">     *        所以我们读数据的操作就是线程安全的。</span>
+<span class="pl-c">     * 3）</span>
+<span class="pl-c">     *      最后把值赋给了map，map是用volatile关键字修饰的。</span>
+<span class="pl-c">     *      说明这个map是具有可见性的，这样的话，如果get数据的时候，这儿的值发生了变化，也是能感知到的。</span>
+<span class="pl-c">     */</span>
+    <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+    <span class="pl-k">public</span> <span class="pl-k">synchronized</span> <span class="pl-smi">V</span> <span class="pl-en">put</span>(<span class="pl-smi">K</span> <span class="pl-s1">k</span>, <span class="pl-smi">V</span> <span class="pl-s1">v</span>) {
+        <span class="pl-c">// 新的内存空间</span>
+        <span class="pl-smi">Map</span>&lt;<span class="pl-smi">K</span>, <span class="pl-smi">V</span>&gt; <span class="pl-s1">copy</span> = <span class="pl-k">new</span> <span class="pl-smi">HashMap</span>&lt;<span class="pl-smi">K</span>, <span class="pl-smi">V</span>&gt;(<span class="pl-smi">this</span>.<span class="pl-s1">map</span>);
+        <span class="pl-c">// 插入操作</span>
+        <span class="pl-smi">V</span> <span class="pl-s1">prev</span> = <span class="pl-s1">copy</span>.<span class="pl-en">put</span>(<span class="pl-s1">k</span>, <span class="pl-s1">v</span>);
+        <span class="pl-smi">this</span>.<span class="pl-s1">map</span> = <span class="pl-smi">Collections</span>.<span class="pl-en">unmodifiableMap</span>(<span class="pl-s1">copy</span>);
+        <span class="pl-k">return</span> <span class="pl-s1">prev</span>;
+    }
+}</pre></div>
+<p>（2）整体流程采用分段加锁的设计，提高并发能力</p>
+<p>（3）采用内存池设计BufferPool</p>
+<p><strong>既可以循环使用内存，又可以减少GC的次数。对应的流程图为：</strong></p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2022/01/image-e0f8dda4c99040ceb617062dac8043ba.png"><img src="/upload/2022/01/image-e0f8dda4c99040ceb617062dac8043ba.png" alt="image.png" style="max-width: 100%;"></a></p>
+<h3>2.8 唤醒Sender线程</h3>
+<p>唤醒sender线程，主要用来负责发送数据。后面我们再详细的分析。</p>
+<h2>三、最后</h2>
+<p><strong>从Producer 的 send 方法可以学到非常多的东西：</strong></p>
+<ul>
+<li>Producer初始化没有去拉取集群的元数据，而是在后面根据你发送消息时候的需要，要给哪个topic发送消息，再去拉取那个topic对应的元数据，这就是懒加载的设计思想，按需加载思想;</li>
+<li>一个高并发、高吞吐、高性能的消息系统的客户端的设计，他的核心流程是如何来搭建和设计的，可扩展，通过拦截器的模式预留一些扩展点给其他人来扩展，在消息发送之前或者发送之后，都可以进行自定义的扩展;</li>
+<li>设计一个通用框架的时候，必须得有一个序列化的过程，因为key和value可能是各种各样的类型，但是必须要保证把key和value都转换成通用的byte[]字节数组的格式，才可以来进行跟broker的通信;</li>
+<li>基于一个独立封装的组件来进行分区的选择和路由，可以用默认的，也可以用自定义的分区器，留下给用户自己扩展的空间;</li>
+<li>对消息的大小，是否超出请求的最大大小，是否会填满 内存缓冲导致内存溢出，对一些核心的请求数据必然要进行严格的检查;</li>
+<li>异步发送请求，通过先进入内存缓冲，同时设置一个callback回调函数的思路，在发送完成之后来回调你的函数通知你消息发送的结果，异步运行的后台线程配合起来使用，基于异步线程来发送消息;</li>
+</ul>
+<p>本篇文章主要探索了Producer的发送数据的主流程，其中分段加锁，内存池设计，并发安全数据结构CopyOnWriteMap&lt;&gt;() 值得我们去思考和学习。下篇我们将讲解元数据的更新操作。</p></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+
+</div>
+    <div id="footer"><div id="footer1">Copyright © <span id="copyrightYear"></span> <a href="https://shuaiwang888.github.io/appStore-Blog.github.io">Blog Title</a></div>
+<div id="footer2">
+    <span id="runday"></span><span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>
+</div>
+
+<script>
+var now=new Date();
+document.getElementById("copyrightYear").innerHTML=now.getFullYear();
+
+if(""!=""){
+    var startSite=new Date("");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";
+}
+</script></div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z', 'copy': 'M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z', 'check': 'M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","shuaiwang888/appStore-Blog.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const createClipboardHTML = (codeContent, additionalClasses = '') => `
+        <pre class="notranslate"><code class="notranslate">${codeContent}</code></pre>
+        <div class="clipboard-container position-absolute right-0 top-0 ${additionalClasses}">
+            <clipboard-copy class="ClipboardButton btn m-2 p-0" role="button" style="display: inherit;">
+                <svg height="16" width="16" class="octicon octicon-copy m-2"><path d="${IconList["copy"]}"></path></svg>
+                <svg height="16" width="16" class="octicon octicon-check color-fg-success m-2 d-none"><path d="${IconList["check"]}"></path></svg>
+            </clipboard-copy>
+            <div class="copy-feedback">Copied!</div>
+        </div>
+    `;
+
+    const handleCodeElements = (selector = '') => {
+        document.querySelectorAll(selector).forEach(codeElement => {
+            const codeContent = codeElement.innerHTML;
+            const newStructure = document.createElement('div');
+            newStructure.className = 'snippet-clipboard-content position-relative overflow-auto';
+            newStructure.innerHTML = createClipboardHTML(codeContent);
+
+            const parentElement = codeElement.parentElement;
+            if (selector.includes('highlight')) {
+                parentElement.insertBefore(newStructure, codeElement.nextSibling);
+                parentElement.removeChild(codeElement);
+            } else {
+                parentElement.parentElement.replaceChild(newStructure, parentElement);
+            }
+        });
+    };
+
+    handleCodeElements('pre.notranslate > code.notranslate');
+    handleCodeElements('div.highlight > pre.notranslate');
+
+    let currentFeedback = null;
+    document.querySelectorAll('clipboard-copy').forEach(copyButton => {
+        copyButton.addEventListener('click', () => {
+            const codeContent = copyButton.closest('.snippet-clipboard-content').innerText;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = codeContent;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            const copyIcon = copyButton.querySelector('.octicon-copy');
+            const checkIcon = copyButton.querySelector('.octicon-check');
+            const copyFeedback = copyButton.nextElementSibling;
+
+            if (currentFeedback && currentFeedback !== copyFeedback) {currentFeedback.style.display = 'none';}
+            currentFeedback = copyFeedback;
+
+            copyIcon.classList.add('d-none');
+            checkIcon.classList.remove('d-none');
+            copyFeedback.style.display = 'block';
+            copyButton.style.borderColor = 'var(--color-success-fg)';
+
+            setTimeout(() => {
+                copyIcon.classList.remove('d-none');
+                checkIcon.classList.add('d-none');
+                copyFeedback.style.display = 'none';
+                copyButton.style.borderColor = '';
+            }, 2000);
+        });
+    });
+});
+
+</script>
+
+
+</html>
