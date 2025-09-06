@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark" data-light-theme="light" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
+    
+    <link rel="icon" href="https://github.githubassets.com/favicons/favicon.svg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="## 前言
+
+我觉得我们可以从以下几个方面回答：
+1. 什么是 SpringBoot 自动装配？
+2. SpringBoot 是如何实现自动装配的？如何实现按需加载？
+3. 如何实现一个 Starter？
+
+使用过 Spring 的小伙伴，一定有被 XML 配置统治的恐惧。">
+<meta property="og:title" content="SpringBoot的自动装配原理">
+<meta property="og:description" content="## 前言
+
+我觉得我们可以从以下几个方面回答：
+1. 什么是 SpringBoot 自动装配？
+2. SpringBoot 是如何实现自动装配的？如何实现按需加载？
+3. 如何实现一个 Starter？
+
+使用过 Spring 的小伙伴，一定有被 XML 配置统治的恐惧。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://shuaiwang888.github.io/appStore-Blog.github.io/post/SpringBoot-de-zi-dong-zhuang-pei-yuan-li.html">
+<meta property="og:image" content="https://github.githubassets.com/favicons/favicon.svg">
+<title>SpringBoot的自动装配原理</title>
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+.copy-feedback {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    color: var(--color-fg-on-emphasis);
+    background-color: var(--color-fg-muted);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
+</style>
+
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">SpringBoot的自动装配原理</h1>
+<div class="title-right">
+    <a href="https://shuaiwang888.github.io/appStore-Blog.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/shuaiwang888/appStore-Blog.github.io/issues/21" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><h2>前言</h2>
+<p>我觉得我们可以从以下几个方面回答：</p>
+<ol>
+<li>什么是 SpringBoot 自动装配？</li>
+<li>SpringBoot 是如何实现自动装配的？如何实现按需加载？</li>
+<li>如何实现一个 Starter？</li>
+</ol>
+<p>使用过 Spring 的小伙伴，一定有被 XML 配置统治的恐惧。即使 Spring 后面引入了基于注解的配置，我们在开启某些 Spring 特性或者引入第三方依赖的时候，还是需要用 XML 或 Java 进行显式配置。</p>
+<p>举个例子。没有 Spring Boot 的时候，我们写一个 RestFul Web 服务，还首先需要进行如下配置。</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c1">@</span><span class="pl-c1">Configuration</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">RESTConfiguration</span>
+{
+    <span class="pl-c1">@</span><span class="pl-c1">Bean</span>
+    <span class="pl-k">public</span> <span class="pl-smi">View</span> <span class="pl-en">jsonTemplate</span>() {
+        <span class="pl-smi">MappingJackson2JsonView</span> <span class="pl-s1">view</span> = <span class="pl-k">new</span> <span class="pl-smi">MappingJackson2JsonView</span>();
+        <span class="pl-s1">view</span>.<span class="pl-en">setPrettyPrint</span>(<span class="pl-c1">true</span>);
+        <span class="pl-k">return</span> <span class="pl-s1">view</span>;
+    }
+
+    <span class="pl-c1">@</span><span class="pl-c1">Bean</span>
+    <span class="pl-k">public</span> <span class="pl-smi">ViewResolver</span> <span class="pl-en">viewResolver</span>() {
+        <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-smi">BeanNameViewResolver</span>();
+    }
+}</pre></div>
+<p><strong>spring-servlet.xml：</strong></p>
+<div class="highlight highlight-text-xml"><pre class="notranslate">&lt;<span class="pl-ent">beans</span> <span class="pl-e">xmlns</span>=<span class="pl-s"><span class="pl-pds">"</span>http://www.springframework.org/schema/beans<span class="pl-pds">"</span></span>
+    <span class="pl-e">xmlns</span><span class="pl-e">:</span><span class="pl-e">xsi</span>=<span class="pl-s"><span class="pl-pds">"</span>http://www.w3.org/2001/XMLSchema-instance<span class="pl-pds">"</span></span> <span class="pl-e">xmlns</span><span class="pl-e">:</span><span class="pl-e">context</span>=<span class="pl-s"><span class="pl-pds">"</span>http://www.springframework.org/schema/context<span class="pl-pds">"</span></span>
+    <span class="pl-e">xmlns</span><span class="pl-e">:</span><span class="pl-e">mvc</span>=<span class="pl-s"><span class="pl-pds">"</span>http://www.springframework.org/schema/mvc<span class="pl-pds">"</span></span>
+    <span class="pl-e">xsi</span><span class="pl-e">:</span><span class="pl-e">schemaLocation</span>=<span class="pl-s"><span class="pl-pds">"</span>http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd</span>
+<span class="pl-s">    http://www.springframework.org/schema/context/ http://www.springframework.org/schema/context/spring-context.xsd</span>
+<span class="pl-s">    http://www.springframework.org/schema/mvc/ http://www.springframework.org/schema/mvc/spring-mvc.xsd<span class="pl-pds">"</span></span>&gt;
+
+    &lt;<span class="pl-ent">context</span><span class="pl-ent">:</span><span class="pl-ent">component-scan</span> <span class="pl-e">base-package</span>=<span class="pl-s"><span class="pl-pds">"</span>com.howtodoinjava.demo<span class="pl-pds">"</span></span> /&gt;
+    &lt;<span class="pl-ent">mvc</span><span class="pl-ent">:</span><span class="pl-ent">annotation-driven</span> /&gt;
+
+    <span class="pl-c"><span class="pl-c">&lt;!--</span> JSON Support <span class="pl-c">--&gt;</span></span>
+    &lt;<span class="pl-ent">bean</span> <span class="pl-e">name</span>=<span class="pl-s"><span class="pl-pds">"</span>viewResolver<span class="pl-pds">"</span></span> <span class="pl-e">class</span>=<span class="pl-s"><span class="pl-pds">"</span>org.springframework.web.servlet.view.BeanNameViewResolver<span class="pl-pds">"</span></span>/&gt;
+    &lt;<span class="pl-ent">bean</span> <span class="pl-e">name</span>=<span class="pl-s"><span class="pl-pds">"</span>jsonTemplate<span class="pl-pds">"</span></span> <span class="pl-e">class</span>=<span class="pl-s"><span class="pl-pds">"</span>org.springframework.web.servlet.view.json.MappingJackson2JsonView<span class="pl-pds">"</span></span>/&gt;
+
+&lt;/<span class="pl-ent">beans</span>&gt;</pre></div>
+<blockquote>
+<p><strong>但是，Spring Boot 项目，我们只需要添加相关依赖，无需配置，通过启动下面的 main 方法即可。</strong></p>
+</blockquote>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c1">@</span><span class="pl-c1">SpringBootApplication</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">DemoApplication</span> {
+    <span class="pl-k">public</span> <span class="pl-k">static</span> <span class="pl-smi">void</span> <span class="pl-en">main</span>(<span class="pl-smi">String</span>[] <span class="pl-s1">args</span>) {
+        <span class="pl-smi">SpringApplication</span>.<span class="pl-en">run</span>(<span class="pl-smi">DemoApplication</span>.<span class="pl-k">class</span>, <span class="pl-s1">args</span>);
+    }
+}</pre></div>
+<p>并且，我们通过 Spring Boot 的全局配置文件 application.properties或application.yml即可对项目进行设置比如更换端口号，配置 JPA 属性等等。</p>
+<p>为什么 Spring Boot 使用起来这么酸爽呢？ 这得益于其自动装配。自动装配可以说是 Spring Boot 的核心，那究竟什么是自动装配呢？</p>
+<h2>一、什么是 SpringBoot 自动装配？</h2>
+<p>我们现在提到自动装配的时候，一般会和 Spring Boot 联系在一起。但是，实际上 Spring Framework 早就实现了这个功能。Spring Boot 只是在其基础上，通过 SPI 的方式，做了进一步优化。</p>
+<blockquote>
+<p>SpringBoot 定义了一套接口规范，这套规范规定：SpringBoot 在启动时会扫描外部引用 jar 包中的META-INF/spring.factories文件，将文件中配置的类型信息加载到 Spring 容器（此处涉及到 JVM 类加载机制与 Spring 的容器知识），并执行类中定义的各种操作。对于外部 jar 来说，只需要按照 SpringBoot 定义的标准，就能将自己的功能装置进 SpringBoot。</p>
+</blockquote>
+<p>没有 <code class="notranslate">Spring Boot</code> 的情况下，如果我们需要引入第三方依赖，需要手动配置，非常麻烦。但是 <code class="notranslate">Spring Boot</code> 中，我们直接引入一个 <code class="notranslate">starter</code> 即可。比如你想要在项目中使用 <code class="notranslate">redis</code> 的话，直接在项目中引入对应的 <code class="notranslate">starter</code> 即可。</p>
+<div class="highlight highlight-text-xml"><pre class="notranslate">&lt;<span class="pl-ent">dependency</span>&gt;
+    &lt;<span class="pl-ent">groupId</span>&gt;org.springframework.boot&lt;/<span class="pl-ent">groupId</span>&gt;
+    &lt;<span class="pl-ent">artifactId</span>&gt;spring-boot-starter-data-redis&lt;/<span class="pl-ent">artifactId</span>&gt;
+&lt;/<span class="pl-ent">dependency</span>&gt;</pre></div>
+<p>引入 starter 之后，我们通过少量注解和一些简单的配置就能使用第三方组件提供的功能了。</p>
+<p><strong>在我看来，自动装配可以简单理解为：通过注解或者一些简单的配置就能在 Spring Boot 的帮助下实现某块功能。</strong></p>
+<h2>二、SpringBoot 是如何实现自动装配的？</h2>
+<p>我们先看一下 SpringBoot 的核心注解 <code class="notranslate">SpringBootApplication</code> 。</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c1">@</span><span class="pl-c1">Target</span>({<span class="pl-smi">ElementType</span>.<span class="pl-c1">TYPE</span>})
+<span class="pl-c1">@</span><span class="pl-c1">Retention</span>(<span class="pl-smi">RetentionPolicy</span>.<span class="pl-c1">RUNTIME</span>)
+<span class="pl-c1">@</span><span class="pl-c1">Documented</span>
+<span class="pl-c1">@</span><span class="pl-c1">Inherited</span>
+&lt;<span class="pl-c1">1.</span>&gt;<span class="pl-c1">@</span><span class="pl-c1">SpringBootConfiguration</span>
+&lt;<span class="pl-c1">2.</span>&gt;<span class="pl-c1">@</span><span class="pl-c1">ComponentScan</span>
+&lt;<span class="pl-c1">3.</span>&gt;<span class="pl-c1">@</span><span class="pl-c1">EnableAutoConfiguration</span>
+<span class="pl-s1">public</span> <span class="pl-c1">@</span><span class="pl-c1">interface</span> <span class="pl-s1">SpringBootApplication</span> {
+
+}
+
+<span class="pl-c1">@</span><span class="pl-c1">Target</span>({<span class="pl-smi">ElementType</span>.<span class="pl-c1">TYPE</span>})
+<span class="pl-c1">@</span><span class="pl-c1">Retention</span>(<span class="pl-smi">RetentionPolicy</span>.<span class="pl-c1">RUNTIME</span>)
+<span class="pl-c1">@</span><span class="pl-c1">Documented</span>
+<span class="pl-c1">@</span><span class="pl-c1">Configuration</span> <span class="pl-c">//实际上它也是一个配置类</span>
+<span class="pl-s1">public</span> <span class="pl-c1">@</span><span class="pl-c1">interface</span> <span class="pl-smi">SpringBootConfiguration</span> {
+}</pre></div>
+<p>大概可以把 <code class="notranslate">@SpringBootApplication</code> 看作是 <code class="notranslate">@Configuration</code>、<code class="notranslate">@EnableAutoConfiguration</code>、<code class="notranslate">@ComponentScan</code> 注解的集合。根据 SpringBoot 官网，这三个注解的作用分别是：</p>
+<ul>
+<li><strong>@EnableAutoConfiguration：启用 SpringBoot 的自动配置机制;</strong></li>
+<li><strong><a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/configuration/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/configuration">@configuration</a>：允许在上下文中注册额外的 bean 或导入其他配置类;</strong></li>
+<li><strong><a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/componentscan/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/componentscan">@componentscan</a>： 扫描被 <code class="notranslate">@Component</code> (<a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/service/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/service">@service</a>,<a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/controller/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/controller">@controller</a>)注解的 bean，注解默认会扫描启动类所在的包下所有的类 ，可以自定义不扫描某些 bean。如下图所示，容器中将排除<code class="notranslate">TypeExcludeFilter</code>和<code class="notranslate">AutoConfigurationExcludeFilter</code>。</strong></li>
+</ul>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/01f3316af83c672db9a8561381111620a43783c4d1ff729d211eb927a8f532f1/68747470733a2f2f70332d6a75656a696e2e62797465696d672e636f6d2f746f732d636e2d692d6b3375316662706663702f62636337333439306166626534633662613632616364653661393466666466647e74706c762d6b3375316662706663702d77617465726d61726b2e696d616765"><img src="https://camo.githubusercontent.com/01f3316af83c672db9a8561381111620a43783c4d1ff729d211eb927a8f532f1/68747470733a2f2f70332d6a75656a696e2e62797465696d672e636f6d2f746f732d636e2d692d6b3375316662706663702f62636337333439306166626534633662613632616364653661393466666466647e74706c762d6b3375316662706663702d77617465726d61726b2e696d616765" alt="" data-canonical-src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/bcc73490afbe4c6ba62acde6a94ffdfd~tplv-k3u1fbpfcp-watermark.image" style="max-width: 100%;"></a></p>
+<h3>2.1 @EnableAutoConfiguration 是实现自动装配的重要注解。</h3>
+<p><code class="notranslate">@EnableAutoConfiguration</code> 只是一个简单地注解，自动装配核心功能的实现实际是通过 AutoConfigurationImportSelector类。</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c1">@</span><span class="pl-c1">Target</span>({<span class="pl-smi">ElementType</span>.<span class="pl-c1">TYPE</span>})
+<span class="pl-c1">@</span><span class="pl-c1">Retention</span>(<span class="pl-smi">RetentionPolicy</span>.<span class="pl-c1">RUNTIME</span>)
+<span class="pl-c1">@</span><span class="pl-c1">Documented</span>
+<span class="pl-c1">@</span><span class="pl-c1">Inherited</span>
+<span class="pl-c1">@</span><span class="pl-c1">AutoConfigurationPackage</span> <span class="pl-c">//作用：将main包下的所欲组件注册到容器中</span>
+<span class="pl-c1">@</span><span class="pl-c1">Import</span>({<span class="pl-smi">AutoConfigurationImportSelector</span>.<span class="pl-k">class</span>}) <span class="pl-c">//加载自动装配类 xxxAutoconfiguration</span>
+<span class="pl-k">public</span> @interface <span class="pl-s1">EnableAutoConfiguration</span> {
+    <span class="pl-smi">String</span> <span class="pl-c1">ENABLED_OVERRIDE_PROPERTY</span> = <span class="pl-s">"spring.boot.enableautoconfiguration"</span>;
+
+    <span class="pl-smi">Class</span>&lt;?&gt;[] <span class="pl-s1">exclude</span>() <span class="pl-k">default</span> {};
+
+    <span class="pl-smi">String</span>[] <span class="pl-s1">excludeName</span>() <span class="pl-k">default</span> {};
+}</pre></div>
+<p>我们现在重点分析下AutoConfigurationImportSelector 类到底做了什么？</p>
+<h3>2.2 AutoConfigurationImportSelector(加载自动装配类)</h3>
+<p>AutoConfigurationImportSelector类的继承体系如下：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">AutoConfigurationImportSelector</span> <span class="pl-k">implements</span> <span class="pl-smi">DeferredImportSelector</span>, <span class="pl-smi">BeanClassLoaderAware</span>, <span class="pl-smi">ResourceLoaderAware</span>, <span class="pl-smi">BeanFactoryAware</span>, <span class="pl-smi">EnvironmentAware</span>, <span class="pl-smi">Ordered</span> {
+
+}
+
+<span class="pl-k">public</span> <span class="pl-k">interface</span> <span class="pl-smi">DeferredImportSelector</span> <span class="pl-k">extends</span> <span class="pl-smi">ImportSelector</span> {
+
+}
+
+<span class="pl-k">public</span> <span class="pl-k">interface</span> <span class="pl-smi">ImportSelector</span> {
+    <span class="pl-smi">String</span>[] <span class="pl-en">selectImports</span>(<span class="pl-smi">AnnotationMetadata</span> <span class="pl-s1">var1</span>);
+}</pre></div>
+<p><strong>注意：</strong> 可以看出，AutoConfigurationImportSelector 类实现了 <code class="notranslate">ImportSelector</code> 接口，也就实现了这个接口中的 <code class="notranslate">selectImports</code> 方法，<strong>该方法主要用于获取所有符合条件的类的全限定类名，这些类需要被加载到 IoC 容器中。</strong></p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">private</span> <span class="pl-k">static</span> <span class="pl-k">final</span> <span class="pl-smi">String</span>[] <span class="pl-c1">NO_IMPORTS</span> = <span class="pl-k">new</span> <span class="pl-smi">String</span>[<span class="pl-c1">0</span>];
+
+<span class="pl-k">public</span> <span class="pl-smi">String</span>[] <span class="pl-en">selectImports</span>(<span class="pl-smi">AnnotationMetadata</span> <span class="pl-s1">annotationMetadata</span>) {
+        <span class="pl-c">// &lt;1&gt;.判断自动装配开关是否打开</span>
+        <span class="pl-k">if</span> (!<span class="pl-smi">this</span>.<span class="pl-en">isEnabled</span>(<span class="pl-s1">annotationMetadata</span>)) {
+            <span class="pl-k">return</span> <span class="pl-c1">NO_IMPORTS</span>;
+        } <span class="pl-k">else</span> {
+          <span class="pl-c">//&lt;2&gt;.获取所有需要装配的bean</span>
+            <span class="pl-smi">AutoConfigurationMetadata</span> <span class="pl-s1">autoConfigurationMetadata</span> = <span class="pl-smi">AutoConfigurationMetadataLoader</span>.<span class="pl-en">loadMetadata</span>(<span class="pl-smi">this</span>.<span class="pl-s1">beanClassLoader</span>);
+            <span class="pl-smi">AutoConfigurationImportSelector</span>.<span class="pl-smi">AutoConfigurationEntry</span> <span class="pl-s1">autoConfigurationEntry</span> = <span class="pl-smi">this</span>.<span class="pl-en">getAutoConfigurationEntry</span>(<span class="pl-s1">autoConfigurationMetadata</span>, <span class="pl-s1">annotationMetadata</span>);
+            <span class="pl-k">return</span> <span class="pl-smi">StringUtils</span>.<span class="pl-en">toStringArray</span>(<span class="pl-s1">autoConfigurationEntry</span>.<span class="pl-en">getConfigurations</span>());
+        }
+    }</pre></div>
+<blockquote>
+<p><strong>这里我们需要重点关注一下 getAutoConfigurationEntry() 方法，这个方法主要负责加载自动配置类的。</strong></p>
+</blockquote>
+<p><strong>该方法调用链如下：</strong></p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/b1fa5e654c5da06da14d29a272a939b2dc1c41164d681b200c6c1ee58fc74de7/68747470733a2f2f70362d6a75656a696e2e62797465696d672e636f6d2f746f732d636e2d692d6b3375316662706663702f33633132303037313236353534343363613462333835303064363135626237307e74706c762d6b3375316662706663702d77617465726d61726b2e696d616765"><img src="https://camo.githubusercontent.com/b1fa5e654c5da06da14d29a272a939b2dc1c41164d681b200c6c1ee58fc74de7/68747470733a2f2f70362d6a75656a696e2e62797465696d672e636f6d2f746f732d636e2d692d6b3375316662706663702f33633132303037313236353534343363613462333835303064363135626237307e74706c762d6b3375316662706663702d77617465726d61726b2e696d616765" alt="" data-canonical-src="https://p6-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/3c1200712655443ca4b38500d615bb70~tplv-k3u1fbpfcp-watermark.image" style="max-width: 100%;"></a></p>
+<h3>2.3 现在我们结合getAutoConfigurationEntry()的源码来详细分析一下：</h3>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">private</span> <span class="pl-k">static</span> <span class="pl-k">final</span> <span class="pl-smi">AutoConfigurationEntry</span> <span class="pl-c1">EMPTY_ENTRY</span> = <span class="pl-k">new</span> <span class="pl-smi">AutoConfigurationEntry</span>();
+
+<span class="pl-smi">AutoConfigurationEntry</span> <span class="pl-en">getAutoConfigurationEntry</span>(<span class="pl-smi">AutoConfigurationMetadata</span> <span class="pl-s1">autoConfigurationMetadata</span>, <span class="pl-smi">AnnotationMetadata</span> <span class="pl-s1">annotationMetadata</span>) {
+        <span class="pl-c">//&lt;1&gt;.</span>
+        <span class="pl-k">if</span> (!<span class="pl-smi">this</span>.<span class="pl-en">isEnabled</span>(<span class="pl-s1">annotationMetadata</span>)) {
+            <span class="pl-k">return</span> <span class="pl-c1">EMPTY_ENTRY</span>;
+        } <span class="pl-k">else</span> {
+            <span class="pl-c">//&lt;2&gt;.</span>
+            <span class="pl-smi">AnnotationAttributes</span> <span class="pl-s1">attributes</span> = <span class="pl-smi">this</span>.<span class="pl-en">getAttributes</span>(<span class="pl-s1">annotationMetadata</span>);
+            <span class="pl-c">//&lt;3&gt;.</span>
+            <span class="pl-smi">List</span>&lt;<span class="pl-smi">String</span>&gt; <span class="pl-s1">configurations</span> = <span class="pl-smi">this</span>.<span class="pl-en">getCandidateConfigurations</span>(<span class="pl-s1">annotationMetadata</span>, <span class="pl-s1">attributes</span>);
+            <span class="pl-c">//&lt;4&gt;.</span>
+            <span class="pl-s1">configurations</span> = <span class="pl-smi">this</span>.<span class="pl-en">removeDuplicates</span>(<span class="pl-s1">configurations</span>);
+            <span class="pl-smi">Set</span>&lt;<span class="pl-smi">String</span>&gt; <span class="pl-s1">exclusions</span> = <span class="pl-smi">this</span>.<span class="pl-en">getExclusions</span>(<span class="pl-s1">annotationMetadata</span>, <span class="pl-s1">attributes</span>);
+            <span class="pl-smi">this</span>.<span class="pl-en">checkExcludedClasses</span>(<span class="pl-s1">configurations</span>, <span class="pl-s1">exclusions</span>);
+            <span class="pl-s1">configurations</span>.<span class="pl-en">removeAll</span>(<span class="pl-s1">exclusions</span>);
+            <span class="pl-s1">configurations</span> = <span class="pl-smi">this</span>.<span class="pl-en">filter</span>(<span class="pl-s1">configurations</span>, <span class="pl-s1">autoConfigurationMetadata</span>);
+            <span class="pl-smi">this</span>.<span class="pl-en">fireAutoConfigurationImportEvents</span>(<span class="pl-s1">configurations</span>, <span class="pl-s1">exclusions</span>);
+            <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-smi">AutoConfigurationImportSelector</span>.<span class="pl-smi">AutoConfigurationEntry</span>(<span class="pl-s1">configurations</span>, <span class="pl-s1">exclusions</span>);
+        }
+    }</pre></div>
+<p><strong>第 1 步：</strong> 判断自动装配开关是否打开。默认<code class="notranslate">spring.boot.enableautoconfiguration=true</code>，可在 <code class="notranslate">application.properties</code> 或 <code class="notranslate">application.yml</code> 中设置。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/b8d7bfe9346950c054807ce70bfbd63626e1ba3f9f731b8c13fbad67b1daf0be/68747470733a2f2f70332d6a75656a696e2e62797465696d672e636f6d2f746f732d636e2d692d6b3375316662706663702f37376161366133373237656134333932383730663563636364303938343461627e74706c762d6b3375316662706663702d77617465726d61726b2e696d616765"><img src="https://camo.githubusercontent.com/b8d7bfe9346950c054807ce70bfbd63626e1ba3f9f731b8c13fbad67b1daf0be/68747470733a2f2f70332d6a75656a696e2e62797465696d672e636f6d2f746f732d636e2d692d6b3375316662706663702f37376161366133373237656134333932383730663563636364303938343461627e74706c762d6b3375316662706663702d77617465726d61726b2e696d616765" alt="" data-canonical-src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/77aa6a3727ea4392870f5cccd09844ab~tplv-k3u1fbpfcp-watermark.image" style="max-width: 100%;"></a></p>
+<p><strong>第 2 步：</strong> 用于获取 <code class="notranslate">EnableAutoConfiguration</code> 注解中的 <code class="notranslate">exclude</code> 和 <code class="notranslate">excludeName</code>。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/e356c68a0b5034c891b10dafd27c20e903b4b63d7700b4f4e7139d5ef57c08a9/68747470733a2f2f70332d6a75656a696e2e62797465696d672e636f6d2f746f732d636e2d692d6b3375316662706663702f33643665633933626264613134353361613038633532623439353136633035617e74706c762d6b3375316662706663702d7a6f6f6d2d312e696d616765"><img src="https://camo.githubusercontent.com/e356c68a0b5034c891b10dafd27c20e903b4b63d7700b4f4e7139d5ef57c08a9/68747470733a2f2f70332d6a75656a696e2e62797465696d672e636f6d2f746f732d636e2d692d6b3375316662706663702f33643665633933626264613134353361613038633532623439353136633035617e74706c762d6b3375316662706663702d7a6f6f6d2d312e696d616765" alt="" data-canonical-src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/3d6ec93bbda1453aa08c52b49516c05a~tplv-k3u1fbpfcp-zoom-1.image" style="max-width: 100%;"></a></p>
+<p><strong>第 3 步：</strong> 获取需要自动装配的所有配置类，读取 <code class="notranslate">META-INF/spring.factories</code></p>
+<pre class="notranslate"><code class="notranslate">文件地址：spring-boot/spring-boot-project/spring-boot-autoconfigure/src/main/resources/META-INF/spring.factories
+</code></pre>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/c484de2118d476269c60c553dfec58fa5f18a7eff6432b0f65c1f7b563ba3bb1/68747470733a2f2f70362d6a75656a696e2e62797465696d672e636f6d2f746f732d636e2d692d6b3375316662706663702f35386335313932306566656134373537616131656332396336643566396533367e74706c762d6b3375316662706663702d77617465726d61726b2e696d616765"><img src="https://camo.githubusercontent.com/c484de2118d476269c60c553dfec58fa5f18a7eff6432b0f65c1f7b563ba3bb1/68747470733a2f2f70362d6a75656a696e2e62797465696d672e636f6d2f746f732d636e2d692d6b3375316662706663702f35386335313932306566656134373537616131656332396336643566396533367e74706c762d6b3375316662706663702d77617465726d61726b2e696d616765" alt="" data-canonical-src="https://p6-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/58c51920efea4757aa1ec29c6d5f9e36~tplv-k3u1fbpfcp-watermark.image" style="max-width: 100%;"></a></p>
+<p>从下图可以看到这个文件的配置内容都被我们读取到了。XXXAutoConfiguration的作用就是<strong>按需加载组件</strong>。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/02cb296bcdbdc9294850046df6388ffdf7055e78887d56168739431c0cc9f184/68747470733a2f2f70332d6a75656a696e2e62797465696d672e636f6d2f746f732d636e2d692d6b3375316662706663702f39346436653161303630616334316462393730343365313735383738393032367e74706c762d6b3375316662706663702d77617465726d61726b2e696d616765"><img src="https://camo.githubusercontent.com/02cb296bcdbdc9294850046df6388ffdf7055e78887d56168739431c0cc9f184/68747470733a2f2f70332d6a75656a696e2e62797465696d672e636f6d2f746f732d636e2d692d6b3375316662706663702f39346436653161303630616334316462393730343365313735383738393032367e74706c762d6b3375316662706663702d77617465726d61726b2e696d616765" alt="" data-canonical-src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/94d6e1a060ac41db97043e1758789026~tplv-k3u1fbpfcp-watermark.image" style="max-width: 100%;"></a></p>
+<blockquote>
+<p><strong>不光是这个依赖下的 <code class="notranslate">META-INF/spring.factories</code> 被读取到，所有 <code class="notranslate">Spring Boot Starter</code> 下的 <code class="notranslate">META-INF/spring.factories</code> 都会被读取到。</strong></p>
+</blockquote>
+<blockquote>
+<p><strong>所以，你可以清楚滴看到， druid 数据库连接池的 Spring Boot Starter 就创建了META-INF/spring.factories文件。</strong></p>
+</blockquote>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/7684453bccfb40f39af006a770eb9be139a6861b763f6ece2151ebe44204df9b/68747470733a2f2f70312d6a75656a696e2e62797465696d672e636f6d2f746f732d636e2d692d6b3375316662706663702f36386661363661656565343734623033383566393464323362636665313734357e74706c762d6b3375316662706663702d77617465726d61726b2e696d616765"><img src="https://camo.githubusercontent.com/7684453bccfb40f39af006a770eb9be139a6861b763f6ece2151ebe44204df9b/68747470733a2f2f70312d6a75656a696e2e62797465696d672e636f6d2f746f732d636e2d692d6b3375316662706663702f36386661363661656565343734623033383566393464323362636665313734357e74706c762d6b3375316662706663702d77617465726d61726b2e696d616765" alt="" data-canonical-src="https://p1-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/68fa66aeee474b0385f94d23bcfe1745~tplv-k3u1fbpfcp-watermark.image" style="max-width: 100%;"></a></p>
+<blockquote>
+<p><strong>如果，我们自己要创建一个 Spring Boot Starter，这一步是必不可少的。</strong></p>
+</blockquote>
+<p><strong>第 4 步：</strong> 到这里可能面试官会问你:“spring.factories中这么多配置，每次启动都要全部加载么？”。很明显，这是不现实的。我们 debug 到后面你会发现，configurations 的值变小了。</p>
+<p>因为，这一步有经历了一遍筛选，<code class="notranslate">@ConditionalOnXXX</code> 中的所有条件都满足，该类才会生效。</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c1">@</span><span class="pl-c1">Configuration</span>
+<span class="pl-c">// 检查相关的类：RabbitTemplate 和 Channel是否存在</span>
+<span class="pl-c">// 存在才会加载</span>
+<span class="pl-c1">@</span><span class="pl-c1">ConditionalOnClass</span>({ <span class="pl-smi">RabbitTemplate</span>.<span class="pl-k">class</span>, <span class="pl-smi">Channel</span>.<span class="pl-k">class</span> })
+<span class="pl-c1">@</span><span class="pl-c1">EnableConfigurationProperties</span>(<span class="pl-smi">RabbitProperties</span>.<span class="pl-k">class</span>)
+<span class="pl-c1">@</span><span class="pl-c1">Import</span>(<span class="pl-smi">RabbitAnnotationDrivenConfiguration</span>.<span class="pl-k">class</span>)
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">RabbitAutoConfiguration</span> {
+}</pre></div>
+<p>有兴趣的童鞋可以详细了解下 Spring Boot 提供的条件注解：</p>
+<ul>
+<li>@ConditionalOnBean：当容器里有指定 Bean 的条件下</li>
+<li>@ConditionalOnMissingBean：当容器里没有指定 Bean 的情况下</li>
+<li>@ConditionalOnSingleCandidate：当指定 Bean 在容器中只有一个，或者虽然有多个但是指定首选 Bean</li>
+<li>@ConditionalOnClass：当类路径下有指定类的条件下</li>
+<li>@ConditionalOnMissingClass：当类路径下没有指定类的条件下</li>
+<li>@ConditionalOnProperty：指定的属性是否有指定的值</li>
+<li>@ConditionalOnResource：类路径是否有指定的值</li>
+<li>@ConditionalOnExpression：基于 SpEL 表达式作为判断条件</li>
+<li>@ConditionalOnJava：基于 Java 版本作为判断条件</li>
+<li>@ConditionalOnJndi：在 JNDI 存在的条件下差在指定的位置</li>
+<li>@ConditionalOnNotWebApplication：当前项目不是 Web 项目的条件下</li>
+<li>@ConditionalOnWebApplication：当前项目是 Web 项 目的条件下</li>
+</ul>
+<h2>三、如何实现一个 Starter ？</h2>
+<p>光说不练假把式，现在就来撸一个 starter，实现自定义线程池</p>
+<p><strong>第一步：</strong> 创建threadpool-spring-boot-starter工程</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/9d7bd9a0986d1577ebad7d6cf1e399b726719661e98f80fa0d20d96bf3b7abb8/68747470733a2f2f70392d6a75656a696e2e62797465696d672e636f6d2f746f732d636e2d692d6b3375316662706663702f31666630656265373834346634303238396562363032313361663732633561367e74706c762d6b3375316662706663702d77617465726d61726b2e696d616765"><img src="https://camo.githubusercontent.com/9d7bd9a0986d1577ebad7d6cf1e399b726719661e98f80fa0d20d96bf3b7abb8/68747470733a2f2f70392d6a75656a696e2e62797465696d672e636f6d2f746f732d636e2d692d6b3375316662706663702f31666630656265373834346634303238396562363032313361663732633561367e74706c762d6b3375316662706663702d77617465726d61726b2e696d616765" alt="" data-canonical-src="https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/1ff0ebe7844f40289eb60213af72c5a6~tplv-k3u1fbpfcp-watermark.image" style="max-width: 100%;"></a></p>
+<p><strong>第二步：</strong> 引入 Spring Boot 相关依赖</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/a5f7021b4b528d5712c7e6af1880aba3336c7ccc4ed9ea4a1bb93ebef319a392/68747470733a2f2f70392d6a75656a696e2e62797465696d672e636f6d2f746f732d636e2d692d6b3375316662706663702f35653134323534323736363034663837623236316535613830613335346363307e74706c762d6b3375316662706663702d77617465726d61726b2e696d616765"><img src="https://camo.githubusercontent.com/a5f7021b4b528d5712c7e6af1880aba3336c7ccc4ed9ea4a1bb93ebef319a392/68747470733a2f2f70392d6a75656a696e2e62797465696d672e636f6d2f746f732d636e2d692d6b3375316662706663702f35653134323534323736363034663837623236316535613830613335346363307e74706c762d6b3375316662706663702d77617465726d61726b2e696d616765" alt="" data-canonical-src="https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/5e14254276604f87b261e5a80a354cc0~tplv-k3u1fbpfcp-watermark.image" style="max-width: 100%;"></a></p>
+<p><strong>第三步：</strong> 创建 ThreadPoolAutoConfiguration</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/b577a1503d940c381f02ab0ca089f05e4f224bfe56888cb2885de7604edf281f/68747470733a2f2f70392d6a75656a696e2e62797465696d672e636f6d2f746f732d636e2d692d6b3375316662706663702f31383433663164313263353634396662613835666437623465346135396533397e74706c762d6b3375316662706663702d77617465726d61726b2e696d616765"><img src="https://camo.githubusercontent.com/b577a1503d940c381f02ab0ca089f05e4f224bfe56888cb2885de7604edf281f/68747470733a2f2f70392d6a75656a696e2e62797465696d672e636f6d2f746f732d636e2d692d6b3375316662706663702f31383433663164313263353634396662613835666437623465346135396533397e74706c762d6b3375316662706663702d77617465726d61726b2e696d616765" alt="" data-canonical-src="https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/1843f1d12c5649fba85fd7b4e4a59e39~tplv-k3u1fbpfcp-watermark.image" style="max-width: 100%;"></a></p>
+<p><strong>第四步：</strong> 在 <code class="notranslate">threadpool-spring-boot-starter</code>工程的 <code class="notranslate">resources</code> 包下创建 <code class="notranslate">META-INF/spring.factories</code>文件</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/81edf8c1e141abc05179556dc6ed70f51b496528f871da0f72f2f4e72b27954d/68747470733a2f2f70392d6a75656a696e2e62797465696d672e636f6d2f746f732d636e2d692d6b3375316662706663702f39376237333833323166313534326561383134303438346436616166303732387e74706c762d6b3375316662706663702d77617465726d61726b2e696d616765"><img src="https://camo.githubusercontent.com/81edf8c1e141abc05179556dc6ed70f51b496528f871da0f72f2f4e72b27954d/68747470733a2f2f70392d6a75656a696e2e62797465696d672e636f6d2f746f732d636e2d692d6b3375316662706663702f39376237333833323166313534326561383134303438346436616166303732387e74706c762d6b3375316662706663702d77617465726d61726b2e696d616765" alt="" data-canonical-src="https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/97b738321f1542ea8140484d6aaf0728~tplv-k3u1fbpfcp-watermark.image" style="max-width: 100%;"></a></p>
+<p><strong>第五步：</strong> 最后新建工程引入 threadpool-spring-boot-starter</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/331a261e0c6a932085f0053b4a91a2304947c27d6fb70597225a7b84c0457ddf/68747470733a2f2f70332d6a75656a696e2e62797465696d672e636f6d2f746f732d636e2d692d6b3375316662706663702f65646364643835393561303234616261383562366262323064306533666564347e74706c762d6b3375316662706663702d77617465726d61726b2e696d616765"><img src="https://camo.githubusercontent.com/331a261e0c6a932085f0053b4a91a2304947c27d6fb70597225a7b84c0457ddf/68747470733a2f2f70332d6a75656a696e2e62797465696d672e636f6d2f746f732d636e2d692d6b3375316662706663702f65646364643835393561303234616261383562366262323064306533666564347e74706c762d6b3375316662706663702d77617465726d61726b2e696d616765" alt="" data-canonical-src="https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/edcdd8595a024aba85b6bb20d0e3fed4~tplv-k3u1fbpfcp-watermark.image" style="max-width: 100%;"></a></p>
+<p><strong>测试通过！！！</strong></p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/253345812bcbb552153ba5b2d3f707bd5cef28c9548dca235b99a509f09ca56b/68747470733a2f2f70312d6a75656a696e2e62797465696d672e636f6d2f746f732d636e2d692d6b3375316662706663702f39613236356565613464653734326136626264626261613735663433373330377e74706c762d6b3375316662706663702d77617465726d61726b2e696d616765"><img src="https://camo.githubusercontent.com/253345812bcbb552153ba5b2d3f707bd5cef28c9548dca235b99a509f09ca56b/68747470733a2f2f70312d6a75656a696e2e62797465696d672e636f6d2f746f732d636e2d692d6b3375316662706663702f39613236356565613464653734326136626264626261613735663433373330377e74706c762d6b3375316662706663702d77617465726d61726b2e696d616765" alt="" data-canonical-src="https://p1-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/9a265eea4de742a6bbdbbaa75f437307~tplv-k3u1fbpfcp-watermark.image" style="max-width: 100%;"></a></p>
+<h2>总结</h2>
+<p>Spring Boot 通过 <code class="notranslate">@EnableAutoConfiguration</code> 开启自动装配，通过 <code class="notranslate">SpringFactoriesLoader</code> 最终加载<code class="notranslate"> META-INF/spring.factories</code> 中的自动配置类实现自动装配，自动配置类其实就是通过<code class="notranslate">@Conditional</code>按需加载的配置类，想要其生效必须引入<code class="notranslate">spring-boot-starter-xxx</code>包实现起步依赖.</p></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+
+</div>
+    <div id="footer"><div id="footer1">Copyright © <span id="copyrightYear"></span> <a href="https://shuaiwang888.github.io/appStore-Blog.github.io">Blog Title</a></div>
+<div id="footer2">
+    <span id="runday"></span><span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>
+</div>
+
+<script>
+var now=new Date();
+document.getElementById("copyrightYear").innerHTML=now.getFullYear();
+
+if(""!=""){
+    var startSite=new Date("");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";
+}
+</script></div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z', 'copy': 'M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z', 'check': 'M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","shuaiwang888/appStore-Blog.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const createClipboardHTML = (codeContent, additionalClasses = '') => `
+        <pre class="notranslate"><code class="notranslate">${codeContent}</code></pre>
+        <div class="clipboard-container position-absolute right-0 top-0 ${additionalClasses}">
+            <clipboard-copy class="ClipboardButton btn m-2 p-0" role="button" style="display: inherit;">
+                <svg height="16" width="16" class="octicon octicon-copy m-2"><path d="${IconList["copy"]}"></path></svg>
+                <svg height="16" width="16" class="octicon octicon-check color-fg-success m-2 d-none"><path d="${IconList["check"]}"></path></svg>
+            </clipboard-copy>
+            <div class="copy-feedback">Copied!</div>
+        </div>
+    `;
+
+    const handleCodeElements = (selector = '') => {
+        document.querySelectorAll(selector).forEach(codeElement => {
+            const codeContent = codeElement.innerHTML;
+            const newStructure = document.createElement('div');
+            newStructure.className = 'snippet-clipboard-content position-relative overflow-auto';
+            newStructure.innerHTML = createClipboardHTML(codeContent);
+
+            const parentElement = codeElement.parentElement;
+            if (selector.includes('highlight')) {
+                parentElement.insertBefore(newStructure, codeElement.nextSibling);
+                parentElement.removeChild(codeElement);
+            } else {
+                parentElement.parentElement.replaceChild(newStructure, parentElement);
+            }
+        });
+    };
+
+    handleCodeElements('pre.notranslate > code.notranslate');
+    handleCodeElements('div.highlight > pre.notranslate');
+
+    let currentFeedback = null;
+    document.querySelectorAll('clipboard-copy').forEach(copyButton => {
+        copyButton.addEventListener('click', () => {
+            const codeContent = copyButton.closest('.snippet-clipboard-content').innerText;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = codeContent;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            const copyIcon = copyButton.querySelector('.octicon-copy');
+            const checkIcon = copyButton.querySelector('.octicon-check');
+            const copyFeedback = copyButton.nextElementSibling;
+
+            if (currentFeedback && currentFeedback !== copyFeedback) {currentFeedback.style.display = 'none';}
+            currentFeedback = copyFeedback;
+
+            copyIcon.classList.add('d-none');
+            checkIcon.classList.remove('d-none');
+            copyFeedback.style.display = 'block';
+            copyButton.style.borderColor = 'var(--color-success-fg)';
+
+            setTimeout(() => {
+                copyIcon.classList.remove('d-none');
+                checkIcon.classList.add('d-none');
+                copyFeedback.style.display = 'none';
+                copyButton.style.borderColor = '';
+            }, 2000);
+        });
+    });
+});
+
+</script>
+
+
+</html>
