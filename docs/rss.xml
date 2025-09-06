@@ -1,5 +1,39 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>Blog Title</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link><description>Blog description</description><copyright>Blog Title</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://github.githubassets.com/favicons/favicon.svg</url><title>avatar</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link></image><lastBuildDate>Sat, 06 Sep 2025 09:07:47 +0000</lastBuildDate><managingEditor>Blog Title</managingEditor><ttl>60</ttl><webMaster>Blog Title</webMaster><item><title>SpringBoot项目汇总</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/SpringBoot-xiang-mu-hui-zong.html</link><description>## 一、项目简述
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>Blog Title</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link><description>Blog description</description><copyright>Blog Title</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://github.githubassets.com/favicons/favicon.svg</url><title>avatar</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link></image><lastBuildDate>Sat, 06 Sep 2025 09:08:50 +0000</lastBuildDate><managingEditor>Blog Title</managingEditor><ttl>60</ttl><webMaster>Blog Title</webMaster><item><title>Zookeeper分布式协调服务</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/Zookeeper-fen-bu-shi-xie-diao-fu-wu.html</link><description>## 一、分布式的基本概念
+
+### 1.1 系统高可用
+所谓的系统高可用，主要是指两个方面：
+- 系统的健壮性, 不允许系统出现单点故障；
+- 系统的处理能力, 可以提高系统的处理能力, 保证系统的运行效率
+
+**集群**
+ 所谓的集群, 主要是原来使用的是一台服务器处理, 现在使用多台服务器保障系统的运行，主要分为：
+
+- **主备集群:** 主要有一个主要节点提供服务, 另外的节点主要是出于备份状态, 平时不提供工作, 一旦主节点出现问题, 备份节点启动运行, 提供正常的服务；
+
+![QQ图片20211005131557.png](/upload/2021/10/QQ%E5%9B%BE%E7%89%8720211005131557-63e5f8b0303f4921a8ddc066f5491de4.png)
+
+- **主从集群:** 集群中的节点都提供服务, 但是每台服务器的角色可能不一样, 比如配置数据库的读写分离, 主数据库可能是写操作, 对于实时性要求不高的读操作就使用从数据库，该模式对于主从有数据传输延迟性；
+
+![QQ图片20211005131606.png](/upload/2021/10/QQ%E5%9B%BE%E7%89%8720211005131606-2462413ea43e4b3195c95989cd2e1f96.png)
+
+- **普通集群:** 集群中的节点提供的功能是一样的, 所有的节点没有主从之分,主要是提高系统的高可用；
+
+![QQ图片20211005131608.png](/upload/2021/10/QQ%E5%9B%BE%E7%89%8720211005131608-fd7c58a463614a1dbb26b212de33740c.png)
+
+**分布式**
+
+分布式是系统部署方式：
+- 比如我们的业务系统, 部署一个业务系统需要的环境(应用服务(Tomcat)+数据库服务(MySQL))；
+
+- 如果我们把Tomcat和数据库MySQL服务部署在同一台服务器, 我们称之为单机部署, 这样Tomcat和MySQL之间的网络开销可以忽略(直接走127.0.0.1不会消耗网络)；
+
+- 如果我们把Tomcat和数据库MySQL服务部署在不同的服务器, 我们称之为分布式应用, 因为应用服务器和数据库服务器之间需要走网络通信, 当然, **我们把所有需要走网络这种部署方式称之为'分布式应用'**；
+
+![QQ图片20211005132216.png](/upload/2021/10/QQ%E5%9B%BE%E7%89%8720211005132216-e8540e32c1da481899ca7203721bf30b.png)
+
+**微服务**
+当使用单体应用时：其中一个模块挂了，整个系统（crm）都会访问不了；如果只是针对整个jar包（crm.jar）部署的话，就没法针对高并发模块进行单独的增强扩容或者添加服务器了；对于系统维护/后期开发不方便，若想要单独操作一个模块，需要把整个系统停掉，导致其他模块不可用。</description><guid isPermaLink="true">https://shuaiwang888.github.io/appStore-Blog.github.io/post/Zookeeper-fen-bu-shi-xie-diao-fu-wu.html</guid><pubDate>Sat, 06 Sep 2025 09:08:15 +0000</pubDate></item><item><title>SpringBoot项目汇总</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/SpringBoot-xiang-mu-hui-zong.html</link><description>## 一、项目简述
 
 ### 企业开发中常见的后台管理系统？
 
