@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark" data-light-theme="light" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
+    
+    <link rel="icon" href="https://github.githubassets.com/favicons/favicon.svg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="## 前言
+
+随着业务的发展，**用户对系统需求变得越来越多**，这就要求系统能够快速更新迭代以满足业务需求，通常系统版本发布时，都要**先执行数据库的DDL变更**，**包括创建表、添加字段、添加索引、修改字段属性等。">
+<meta property="og:title" content="MySQL大表如何进行DDL变更">
+<meta property="og:description" content="## 前言
+
+随着业务的发展，**用户对系统需求变得越来越多**，这就要求系统能够快速更新迭代以满足业务需求，通常系统版本发布时，都要**先执行数据库的DDL变更**，**包括创建表、添加字段、添加索引、修改字段属性等。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://shuaiwang888.github.io/appStore-Blog.github.io/post/MySQL-da-biao-ru-he-jin-xing-DDL-bian-geng.html">
+<meta property="og:image" content="https://github.githubassets.com/favicons/favicon.svg">
+<title>MySQL大表如何进行DDL变更</title>
+
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+
+</style>
+
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">MySQL大表如何进行DDL变更</h1>
+<div class="title-right">
+    <a href="https://shuaiwang888.github.io/appStore-Blog.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/shuaiwang888/appStore-Blog.github.io/issues/62" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><h2>前言</h2>
+<p>随着业务的发展，<strong>用户对系统需求变得越来越多</strong>，这就要求系统能够快速更新迭代以满足业务需求，通常系统版本发布时，都要<strong>先执行数据库的DDL变更</strong>，<strong>包括创建表、添加字段、添加索引、修改字段属性等。</strong></p>
+<p>在<strong>数据量大不大的情况下，执行DDL都很快</strong>，对业务基本没啥影响，<strong>但是数据量大的情况，而且我们业务做了读写分离，接入了实时数仓，这时DDL变更就是一个的难题，需要综合各方业务全盘考虑。</strong></p>
+<h2>MySQL中的DDL</h2>
+<h3>DDL概述</h3>
+<p>MySQL中的<strong>DDL语句形式比较多</strong>，概括一下有以下几类：<strong>CREATE，ALTER，DROP，RENAME，TRUNCATE。</strong></p>
+<p>这些操作都是隐式提交且原子性，要么成功，要么失败，在MySQL 8.0之前DDL操作是不记录日志的。</p>
+<p>今天就聊一下跟系统版本发布相关的数据库结构变更，主要就是<strong>ALTER TABLE</strong>变更了，DDL变更流程普通的DML变更是类似的，如下所示</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/8717f51dc5d87d423b47389ed3cc228adc7fb34f114d775f10e7af4dd64796c1/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f62306235636632636266383434393130623166633935616633623064306239362e706e67"><img src="https://camo.githubusercontent.com/8717f51dc5d87d423b47389ed3cc228adc7fb34f114d775f10e7af4dd64796c1/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f62306235636632636266383434393130623166633935616633623064306239362e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/b0b5cf2cbf844910b1fc95af3b0d0b96.png" style="max-width: 100%;"></a></p>
+<p><strong>在早期的MySQL版本，DDL变更都会导致全表被锁，阻塞表上的DML操作，影响业务正常运行</strong>，好的一点就是，随着MySQL版本的迭代，DDL的执行方式也在变化。</p>
+<h3>MetaData元数据</h3>
+<p><strong>MySQL的元数据（MetaData）</strong> 跟其他的RDBMS数据库一样的，<strong>描述的对象的结构信息</strong>，存储在<code class="notranslate">information_schema</code>架构下，例如常见的<code class="notranslate">TABLES</code>、<code class="notranslate">COLUMNS</code>等，下面例子是创建一个表crm_users，MySQL会自动往Information_schema.tables和columns等相关数据字典表中插入数据，这些数据称为元数据，一般都是静态化，只有表上发生了DDL操作才会实时更新。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/8568985d4ddafffaaca8e6f446ffba33143aaa84dec3c904d663f7eea560560c/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f61353164383637626335363734353064613935303834376431613138633636382e706e67"><img src="https://camo.githubusercontent.com/8568985d4ddafffaaca8e6f446ffba33143aaa84dec3c904d663f7eea560560c/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f61353164383637626335363734353064613935303834376431613138633636382e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/a51d867bc567450da950847d1a18c668.png" style="max-width: 100%;"></a></p>
+<h3>MetaData Lock</h3>
+<p><strong>MySQL利用MetaData Lock来管理对象的访问</strong>，<strong>保证数据的一致性</strong>，<strong>对于一些核心业务表，表上DML操作比较频繁，这个时候添加字段可能会触发MetaData Lock。</strong></p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/0e91e9673181379f3e6a5957e88365a77010023f4f863e180fa10fa47284bcea/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f33336161366264623936663334326361393531396562363563663433333134612e706e67"><img src="https://camo.githubusercontent.com/0e91e9673181379f3e6a5957e88365a77010023f4f863e180fa10fa47284bcea/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f33336161366264623936663334326361393531396562363563663433333134612e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/33aa6bdb96f342ca9519eb65cf43314a.png" style="max-width: 100%;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/5f83f400955278504d5d3ae2de2016a847c5c757b3c11ceee6090baf80b4698a/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f63613939633363323133643634303635623333393265333462653333363837392e706e67"><img src="https://camo.githubusercontent.com/5f83f400955278504d5d3ae2de2016a847c5c757b3c11ceee6090baf80b4698a/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f63613939633363323133643634303635623333393265333462653333363837392e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/ca99c3c213d64065b3392e34be336879.png" style="max-width: 100%;"></a></p>
+<p>可以看到<code class="notranslate">Waiting for table metadata lock</code>等待事件，thread 155正在执行<code class="notranslate">alter table</code>等待thread 154执行的<code class="notranslate">select</code>释放锁，因为<strong>DML在执行期间会持有SHARED_READ锁</strong>，<strong>要执行DDL时获取SHARED_UPGRADABLE（共享可升级锁，缩写为SU，允许并发更新和读同一个表）锁成功，但是获取EXCLUSIVE MetaData Lock锁失败，处于暂挂PENDING状态。</strong></p>
+<h2>DDL执行方式</h2>
+<p>从MySQL官方文档可以看到，ALTER TABLE的选项很多，跟性能相关的选项主要有<code class="notranslate">ALGORITHM</code>和<code class="notranslate">LOCK</code>。<br>
+<a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/9178482cf0335c37a691faf1492b5e95db0e9612428395d23367e47d945affd3/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f32363438333761336664623234623362613465303463343531653339376135652e706e67"><img src="https://camo.githubusercontent.com/9178482cf0335c37a691faf1492b5e95db0e9612428395d23367e47d945affd3/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f32363438333761336664623234623362613465303463343531653339376135652e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/264837a3fdb24b3ba4e04c451e397a5e.png" style="max-width: 100%;"></a></p>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th>ALGORITHM OPTION</th>
+<th>DESCRIPTION</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>COPY</strong></td>
+<td><strong>MySQL早期的变更方式，需要创建修改后的临时表，然后按数据行拷贝原表数据到临时表，做rename重命名来完成创建，在此期间不允许并发DML操作，原表是可读的，不可写，同时需要额外一倍的磁盘空间。</strong></td>
+</tr>
+<tr>
+<td><strong>INPLACE</strong></td>
+<td><strong>直接在原表上进行修改，不需创建临时表拷贝数据及重命名，原表会持有Exclusive Metadata  Lock，通常是允许并发DML操作。</strong></td>
+</tr>
+<tr>
+<td><strong>INSTANT</strong></td>
+<td>MySQL 5.8开始支持，<strong>只修改数据字典中的元数据，表数据不受影响，执行期间没有Exclusive Metadata  Lock，允许并发的DML操作。</strong></td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<p>从这张表可以看到，MySQL对于DDL执行方式一直在做优化，目的就是为了<strong>提高DDL执行效率，减少锁等待，不影响表数据，同时不影响正常的DML操作。</strong></p>
+<h3>LOCK选项</h3>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th>LOCK OPTiON</th>
+<th>DESCRIPTION</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DEFAULT</td>
+<td>默认模式：MySQL根据运行情况，在尽量不锁表的情况下自动选择LOCK模式。</td>
+</tr>
+<tr>
+<td>NONE</td>
+<td>无锁：允许Online DDL期间进行并发读写操作，如果Online DDL操作不支持对表并发DML操作，则DDL操作失败，对表修改无效。</td>
+</tr>
+<tr>
+<td>SHARED</td>
+<td>共享锁：Online DDL操作期间不影响读取，阻塞写入。</td>
+</tr>
+<tr>
+<td>EXCLUSIVE</td>
+<td>排它锁：Online DDL操作期间不允许对锁表进行任何操作。</td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<h3>COPY</h3>
+<p>COPY方式的变更流程如下：</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/2f5728085f503397018cffa0e753fe497b353d33c5316f6e396d378df439d5f5/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f33353032356232636162366334383435386166346537613830336565663737372e706e67"><img src="https://camo.githubusercontent.com/2f5728085f503397018cffa0e753fe497b353d33c5316f6e396d378df439d5f5/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f33353032356232636162366334383435386166346537613830336565663737372e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/35025b2cab6c48458af4e7a803eef777.png" style="max-width: 100%;"></a></p>
+<p>根据业务需要，需要在crm_users添加一个字段user_type，采用COPY方式执行变更。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/9ef1666bb42eb10e0fc42238c90802f03a9fd779ec5a561cf898e9988ee9cdf6/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f39376237396239353864373034613363396237666532313565626461656138622e706e67"><img src="https://camo.githubusercontent.com/9ef1666bb42eb10e0fc42238c90802f03a9fd779ec5a561cf898e9988ee9cdf6/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f39376237396239353864373034613363396237666532313565626461656138622e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/97b79b958d704a3c9b7fe215ebdaea8b.png" style="max-width: 100%;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/76a7529ba38ad558db9b86fa4c223f06a10ad183734a9cd45c942e75272a15c6/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f66616535623465333761653934373362393137333339663335626639656264622e706e67"><img src="https://camo.githubusercontent.com/76a7529ba38ad558db9b86fa4c223f06a10ad183734a9cd45c942e75272a15c6/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f66616535623465333761653934373362393137333339663335626639656264622e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/fae5b4e37ae9473b917339f35bf9ebdb.png" style="max-width: 100%;"></a></p>
+<blockquote>
+<p><strong>从执行过程及profile可以看出，通过COPY方式会创建临是表#sql-564_85，获取System Lock，拷贝数据到临时表，最后做rename表名切换，释放Lock资源，在执行期间不支持并发DML操作。</strong></p>
+</blockquote>
+<h3>INPLACE</h3>
+<p>INPLACE方式是在原表上直接修改，对于添加索引、添加/删除列、修改字段NULL/NOT NULL属性等操作，需要修改MySQL内部的数据记录，需要重建表（Rebuild Table）。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/8412eb193262d7f869646adeffe40f23701e6a2664b6ae397fd9cb4f13c3fb76/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f32353536353331336266633934393735393962653961646331373633623762312e706e67"><img src="https://camo.githubusercontent.com/8412eb193262d7f869646adeffe40f23701e6a2664b6ae397fd9cb4f13c3fb76/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f32353536353331336266633934393735393962653961646331373633623762312e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/25565313bfc9497599be9adc1763b7b1.png" style="max-width: 100%;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/3626882fb36415880859893967ca68ecaa769530ae842a6b19e22d9f209725e0/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f39656131653637663439343934323030613536613162313532343233323033372e706e67"><img src="https://camo.githubusercontent.com/3626882fb36415880859893967ca68ecaa769530ae842a6b19e22d9f209725e0/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f39656131653637663439343934323030613536613162313532343233323033372e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/9ea1e67f49494200a56a1b1524232037.png" style="max-width: 100%;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/cb1fbc83b6e6f75efd7cc455269a3bca7a87b6e67aacd97e8e37e0be0c9713de/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f30653662326162636663326334356161616335636232653334643431626436392e706e67"><img src="https://camo.githubusercontent.com/cb1fbc83b6e6f75efd7cc455269a3bca7a87b6e67aacd97e8e37e0be0c9713de/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f30653662326162636663326334356161616335636232653334643431626436392e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/0e6b2abcfc2c45aaac5cb2e34d41bd69.png" style="max-width: 100%;"></a></p>
+<blockquote>
+<p><strong>从执行过程可以看到，需要获取Exclusive Metadata  Lock，修改表数据，释放Lock，在执行期间支持并发DML操作。</strong></p>
+</blockquote>
+<h3>INSTANT</h3>
+<p>MySQL 5.8开始推出的方式，<strong>DDL只修改数据字典中的元数据，表数据不受影响</strong>，<strong>没有Exclusive Metadata  Lock，允许并发的DML操作</strong>，支持的DDL变更是有限制的，目前主要包括添加字段，添加/删除生成列，修改ENUM或SET列，改变索引类型以及重命名表。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/feb2abeae3cfacf5876b9deae82230a71d4e36ff8ca6c1e76505a7184854991d/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f37653231326437396439663134626433393931656565666661333731616139652e706e67"><img src="https://camo.githubusercontent.com/feb2abeae3cfacf5876b9deae82230a71d4e36ff8ca6c1e76505a7184854991d/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f37653231326437396439663134626433393931656565666661333731616139652e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/7e212d79d9f14bd3991eeeffa371aa9e.png" style="max-width: 100%;"></a></p>
+<h3>比对下这三种方式的执行效率</h3>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th>执行方式/项目</th>
+<th>数据量(w)</th>
+<th>执行时间(s)</th>
+<th>重建表</th>
+<th>修改MetaData</th>
+<th>修改Data</th>
+<th>允许并发DML</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>COPY</td>
+<td>650</td>
+<td>29.89</td>
+<td>YES</td>
+<td>No</td>
+<td>Yes</td>
+<td>No</td>
+</tr>
+<tr>
+<td>INPLACE</td>
+<td>650</td>
+<td>10.56</td>
+<td>No</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>INSTANT</td>
+<td>650</td>
+<td>0.19</td>
+<td>No</td>
+<td>Yes</td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<h3>ONLINE DDL</h3>
+<p>截止MySQL 8.0，<strong>OnLine DDL有三种方式COPY，INPLACE，INSTANT</strong>，MySQL会自动根据执行的DDL选择使用哪种方式，一般会<strong>优先选择INSTANT方式，如果不支持，就选择INPLANCE方式，再不支持就只能选择COPY方式了。</strong></p>
+<h2>大表DDL方案</h2>
+<p>在实际业务系统中，业务发展比较快，表的数据量比较大，业务层面又做了读写分离，同时会将MySQL数据实时同步到数据仓库（包括实时数仓和离线数仓），实际的数据库架构如下。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/dcf69c2c931973f6093d30c7da036dea2efafe65598295332386583e65e3e325/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f31613061623261376131356534313466616631306161366137396261653763622e706e67"><img src="https://camo.githubusercontent.com/dcf69c2c931973f6093d30c7da036dea2efafe65598295332386583e65e3e325/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f31613061623261376131356534313466616631306161366137396261653763622e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/1a0ab2a7a15e414faf10aa6a79bae7cb.png" style="max-width: 100%;"></a></p>
+<blockquote>
+<p><strong>假设这是一个交易系统数据库，订单表booking有8000w数据，且接入到了实时和离线仓库，根据业务需要，在订单表booking添加一个字段，在MySQL 5.7之前添加字段属于高危操作，需要充分考虑对业务的影响，主要存在于两个方面：</strong></p>
+</blockquote>
+<ul>
+<li>在读写分离场景，主从同步延迟导致业务数据不一致</li>
+<li>实时数仓ADB不允许源端MySQL表重命名，如果通过COPY方式或者pt-osc、gh-ost等工具都会rename表名，那么就需要从数仓删除该表，重新配置同步（全量 + 增量），会影响数仓业务</li>
+</ul>
+<h3>一、ONLINE DDL方式</h3>
+<p>对于MySQL 5.6到5.7的版本，可以使用OnLine DDL的方式变更，对于大表来说，执行时间会很长，<strong>好处是在Master上DML操作不受影响，但是会导致主从延时。</strong></p>
+<p><strong>假如Master上添加字段执行了20分钟，相应的Slave也要执行20分钟，在这期间Slave一直处于延迟状态，会造成业务数据不一致</strong>，比如用户在Master下单成功，由于Slave延迟查询不到订单信息，用户误以为网络原因没有下单成功，又下了一单，导致重复下单的情况。</p>
+<p>这种方式会导致<strong>主从延迟，但是不会影响实时数仓的业务，根据业务情况，只能选择在业务低峰期执行了。</strong></p>
+<h3>二、pt-osc工具</h3>
+<p>为了解决DDL变更导致主从延时对业务的影响，会想到用大表变更利器pt-osc（pt-online-schema-change）或者gh-ost工具来做，这两个工具执行过程及原理大同小异，变更流程如下（不考虑外键，按照MySQL规范不允许使用外键）：</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/13fb44301b618950d4e1aa87ea8172142069d378296b1c66c0298059fb436952/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f34663338656337386634343734343832623631623830633738353935306433322e706e67"><img src="https://camo.githubusercontent.com/13fb44301b618950d4e1aa87ea8172142069d378296b1c66c0298059fb436952/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f34663338656337386634343734343832623631623830633738353935306433322e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/4f38ec78f4474482b61b80c785950d32.png" style="max-width: 100%;"></a></p>
+<ol>
+<li>
+<p>创建一个新的表，表结构为修改后的数据表，用于从源数据表向新表中导入数据。</p>
+</li>
+<li>
+<p>在源表上创建触发器，用于记录从拷贝数据开始之后，对源数据表继续进行数据修改的操作记录下来，用于数据拷贝结束后，执行这些操作，保证数据不会丢失。</p>
+</li>
+<li>
+<p>拷贝数据，从源数据表中拷贝数据到新表中。</p>
+</li>
+<li>
+<p>修改外键相关的子表，根据修改后的数据，修改外键关联的子表。</p>
+</li>
+<li>
+<p>rename源数据表为old表，把新表rename为源表名，并将old表删除。</p>
+</li>
+<li>
+<p>删除触发器。</p>
+</li>
+</ol>
+<p>执行<code class="notranslate">pt-osc</code>的时候也需要获取一个<code class="notranslate">Exclusive Metadata  Lock</code>，<strong>如果在此期间表上有DML操作正在进行，pt-osc操作会一直处于暂挂PENDING状态，这个时候表上正常DML操作都会被阻塞</strong>，MySQL活动连接数瞬间暴涨，CPU使用率100%，依赖的该表的接口都会报错，所以要选择在业务<strong>低峰期执行</strong>，同时做好MetaData Lock锁的监控以便业务不受影响.</p>
+<h3>三、	MySQL 8.0变更方式</h3>
+<p>令人激动的是，MySQL 8.0也推出了INSTANT方式，**真正的只修改<code class="notranslate">MetaData</code>，不影响表数据，所以它的执行效率跟表大小几乎没有关系。**建议新系统上线用MySQL的话尽量使用MySQL 8.0，老的数据库也可以升级到MySQL 8.0获取更好的性能。</p>
+<blockquote>
+<p><strong>既要解决主从同步，又要解决rename数仓不同步的问题，目前只有INSTANT方式满足需求了。</strong></p>
+</blockquote>
+<h2>监控DDL执行进度</h2>
+<p>在大表执行DDL变更的时候，非常关心它的执行进度，MySQL 5.7之前是没有好的工具去监控，基本只能坐等了。在MySQL 8.0可以通过开启<code class="notranslate">performance_schema</code>，打开<code class="notranslate">events_stages_current</code>事件进行监控。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/f7e37d5cb4b165feec066fa53c13d38a1be3446f32331570251d03bb64140715/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f34396539653362336537633334623330383265306338393535626637333366302e706e67"><img src="https://camo.githubusercontent.com/f7e37d5cb4b165feec066fa53c13d38a1be3446f32331570251d03bb64140715/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f34396539653362336537633334623330383265306338393535626637333366302e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/49e9e3b3e7c34b3082e0c8955bf733f0.png" style="max-width: 100%;"></a></p>
+<h2>总结</h2>
+<p>DDL在业务系统版本迭代的过程是必不可少的，如何在不影响业务以及外围系统的情况下，实现DDL的平滑变更，是需要综合个系统特性考虑的，评估出重要性和优先级，同时也要掌握不同MySQL版本DDL执行方式，以便我们做更好的选择。</p>
+<p><strong>例如上面提到了，目前在大数据团队，我们的业务都做了读写分离，同时接入实时数仓，数仓不支持rename操作，这时就可以选择在业务低峰期使用<code class="notranslate">ONLINE DDL</code>的方式执行，对业务系统影响最小，同时不影响数仓。</strong></p></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+
+</div>
+    <div id="footer"><div id="footer1">Copyright © <span id="copyrightYear"></span> <a href="https://shuaiwang888.github.io/appStore-Blog.github.io">Blog Title</a></div>
+<div id="footer2">
+    <span id="runday"></span><span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>
+</div>
+
+<script>
+var now=new Date();
+document.getElementById("copyrightYear").innerHTML=now.getFullYear();
+
+if(""!=""){
+    var startSite=new Date("");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";
+}
+</script></div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","shuaiwang888/appStore-Blog.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+
+
+
+</script>
+
+
+</html>
