@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark" data-light-theme="light" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
+    
+    <link rel="icon" href="https://github.githubassets.com/favicons/favicon.svg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="<!-- TOC -->
+
+- [数据库命令规范](#数据库命令规范)
+- [数据库基本设计规范](#数据库基本设计规范)
+    - [1. 所有表必须使用 Innodb 存储引擎](#1-所有表必须使用-innodb-存储引擎)
+    - [2. 数据库和表的字符集统一使用 UTF8](#2-数据库和表的字符集统一使用-utf8)
+    - [3. 所有表和字段都需要添加注释](#3-所有表和字段都需要添加注释)
+    - [4. 尽量控制单表数据量的大小,建议控制在 500 万以内。">
+<meta property="og:title" content="MySQL优化规范">
+<meta property="og:description" content="<!-- TOC -->
+
+- [数据库命令规范](#数据库命令规范)
+- [数据库基本设计规范](#数据库基本设计规范)
+    - [1. 所有表必须使用 Innodb 存储引擎](#1-所有表必须使用-innodb-存储引擎)
+    - [2. 数据库和表的字符集统一使用 UTF8](#2-数据库和表的字符集统一使用-utf8)
+    - [3. 所有表和字段都需要添加注释](#3-所有表和字段都需要添加注释)
+    - [4. 尽量控制单表数据量的大小,建议控制在 500 万以内。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://shuaiwang888.github.io/appStore-Blog.github.io/post/MySQL-you-hua-gui-fan.html">
+<meta property="og:image" content="https://github.githubassets.com/favicons/favicon.svg">
+<title>MySQL优化规范</title>
+
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+.copy-feedback {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    color: var(--color-fg-on-emphasis);
+    background-color: var(--color-fg-muted);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
+</style>
+
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">MySQL优化规范</h1>
+<div class="title-right">
+    <a href="https://shuaiwang888.github.io/appStore-Blog.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/shuaiwang888/appStore-Blog.github.io/issues/9" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody">
+<ul>
+<li><a href="#%E6%95%B0%E6%8D%AE%E5%BA%93%E5%91%BD%E4%BB%A4%E8%A7%84%E8%8C%83">数据库命令规范</a></li>
+<li><a href="#%E6%95%B0%E6%8D%AE%E5%BA%93%E5%9F%BA%E6%9C%AC%E8%AE%BE%E8%AE%A1%E8%A7%84%E8%8C%83">数据库基本设计规范</a>
+<ul>
+<li><a href="#1-%E6%89%80%E6%9C%89%E8%A1%A8%E5%BF%85%E9%A1%BB%E4%BD%BF%E7%94%A8-innodb-%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E">1. 所有表必须使用 Innodb 存储引擎</a></li>
+<li><a href="#2-%E6%95%B0%E6%8D%AE%E5%BA%93%E5%92%8C%E8%A1%A8%E7%9A%84%E5%AD%97%E7%AC%A6%E9%9B%86%E7%BB%9F%E4%B8%80%E4%BD%BF%E7%94%A8-utf8">2. 数据库和表的字符集统一使用 UTF8</a></li>
+<li><a href="#3-%E6%89%80%E6%9C%89%E8%A1%A8%E5%92%8C%E5%AD%97%E6%AE%B5%E9%83%BD%E9%9C%80%E8%A6%81%E6%B7%BB%E5%8A%A0%E6%B3%A8%E9%87%8A">3. 所有表和字段都需要添加注释</a></li>
+<li><a href="#4-%E5%B0%BD%E9%87%8F%E6%8E%A7%E5%88%B6%E5%8D%95%E8%A1%A8%E6%95%B0%E6%8D%AE%E9%87%8F%E7%9A%84%E5%A4%A7%E5%B0%8F%E5%BB%BA%E8%AE%AE%E6%8E%A7%E5%88%B6%E5%9C%A8-500-%E4%B8%87%E4%BB%A5%E5%86%85">4. 尽量控制单表数据量的大小,建议控制在 500 万以内。</a></li>
+<li><a href="#5-%E8%B0%A8%E6%85%8E%E4%BD%BF%E7%94%A8-mysql-%E5%88%86%E5%8C%BA%E8%A1%A8">5. 谨慎使用 MySQL 分区表</a></li>
+<li><a href="#6%E5%B0%BD%E9%87%8F%E5%81%9A%E5%88%B0%E5%86%B7%E7%83%AD%E6%95%B0%E6%8D%AE%E5%88%86%E7%A6%BB%E5%87%8F%E5%B0%8F%E8%A1%A8%E7%9A%84%E5%AE%BD%E5%BA%A6">6.尽量做到冷热数据分离,减小表的宽度</a></li>
+<li><a href="#7-%E7%A6%81%E6%AD%A2%E5%9C%A8%E8%A1%A8%E4%B8%AD%E5%BB%BA%E7%AB%8B%E9%A2%84%E7%95%99%E5%AD%97%E6%AE%B5">7. 禁止在表中建立预留字段</a></li>
+<li><a href="#8-%E7%A6%81%E6%AD%A2%E5%9C%A8%E6%95%B0%E6%8D%AE%E5%BA%93%E4%B8%AD%E5%AD%98%E5%82%A8%E5%9B%BE%E7%89%87%E6%96%87%E4%BB%B6%E7%AD%89%E5%A4%A7%E7%9A%84%E4%BA%8C%E8%BF%9B%E5%88%B6%E6%95%B0%E6%8D%AE">8. 禁止在数据库中存储图片,文件等大的二进制数据</a></li>
+<li><a href="#9-%E7%A6%81%E6%AD%A2%E5%9C%A8%E7%BA%BF%E4%B8%8A%E5%81%9A%E6%95%B0%E6%8D%AE%E5%BA%93%E5%8E%8B%E5%8A%9B%E6%B5%8B%E8%AF%95">9. 禁止在线上做数据库压力测试</a></li>
+<li><a href="#10-%E7%A6%81%E6%AD%A2%E4%BB%8E%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E6%B5%8B%E8%AF%95%E7%8E%AF%E5%A2%83%E7%9B%B4%E6%8E%A5%E8%BF%9E%E6%8E%A5%E7%94%9F%E6%88%90%E7%8E%AF%E5%A2%83%E6%95%B0%E6%8D%AE%E5%BA%93">10. 禁止从开发环境,测试环境直接连接生成环境数据库</a></li>
+</ul>
+</li>
+<li><a href="#%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AD%97%E6%AE%B5%E8%AE%BE%E8%AE%A1%E8%A7%84%E8%8C%83">数据库字段设计规范</a>
+<ul>
+<li><a href="#1-%E4%BC%98%E5%85%88%E9%80%89%E6%8B%A9%E7%AC%A6%E5%90%88%E5%AD%98%E5%82%A8%E9%9C%80%E8%A6%81%E7%9A%84%E6%9C%80%E5%B0%8F%E7%9A%84%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B">1. 优先选择符合存储需要的最小的数据类型</a></li>
+<li><a href="#2-%E9%81%BF%E5%85%8D%E4%BD%BF%E7%94%A8-textblob-%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%E6%9C%80%E5%B8%B8%E8%A7%81%E7%9A%84-text-%E7%B1%BB%E5%9E%8B%E5%8F%AF%E4%BB%A5%E5%AD%98%E5%82%A8-64k-%E7%9A%84%E6%95%B0%E6%8D%AE">2. 避免使用 TEXT,BLOB 数据类型，最常见的 TEXT 类型可以存储 64k 的数据</a></li>
+<li><a href="#3-%E9%81%BF%E5%85%8D%E4%BD%BF%E7%94%A8-enum-%E7%B1%BB%E5%9E%8B">3. 避免使用 ENUM 类型</a></li>
+<li><a href="#4-%E5%B0%BD%E5%8F%AF%E8%83%BD%E6%8A%8A%E6%89%80%E6%9C%89%E5%88%97%E5%AE%9A%E4%B9%89%E4%B8%BA-not-null">4. 尽可能把所有列定义为 NOT NULL</a></li>
+<li><a href="#5-%E4%BD%BF%E7%94%A8-timestamp4-%E4%B8%AA%E5%AD%97%E8%8A%82-%E6%88%96-datetime-%E7%B1%BB%E5%9E%8B-8-%E4%B8%AA%E5%AD%97%E8%8A%82-%E5%AD%98%E5%82%A8%E6%97%B6%E9%97%B4">5. 使用 TIMESTAMP(4 个字节) 或 DATETIME 类型 (8 个字节) 存储时间</a></li>
+<li><a href="#6-%E5%90%8C%E8%B4%A2%E5%8A%A1%E7%9B%B8%E5%85%B3%E7%9A%84%E9%87%91%E9%A2%9D%E7%B1%BB%E6%95%B0%E6%8D%AE%E5%BF%85%E9%A1%BB%E4%BD%BF%E7%94%A8-decimal-%E7%B1%BB%E5%9E%8B">6. 同财务相关的金额类数据必须使用 decimal 类型</a></li>
+</ul>
+</li>
+<li><a href="#%E7%B4%A2%E5%BC%95%E8%AE%BE%E8%AE%A1%E8%A7%84%E8%8C%83">索引设计规范</a>
+<ul>
+<li><a href="#1-%E9%99%90%E5%88%B6%E6%AF%8F%E5%BC%A0%E8%A1%A8%E4%B8%8A%E7%9A%84%E7%B4%A2%E5%BC%95%E6%95%B0%E9%87%8F%E5%BB%BA%E8%AE%AE%E5%8D%95%E5%BC%A0%E8%A1%A8%E7%B4%A2%E5%BC%95%E4%B8%8D%E8%B6%85%E8%BF%87-5-%E4%B8%AA">1. 限制每张表上的索引数量,建议单张表索引不超过 5 个</a></li>
+<li><a href="#2-%E7%A6%81%E6%AD%A2%E7%BB%99%E8%A1%A8%E4%B8%AD%E7%9A%84%E6%AF%8F%E4%B8%80%E5%88%97%E9%83%BD%E5%BB%BA%E7%AB%8B%E5%8D%95%E7%8B%AC%E7%9A%84%E7%B4%A2%E5%BC%95">2. 禁止给表中的每一列都建立单独的索引</a></li>
+<li><a href="#3-%E6%AF%8F%E4%B8%AA-innodb-%E8%A1%A8%E5%BF%85%E9%A1%BB%E6%9C%89%E4%B8%AA%E4%B8%BB%E9%94%AE">3. 每个 Innodb 表必须有个主键</a></li>
+<li><a href="#4-%E5%B8%B8%E8%A7%81%E7%B4%A2%E5%BC%95%E5%88%97%E5%BB%BA%E8%AE%AE">4. 常见索引列建议</a></li>
+<li><a href="#5%E5%A6%82%E4%BD%95%E9%80%89%E6%8B%A9%E7%B4%A2%E5%BC%95%E5%88%97%E7%9A%84%E9%A1%BA%E5%BA%8F">5.如何选择索引列的顺序</a></li>
+<li><a href="#6-%E9%81%BF%E5%85%8D%E5%BB%BA%E7%AB%8B%E5%86%97%E4%BD%99%E7%B4%A2%E5%BC%95%E5%92%8C%E9%87%8D%E5%A4%8D%E7%B4%A2%E5%BC%95%E5%A2%9E%E5%8A%A0%E4%BA%86%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E5%99%A8%E7%94%9F%E6%88%90%E6%89%A7%E8%A1%8C%E8%AE%A1%E5%88%92%E7%9A%84%E6%97%B6%E9%97%B4">6. 避免建立冗余索引和重复索引（增加了查询优化器生成执行计划的时间）</a></li>
+<li><a href="#7-%E5%AF%B9%E4%BA%8E%E9%A2%91%E7%B9%81%E7%9A%84%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%85%88%E8%80%83%E8%99%91%E4%BD%BF%E7%94%A8%E8%A6%86%E7%9B%96%E7%B4%A2%E5%BC%95">7. 对于频繁的查询优先考虑使用覆盖索引</a></li>
+<li><a href="#8%E7%B4%A2%E5%BC%95-set-%E8%A7%84%E8%8C%83">8.索引 SET 规范</a></li>
+</ul>
+</li>
+<li><a href="#%E6%95%B0%E6%8D%AE%E5%BA%93-sql-%E5%BC%80%E5%8F%91%E8%A7%84%E8%8C%83">数据库 SQL 开发规范</a>
+<ul>
+<li><a href="#1-%E5%BB%BA%E8%AE%AE%E4%BD%BF%E7%94%A8%E9%A2%84%E7%BC%96%E8%AF%91%E8%AF%AD%E5%8F%A5%E8%BF%9B%E8%A1%8C%E6%95%B0%E6%8D%AE%E5%BA%93%E6%93%8D%E4%BD%9C">1. 建议使用预编译语句进行数据库操作</a></li>
+<li><a href="#2-%E9%81%BF%E5%85%8D%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%E7%9A%84%E9%9A%90%E5%BC%8F%E8%BD%AC%E6%8D%A2">2. 避免数据类型的隐式转换</a></li>
+<li><a href="#3-%E5%85%85%E5%88%86%E5%88%A9%E7%94%A8%E8%A1%A8%E4%B8%8A%E5%B7%B2%E7%BB%8F%E5%AD%98%E5%9C%A8%E7%9A%84%E7%B4%A2%E5%BC%95">3. 充分利用表上已经存在的索引</a></li>
+<li><a href="#4-%E6%95%B0%E6%8D%AE%E5%BA%93%E8%AE%BE%E8%AE%A1%E6%97%B6%E5%BA%94%E8%AF%A5%E8%A6%81%E5%AF%B9%E4%BB%A5%E5%90%8E%E6%89%A9%E5%B1%95%E8%BF%9B%E8%A1%8C%E8%80%83%E8%99%91">4. 数据库设计时，应该要对以后扩展进行考虑</a></li>
+<li><a href="#5-%E7%A8%8B%E5%BA%8F%E8%BF%9E%E6%8E%A5%E4%B8%8D%E5%90%8C%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BD%BF%E7%94%A8%E4%B8%8D%E5%90%8C%E7%9A%84%E8%B4%A6%E5%8F%B7%E7%A6%81%E6%AD%A2%E8%B7%A8%E5%BA%93%E6%9F%A5%E8%AF%A2">5. 程序连接不同的数据库使用不同的账号，禁止跨库查询</a></li>
+<li><a href="#6-%E7%A6%81%E6%AD%A2%E4%BD%BF%E7%94%A8-select--%E5%BF%85%E9%A1%BB%E4%BD%BF%E7%94%A8-select-%E5%AD%97%E6%AE%B5%E5%88%97%E8%A1%A8-%E6%9F%A5%E8%AF%A2">6. 禁止使用 SELECT * 必须使用 SELECT &lt;字段列表&gt; 查询</a></li>
+<li><a href="#7-%E7%A6%81%E6%AD%A2%E4%BD%BF%E7%94%A8%E4%B8%8D%E5%90%AB%E5%AD%97%E6%AE%B5%E5%88%97%E8%A1%A8%E7%9A%84-insert-%E8%AF%AD%E5%8F%A5">7. 禁止使用不含字段列表的 INSERT 语句</a></li>
+<li><a href="#8-%E9%81%BF%E5%85%8D%E4%BD%BF%E7%94%A8%E5%AD%90%E6%9F%A5%E8%AF%A2%E5%8F%AF%E4%BB%A5%E6%8A%8A%E5%AD%90%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E4%B8%BA-join-%E6%93%8D%E4%BD%9C">8. 避免使用子查询，可以把子查询优化为 join 操作</a></li>
+<li><a href="#9-%E9%81%BF%E5%85%8D%E4%BD%BF%E7%94%A8-join-%E5%85%B3%E8%81%94%E5%A4%AA%E5%A4%9A%E7%9A%84%E8%A1%A8">9. 避免使用 JOIN 关联太多的表</a></li>
+<li><a href="#10-%E5%87%8F%E5%B0%91%E5%90%8C%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9A%84%E4%BA%A4%E4%BA%92%E6%AC%A1%E6%95%B0">10. 减少同数据库的交互次数</a></li>
+<li><a href="#11-%E5%AF%B9%E5%BA%94%E5%90%8C%E4%B8%80%E5%88%97%E8%BF%9B%E8%A1%8C-or-%E5%88%A4%E6%96%AD%E6%97%B6%E4%BD%BF%E7%94%A8-in-%E4%BB%A3%E6%9B%BF-or">11. 对应同一列进行 or 判断时，使用 in 代替 or</a></li>
+<li><a href="#12-%E7%A6%81%E6%AD%A2%E4%BD%BF%E7%94%A8-order-by-rand-%E8%BF%9B%E8%A1%8C%E9%9A%8F%E6%9C%BA%E6%8E%92%E5%BA%8F">12. 禁止使用 order by rand() 进行随机排序</a></li>
+<li><a href="#13-where-%E4%BB%8E%E5%8F%A5%E4%B8%AD%E7%A6%81%E6%AD%A2%E5%AF%B9%E5%88%97%E8%BF%9B%E8%A1%8C%E5%87%BD%E6%95%B0%E8%BD%AC%E6%8D%A2%E5%92%8C%E8%AE%A1%E7%AE%97">13. WHERE 从句中禁止对列进行函数转换和计算</a></li>
+<li><a href="#14-%E5%9C%A8%E6%98%8E%E6%98%BE%E4%B8%8D%E4%BC%9A%E6%9C%89%E9%87%8D%E5%A4%8D%E5%80%BC%E6%97%B6%E4%BD%BF%E7%94%A8-union-all-%E8%80%8C%E4%B8%8D%E6%98%AF-union">14. 在明显不会有重复值时使用 UNION ALL 而不是 UNION</a></li>
+<li><a href="#15-%E6%8B%86%E5%88%86%E5%A4%8D%E6%9D%82%E7%9A%84%E5%A4%A7-sql-%E4%B8%BA%E5%A4%9A%E4%B8%AA%E5%B0%8F-sql">15. 拆分复杂的大 SQL 为多个小 SQL</a></li>
+</ul>
+</li>
+<li><a href="#%E6%95%B0%E6%8D%AE%E5%BA%93%E6%93%8D%E4%BD%9C%E8%A1%8C%E4%B8%BA%E8%A7%84%E8%8C%83">数据库操作行为规范</a>
+<ul>
+<li><a href="#1-%E8%B6%85-100-%E4%B8%87%E8%A1%8C%E7%9A%84%E6%89%B9%E9%87%8F%E5%86%99-updatedeleteinsert-%E6%93%8D%E4%BD%9C%E8%A6%81%E5%88%86%E6%89%B9%E5%A4%9A%E6%AC%A1%E8%BF%9B%E8%A1%8C%E6%93%8D%E4%BD%9C">1. 超 100 万行的批量写 (UPDATE,DELETE,INSERT) 操作,要分批多次进行操作</a></li>
+<li><a href="#2-%E5%AF%B9%E4%BA%8E%E5%A4%A7%E8%A1%A8%E4%BD%BF%E7%94%A8-pt-online-schema-change-%E4%BF%AE%E6%94%B9%E8%A1%A8%E7%BB%93%E6%9E%84">2. 对于大表使用 pt-online-schema-change 修改表结构</a></li>
+<li><a href="#3-%E7%A6%81%E6%AD%A2%E4%B8%BA%E7%A8%8B%E5%BA%8F%E4%BD%BF%E7%94%A8%E7%9A%84%E8%B4%A6%E5%8F%B7%E8%B5%8B%E4%BA%88-super-%E6%9D%83%E9%99%90">3. 禁止为程序使用的账号赋予 super 权限</a></li>
+<li><a href="#4-%E5%AF%B9%E4%BA%8E%E7%A8%8B%E5%BA%8F%E8%BF%9E%E6%8E%A5%E6%95%B0%E6%8D%AE%E5%BA%93%E8%B4%A6%E5%8F%B7%E9%81%B5%E5%BE%AA%E6%9D%83%E9%99%90%E6%9C%80%E5%B0%8F%E5%8E%9F%E5%88%99">4. 对于程序连接数据库账号,遵循权限最小原则</a></li>
+</ul>
+</li>
+</ul>
+
+<h2><strong>数据库命令规范</strong></h2>
+<ul>
+<li>所有数据库对象名称必须使用小写字母并用下划线分割</li>
+<li>所有数据库对象名称禁止使用 MySQL 保留关键字（如果表名中包含关键字查询时，需要将其用单引号括起来）</li>
+<li>数据库对象的命名要能做到见名识意，并且最后不要超过 32 个字符</li>
+<li>临时库表必须以 tmp_为前缀并以日期为后缀，备份表必须以 bak_为前缀并以日期 (时间戳) 为后缀</li>
+<li>所有存储相同数据的列名和列类型必须一致（一般作为关联列，如果查询时关联列类型不一致会自动进行数据类型隐式转换，会造成列上的索引失效，导致查询效率降低）</li>
+</ul>
+<hr>
+<h2><strong>数据库基本设计规范</strong></h2>
+<h3><strong>1. 所有表必须使用 Innodb 存储引擎</strong></h3>
+<p>没有特殊要求（即 Innodb 无法满足的功能如：列存储，存储空间数据等）的情况下，所有表必须使用 <code class="notranslate">Innodb 存储引擎</code>（MySQL5.5 之前默认使用 Myisam，5.6 以后默认的为 Innodb）。</p>
+<p><strong>Innodb 支持事务，支持行级锁，更好的恢复性，高并发下性能更好。</strong></p>
+<h3><strong>2. 数据库和表的字符集统一使用 UTF8</strong></h3>
+<p>兼容性更好，统一字符集可以避免由于字符集转换产生的乱码，<strong>不同的字符集进行比较前需要进行转换会造成索引失效，</strong> 如果数据库中有存储 emoji 表情的需要，字符集需要采用 <code class="notranslate">utf8mb4</code> 字符集。</p>
+<h3><strong>3. 所有表和字段都需要添加注释</strong></h3>
+<p>使用 <code class="notranslate">comment</code> 从句添加表和列的备注，从一开始就进行数据字典的维护</p>
+<h3><strong>4. 尽量控制单表数据量的大小,建议控制在 500 万以内。</strong></h3>
+<p>500 万并不是 MySQL 数据库的限制，过大会造成修改表结构，备份，恢复都会有很大的问题。</p>
+<p>可以用 <code class="notranslate">历史数据归档（应用于日志数据），</code> <code class="notranslate">分库分表（应用于业务数据）</code> 等手段来控制数据量大小</p>
+<h3><strong>5. 谨慎使用 MySQL 分区表</strong></h3>
+<p>分区表在物理上表现为多个文件，在逻辑上表现为一个表；</p>
+<p>谨慎选择分区键，跨分区查询效率可能更低；</p>
+<p>建议采用 <code class="notranslate">物理分表</code> 的方式管理大数据。</p>
+<h3><strong>6.尽量做到冷热数据分离,减小表的宽度</strong></h3>
+<blockquote>
+<p>MySQL 限制每个表最多存储 4096 列，并且每一行数据的大小不能超过 65535 字节。</p>
+</blockquote>
+<p>减少磁盘 IO,保证热数据的内存缓存命中率（表越宽，把表装载进内存缓冲池时所占用的内存也就越大,也会消耗更多的 IO）；</p>
+<p>更有效的利用缓存，避免读入无用的冷数据；</p>
+<p>经常一起使用的列放到一个表中（避免更多的关联操作）。</p>
+<h3><strong>7. 禁止在表中建立预留字段</strong></h3>
+<p>预留字段的命名很难做到见名识义。</p>
+<p>预留字段无法确认存储的数据类型，所以无法选择合适的类型。</p>
+<p>对预留字段类型的修改，会对表进行锁定。</p>
+<h3><strong>8. 禁止在数据库中存储图片,文件等大的二进制数据</strong></h3>
+<p>通常文件很大，会短时间内造成数据量快速增长，数据库进行数据库读取时，通常会进行大量的随机 IO 操作，文件很大时，IO 操作很耗时。</p>
+<p><strong>通常存储于文件服务器，数据库只存储文件地址信息</strong></p>
+<h3><strong>9. 禁止在线上做数据库压力测试</strong></h3>
+<h3><strong>10. 禁止从开发环境,测试环境直接连接生产环境数据库</strong></h3>
+<hr>
+<h2><strong>数据库字段设计规范</strong></h2>
+<h3><strong>1. 优先选择符合存储需要的最小的数据类型</strong></h3>
+<p><strong>原因：</strong></p>
+<p>列的字段越大，建立索引时所需要的空间也就越大，这样一页中所能存储的索引节点的数量也就越少也越少，在遍历时所需要的 IO 次数也就越多，索引的性能也就越差。</p>
+<p><strong>方法：</strong></p>
+<p><strong>a.将字符串转换成数字类型存储,如:将 IP 地址转换成整形数据</strong></p>
+<p>MySQL 提供了两个方法来处理 ip 地址</p>
+<ul>
+<li>inet_aton 把 ip 转为无符号整型 (4-8 位)</li>
+<li>inet_ntoa 把整型的 ip 转为地址</li>
+</ul>
+<p>插入数据前，先用 inet_aton 把 ip 地址转为整型，可以节省空间，显示数据时，使用 inet_ntoa 把整型的 ip 地址转为地址显示即可。</p>
+<p>**b.对于非负型的数据 (如自增 ID,整型 IP) 来说,要优先使用无符号整型来存储，因为无符号相对于有符号可以多出一倍的存储空间</p>
+<pre class="notranslate"><code class="notranslate">SIGNED INT -2147483648~2147483647
+UNSIGNED INT 0~4294967295
+</code></pre>
+<p>VARCHAR(N) 中的 N 代表的是字符数，而不是字节数，使用 UTF8 存储 255 个汉字 Varchar(255)=765 个字节。<strong>过大的长度会消耗更多的内存。</strong></p>
+<h3><strong>2. 避免使用 TEXT,BLOB 数据类型，最常见的 TEXT 类型可以存储 64k 的数据</strong></h3>
+<p><strong>a. 建议把 BLOB 或是 TEXT 列分离到单独的扩展表中</strong></p>
+<p>MySQL 内存临时表不支持 TEXT、BLOB 这样的大数据类型，如果查询中包含这样的数据，在排序等操作时，就不能使用内存临时表，必须使用磁盘临时表进行。而且对于这种数据，MySQL 还是要进行二次查询，会使 sql 性能变得很差，但是不是说一定不能使用这样的数据类型。</p>
+<p>如果一定要使用，建议把 BLOB 或是 TEXT 列分离到单独的扩展表中，查询时一定不要使用 select * 而只需要取出必要的列，不需要 TEXT 列的数据时不要对该列进行查询。</p>
+<p><strong>2、TEXT 或 BLOB 类型只能使用前缀索引</strong></p>
+<p>因为<a href="https://mp.weixin.qq.com/s?__biz=MzI4Njc5NjM1NQ==&amp;mid=2247487885&amp;idx=1&amp;sn=65b1bf5f7d4505502620179669a9c2df&amp;chksm=ebd62ea1dca1a7b7bf884bcd9d538d78ba064ee03c09436ca8e57873b1d98a55afd6d7884cfc&amp;scene=21#wechat_redirect" rel="nofollow">MySQL</a> 对索引字段长度是有限制的，所以 TEXT 类型只能使用前缀索引，并且 TEXT 列上是不能有默认值的</p>
+<h3><strong>3. 避免使用 ENUM 类型</strong></h3>
+<p>修改 ENUM 值需要使用 ALTER 语句</p>
+<p>ENUM 类型的 ORDER BY 操作效率低，需要额外操作</p>
+<p>禁止使用数值作为 ENUM 的枚举值</p>
+<h3><strong>4. 尽可能把所有列定义为 NOT NULL</strong></h3>
+<p><strong>原因：</strong></p>
+<p>索引 NULL 列需要额外的空间来保存，所以要占用更多的空间</p>
+<p>进行比较和计算时要对 NULL 值做特别的处理</p>
+<h3><strong>5. 使用 TIMESTAMP(4 个字节) 或 DATETIME 类型 (8 个字节) 存储时间</strong></h3>
+<p>TIMESTAMP 存储的时间范围 1970-01-01 00:00:01 ~ 2038-01-19-03:14:07</p>
+<p>TIMESTAMP 占用 4 字节和 INT 相同，但比 INT 可读性高</p>
+<p>超出 TIMESTAMP 取值范围的使用 DATETIME 类型存储</p>
+<p><strong>经常会有人用字符串存储日期型的数据（不正确的做法）</strong></p>
+<ul>
+<li>缺点 1：无法用日期函数进行计算和比较</li>
+<li>缺点 2：用字符串存储日期要占用更多的空间</li>
+</ul>
+<h3><strong>6. 同财务相关的金额类数据必须使用 decimal 类型</strong></h3>
+<ul>
+<li>非精准浮点：float,double</li>
+<li>精准浮点：decimal</li>
+</ul>
+<p>Decimal 类型为精准浮点数，在计算时不会丢失精度</p>
+<p>占用空间由定义的宽度决定，每 4 个字节可以存储 9 位数字，并且小数点要占用一个字节</p>
+<p>可用于存储比 bigint 更大的整型数据</p>
+<hr>
+<h2><strong>索引设计规范</strong></h2>
+<h3><strong>1. 限制每张表上的索引数量,建议单张表索引不超过 5 个</strong></h3>
+<p>索引并不是越多越好！索引可以提高效率同样可以降低效率。</p>
+<p>索引可以增加查询效率，但同样也会降低插入和更新的效率，甚至有些情况下会降低查询效率。</p>
+<p>因为 MySQL 优化器在选择如何优化查询时，会根据统一信息，对每一个可以用到的索引来进行评估，以生成出一个最好的执行计划，如果同时有很多个索引都可以用于查询，就会增加 MySQL 优化器生成执行计划的时间，同样会降低查询性能。</p>
+<h3><strong>2. 禁止给表中的每一列都建立单独的索引</strong></h3>
+<p>5.6 版本之前，一个 sql 只能使用到一个表中的一个索引，5.6 以后，虽然有了合并索引的优化方式，但是还是远远没有使用一个联合索引的查询方式好。</p>
+<h3><strong>3. 每个 Innodb 表必须有个主键</strong></h3>
+<p>Innodb 是一种索引组织表：数据的存储的逻辑顺序和索引的顺序是相同的。每个表都可以有多个索引，但是表的存储顺序只能有一种。</p>
+<p>Innodb 是按照主键索引的顺序来组织表的</p>
+<ul>
+<li>不要使用更新频繁的列作为主键，不适用多列主键（相当于联合索引）</li>
+<li>不要使用 UUID,MD5,HASH,字符串列作为主键（无法保证数据的顺序增长）</li>
+<li>主键建议使用自增 ID 值</li>
+</ul>
+<hr>
+<h3><strong>4. 常见索引列建议</strong></h3>
+<ul>
+<li>出现在 SELECT、UPDATE、DELETE 语句的 WHERE 从句中的列</li>
+<li>包含在 ORDER BY、GROUP BY、DISTINCT 中的字段</li>
+<li>并不要将符合 1 和 2 中的字段的列都建立一个索引， 通常将 1、2 中的字段建立联合索引效果更好</li>
+<li>多表 join 的关联列</li>
+</ul>
+<hr>
+<h3><strong>5.如何选择索引列的顺序</strong></h3>
+<p>建立索引的目的是：希望通过索引进行数据查找，减少随机 IO，增加查询性能 ，索引能过滤出越少的数据，则从磁盘中读入的数据也就越少。</p>
+<ul>
+<li>区分度最高的放在联合索引的最左侧（区分度=列中不同值的数量/列的总行数）</li>
+<li>尽量把字段长度小的列放在联合索引的最左侧（因为字段长度越小，一页能存储的数据量越大，IO 性能也就越好）</li>
+<li>使用最频繁的列放到联合索引的左侧（这样可以比较少的建立一些索引）</li>
+</ul>
+<hr>
+<h3><strong>6. 避免建立冗余索引和重复索引（增加了查询优化器生成执行计划的时间）</strong></h3>
+<ul>
+<li>重复索引示例：primary key(id)、index(id)、unique index(id)</li>
+<li>冗余索引示例：index(a,b,c)、index(a,b)、index(a)</li>
+</ul>
+<hr>
+<h3><strong>7. 对于频繁的查询优先考虑使用覆盖索引</strong></h3>
+<blockquote>
+<p>覆盖索引：就是包含了所有查询字段 (where,select,order by,group by 包含的字段) 的索引</p>
+</blockquote>
+<p><strong>覆盖索引的好处：</strong></p>
+<ul>
+<li><strong>避免 Innodb 表进行索引的二次查询:</strong> Innodb 是以聚集索引的顺序来存储的，对于 Innodb 来说，二级索引在叶子节点中所保存的是行的主键信息，如果是用二级索引查询数据的话，在查找到相应的键值后，还要通过主键进行二次查询才能获取我们真实所需要的数据。而在覆盖索引中，二级索引的键值中可以获取所有的数据，避免了对主键的二次查询 ，减少了 IO 操作，提升了查询效率。</li>
+<li><strong>可以把随机 IO 变成顺序 IO 加快查询效率:</strong> 由于覆盖索引是按键值的顺序存储的，对于 IO 密集型的范围查找来说，对比随机从磁盘读取每一行的数据 IO 要少的多，因此利用覆盖索引在访问时也可以把磁盘的随机读取的 IO 转变成索引查找的顺序 IO。</li>
+</ul>
+<hr>
+<h3><strong>8.索引 SET 规范</strong></h3>
+<p><strong>尽量避免使用外键约束</strong></p>
+<ul>
+<li>不建议使用外键约束（foreign key），但一定要在表与表之间的关联键上建立索引</li>
+<li>外键可用于保证数据的参照完整性，但建议在业务端实现</li>
+<li>外键会影响父表和子表的写操作从而降低性能</li>
+</ul>
+<hr>
+<h2><strong>数据库 SQL 开发规范</strong></h2>
+<h3><strong>1. 建议使用预编译语句进行数据库操作</strong></h3>
+<p>预编译语句可以重复使用这些计划，减少 SQL 编译所需要的时间，还可以解决动态 SQL 所带来的 SQL 注入的问题。</p>
+<p>只传参数，比传递 SQL 语句更高效。</p>
+<p>相同语句可以一次解析，多次使用，提高处理效率。</p>
+<h3><strong>2. 避免数据类型的隐式转换</strong></h3>
+<p>隐式转换会导致索引失效如:</p>
+<pre class="notranslate"><code class="notranslate">select name,phone from customer where id = '111';
+</code></pre>
+<h3><strong>3. 充分利用表上已经存在的索引</strong></h3>
+<p>避免使用双%号的查询条件。如：<code class="notranslate">a like '%123%'</code>，（如果无前置%,只有后置%，是可以用到列上的索引的）</p>
+<p>一个 SQL 只能利用到复合索引中的一列进行范围查询。如：有 a,b,c 列的联合索引，在查询条件中有 a 列的范围查询，则在 b,c 列上的索引将不会被用到。</p>
+<p>在定义联合索引时，如果 a 列要用到范围查找的话，就要把 a 列放到联合索引的右侧，使用 left join 或 not exists 来优化 not in 操作，因为 not in 也通常会使用索引失效。</p>
+<h3><strong>4. 数据库设计时，应该要对以后扩展进行考虑</strong></h3>
+<h3><strong>5. 程序连接不同的数据库使用不同的账号，禁止跨库查询</strong></h3>
+<ul>
+<li>为数据库迁移和分库分表留出余地</li>
+<li>降低业务耦合度</li>
+<li>避免权限过大而产生的安全风险</li>
+</ul>
+<h3><strong>6. 禁止使用 SELECT * 必须使用 SELECT &lt;字段列表&gt; 查询</strong></h3>
+<p><strong>原因：</strong></p>
+<ul>
+<li>消耗更多的 CPU 和 IO 以网络带宽资源</li>
+<li>无法使用覆盖索引</li>
+<li>可减少表结构变更带来的影响</li>
+</ul>
+<h3><strong>7. 禁止使用不含字段列表的 INSERT 语句</strong></h3>
+<p>如：</p>
+<pre class="notranslate"><code class="notranslate">insert into values ('a','b','c');
+</code></pre>
+<p>应使用：</p>
+<pre class="notranslate"><code class="notranslate">insert into t(c1,c2,c3) values ('a','b','c');
+</code></pre>
+<h3><strong>8. 避免使用子查询，可以把子查询优化为 join 操作</strong></h3>
+<p>通常子查询在 in 子句中，且子查询中为简单 SQL(不包含 union、group by、order by、limit 从句) 时,才可以把子查询转化为关联查询进行优化。</p>
+<p><strong>子查询性能差的原因：</strong></p>
+<p>子查询的结果集无法使用索引，通常子查询的结果集会被存储到临时表中，不论是内存临时表还是磁盘临时表都不会存在索引，所以查询性能会受到一定的影响。特别是对于返回结果集比较大的子查询，其对查询性能的影响也就越大。</p>
+<p>由于子查询会产生大量的临时表也没有索引，所以会消耗过多的 CPU 和 IO 资源，产生大量的慢查询。</p>
+<h3><strong>9. 避免使用 JOIN 关联太多的表</strong></h3>
+<p>对于 MySQL 来说，是存在关联缓存的，缓存的大小可以由 join_buffer_size 参数进行设置。</p>
+<p>在 MySQL 中，对于同一个 SQL 多关联（join）一个表，就会多分配一个关联缓存，如果在一个 SQL 中关联的表越多，所占用的内存也就越大。</p>
+<p>如果程序中大量的使用了多表关联的操作，同时 join_buffer_size 设置的也不合理的情况下，就容易造成服务器内存溢出的情况，就会影响到服务器数据库性能的稳定性。</p>
+<p>同时对于关联操作来说，会产生临时表操作，影响查询效率，MySQL 最多允许关联 61 个表，建议不超过 5 个。</p>
+<h3><strong>10. 减少同数据库的交互次数</strong></h3>
+<p>数据库更适合处理批量操作，合并多个相同的操作到一起，可以提高处理效率。</p>
+<h3><strong>11. 对应同一列进行 or 判断时，使用 in 代替 or</strong></h3>
+<p>in 的值不要超过 500 个，in 操作可以更有效的利用索引，or 大多数情况下很少能利用到索引。</p>
+<h3><strong>12. 禁止使用 order by rand() 进行随机排序</strong></h3>
+<p>order by rand() 会把表中所有符合条件的数据装载到内存中，然后在内存中对所有数据根据随机生成的值进行排序，并且可能会对每一行都生成一个随机值，如果满足条件的数据集非常大，就会消耗大量的 CPU 和 IO 及内存资源。</p>
+<p>推荐在程序中获取一个随机值，然后从数据库中获取数据的方式。</p>
+<h3><strong>13. WHERE 从句中禁止对列进行函数转换和计算</strong></h3>
+<p>对列进行函数转换或计算时会导致无法使用索引</p>
+<p><strong>不推荐：</strong></p>
+<pre class="notranslate"><code class="notranslate">where date(create_time)='20190101'
+</code></pre>
+<p><strong>推荐：</strong></p>
+<pre class="notranslate"><code class="notranslate">where create_time &gt;= '20190101' and create_time &lt; '20190102'
+</code></pre>
+<h3><strong>14. 在明显不会有重复值时使用 UNION ALL 而不是 UNION</strong></h3>
+<ul>
+<li>UNION 会把两个结果集的所有数据放到临时表中后再进行去重操作</li>
+<li>UNION ALL 不会再对结果集进行去重操作</li>
+</ul>
+<h3><strong>15. 拆分复杂的大 SQL 为多个小 SQL</strong></h3>
+<ul>
+<li>大 SQL 逻辑上比较复杂，需要占用大量 CPU 进行计算的 SQL</li>
+<li>MySQL 中，一个 SQL 只能使用一个 CPU 进行计算</li>
+<li>SQL 拆分后可以通过并行执行来提高处理效率</li>
+</ul>
+<hr>
+<h2><strong>数据库操作行为规范</strong></h2>
+<h3><strong>1. 超 100 万行的批量写 (UPDATE,DELETE,INSERT) 操作,要分批多次进行操作</strong></h3>
+<p><strong>大批量操作可能会造成严重的主从延迟</strong></p>
+<p>主从环境中,大批量操作可能会造成严重的主从延迟，大批量的写操作一般都需要执行一定长的时间，<br>
+而只有当主库上执行完成后，才会在其他从库上执行，所以会造成主库与从库长时间的延迟情况</p>
+<p><strong>binlog 日志为 row 格式时会产生大量的日志</strong></p>
+<p>大批量写操作会产生大量日志，特别是对于 row 格式二进制数据而言，由于在 row 格式中会记录每一行数据的修改，我们一次修改的数据越多，产生的日志量也就会越多，日志的传输和恢复所需要的时间也就越长，这也是造成主从延迟的一个原因</p>
+<p><strong>避免产生大事务操作</strong></p>
+<p>大批量修改数据，一定是在一个事务中进行的，这就会造成表中大批量数据进行锁定，从而导致大量的阻塞，阻塞会对 MySQL 的性能产生非常大的影响。</p>
+<p>特别是长时间的阻塞会占满所有数据库的可用连接，这会使生产环境中的其他应用无法连接到数据库，因此一定要注意大批量写操作要进行分批</p>
+<h3><strong>2. 对于大表使用 pt-online-schema-change 修改表结构</strong></h3>
+<ul>
+<li>避免大表修改产生的主从延迟</li>
+<li>避免在对表字段进行修改时进行锁表</li>
+</ul>
+<p>对大表数据结构的修改一定要谨慎，会造成严重的锁表操作，尤其是生产环境，是不能容忍的。</p>
+<p>pt-online-schema-change 它会首先建立一个与原表结构相同的新表，并且在新表上进行表结构的修改，然后再把原表中的数据复制到新表中，并在原表中增加一些触发器。把原表中新增的数据也复制到新表中，在行所有数据复制完成之后，把新表命名成原表，并把原来的表删除掉。把原来一个 DDL 操作，分解成多个小的批次进行。</p>
+<h3><strong>3. 禁止为程序使用的账号赋予 super 权限</strong></h3>
+<ul>
+<li>当达到最大连接数限制时，还运行 1 个有 super 权限的用户连接</li>
+<li>super 权限只能留给 DBA 处理问题的账号使用</li>
+</ul>
+<h3><strong>4. 对于程序连接数据库账号,遵循权限最小原则</strong></h3>
+<ul>
+<li>程序使用数据库账号只能在一个 DB 下使用，不准跨库</li>
+<li>程序使用的账号原则上不准有 drop 权限</li>
+</ul></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+
+</div>
+    <div id="footer"><div id="footer1">Copyright © <span id="copyrightYear"></span> <a href="https://shuaiwang888.github.io/appStore-Blog.github.io">Blog Title</a></div>
+<div id="footer2">
+    <span id="runday"></span><span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>
+</div>
+
+<script>
+var now=new Date();
+document.getElementById("copyrightYear").innerHTML=now.getFullYear();
+
+if(""!=""){
+    var startSite=new Date("");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";
+}
+</script></div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z', 'copy': 'M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z', 'check': 'M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","shuaiwang888/appStore-Blog.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const createClipboardHTML = (codeContent, additionalClasses = '') => `
+        <pre class="notranslate"><code class="notranslate">${codeContent}</code></pre>
+        <div class="clipboard-container position-absolute right-0 top-0 ${additionalClasses}">
+            <clipboard-copy class="ClipboardButton btn m-2 p-0" role="button" style="display: inherit;">
+                <svg height="16" width="16" class="octicon octicon-copy m-2"><path d="${IconList["copy"]}"></path></svg>
+                <svg height="16" width="16" class="octicon octicon-check color-fg-success m-2 d-none"><path d="${IconList["check"]}"></path></svg>
+            </clipboard-copy>
+            <div class="copy-feedback">Copied!</div>
+        </div>
+    `;
+
+    const handleCodeElements = (selector = '') => {
+        document.querySelectorAll(selector).forEach(codeElement => {
+            const codeContent = codeElement.innerHTML;
+            const newStructure = document.createElement('div');
+            newStructure.className = 'snippet-clipboard-content position-relative overflow-auto';
+            newStructure.innerHTML = createClipboardHTML(codeContent);
+
+            const parentElement = codeElement.parentElement;
+            if (selector.includes('highlight')) {
+                parentElement.insertBefore(newStructure, codeElement.nextSibling);
+                parentElement.removeChild(codeElement);
+            } else {
+                parentElement.parentElement.replaceChild(newStructure, parentElement);
+            }
+        });
+    };
+
+    handleCodeElements('pre.notranslate > code.notranslate');
+    handleCodeElements('div.highlight > pre.notranslate');
+
+    let currentFeedback = null;
+    document.querySelectorAll('clipboard-copy').forEach(copyButton => {
+        copyButton.addEventListener('click', () => {
+            const codeContent = copyButton.closest('.snippet-clipboard-content').innerText;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = codeContent;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            const copyIcon = copyButton.querySelector('.octicon-copy');
+            const checkIcon = copyButton.querySelector('.octicon-check');
+            const copyFeedback = copyButton.nextElementSibling;
+
+            if (currentFeedback && currentFeedback !== copyFeedback) {currentFeedback.style.display = 'none';}
+            currentFeedback = copyFeedback;
+
+            copyIcon.classList.add('d-none');
+            checkIcon.classList.remove('d-none');
+            copyFeedback.style.display = 'block';
+            copyButton.style.borderColor = 'var(--color-success-fg)';
+
+            setTimeout(() => {
+                copyIcon.classList.remove('d-none');
+                checkIcon.classList.add('d-none');
+                copyFeedback.style.display = 'none';
+                copyButton.style.borderColor = '';
+            }, 2000);
+        });
+    });
+});
+
+</script>
+
+
+</html>
