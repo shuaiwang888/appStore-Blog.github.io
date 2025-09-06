@@ -1,5 +1,33 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>Blog Title</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link><description>Blog description</description><copyright>Blog Title</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://github.githubassets.com/favicons/favicon.svg</url><title>avatar</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link></image><lastBuildDate>Sat, 06 Sep 2025 09:04:18 +0000</lastBuildDate><managingEditor>Blog Title</managingEditor><ttl>60</ttl><webMaster>Blog Title</webMaster><item><title>Spring</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/Spring.html</link><description>这篇文章主要是想通过一些问题，加深大家对于 Spring 的理解，所以不会涉及太多的代码！
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>Blog Title</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link><description>Blog description</description><copyright>Blog Title</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://github.githubassets.com/favicons/favicon.svg</url><title>avatar</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link></image><lastBuildDate>Sat, 06 Sep 2025 09:05:06 +0000</lastBuildDate><managingEditor>Blog Title</managingEditor><ttl>60</ttl><webMaster>Blog Title</webMaster><item><title>Spring 框架设计模式</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/Spring%20-kuang-jia-she-ji-mo-shi.html</link><description>&lt;!-- TOC --&gt;
+
+- [控制反转(IoC)和依赖注入(DI)](#控制反转ioc和依赖注入di)
+- [工厂设计模式](#工厂设计模式)
+- [单例设计模式](#单例设计模式)
+- [代理设计模式](#代理设计模式)
+    - [代理模式在 AOP 中的应用](#代理模式在-aop-中的应用)
+    - [Spring AOP 和 AspectJ AOP 有什么区别?](#spring-aop-和-aspectj-aop-有什么区别)
+- [模板方法](#模板方法)
+- [观察者模式](#观察者模式)
+    - [Spring 事件驱动模型中的三种角色](#spring-事件驱动模型中的三种角色)
+        - [事件角色](#事件角色)
+        - [事件监听者角色](#事件监听者角色)
+        - [事件发布者角色](#事件发布者角色)
+    - [Spring 的事件流程总结](#spring-的事件流程总结)
+- [适配器模式](#适配器模式)
+    - [spring AOP中的适配器模式](#spring-aop中的适配器模式)
+    - [spring MVC中的适配器模式](#spring-mvc中的适配器模式)
+- [装饰者模式](#装饰者模式)
+- [总结](#总结)
+- [参考](#参考)
+
+&lt;!-- /TOC --&gt;
+
+### 参考文献：[设计模式目录](https://github.com/CyC2018/CS-Notes/blob/master/notes/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F%20-%20%E7%9B%AE%E5%BD%95.md)
+
+## **Spring 框架中用到了哪些设计模式？**
+
+关于下面一些设计模式的详细介绍，可以看笔主前段时间的原创文章[《面试官:“谈谈 Spring 中都用到了那些设计模式?”。</description><guid isPermaLink="true">https://shuaiwang888.github.io/appStore-Blog.github.io/post/Spring%20-kuang-jia-she-ji-mo-shi.html</guid><pubDate>Sat, 06 Sep 2025 09:04:36 +0000</pubDate></item><item><title>Spring</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/Spring.html</link><description>这篇文章主要是想通过一些问题，加深大家对于 Spring 的理解，所以不会涉及太多的代码！
 
 下面的很多问题我自己在使用 Spring 的过程中也并没有注意，自己也是临时查阅了很多资料和书籍补上的。</description><guid isPermaLink="true">https://shuaiwang888.github.io/appStore-Blog.github.io/post/Spring.html</guid><pubDate>Sat, 06 Sep 2025 09:03:49 +0000</pubDate></item><item><title>MySQL数据库索引</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/MySQL-shu-ju-ku-suo-yin.html</link><description>## 一、何为索引？有什么作用？**
 
