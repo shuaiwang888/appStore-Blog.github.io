@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark" data-light-theme="light" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
+    
+    <link rel="icon" href="https://github.githubassets.com/favicons/favicon.svg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="### 参考文献：[MySQL](https://github.com/CyC2018/CS-Notes/blob/master/notes/MySQL.md)、[SQL 练习](https://github.com/CyC2018/CS-Notes/blob/master/notes/SQL%20%E7%BB%83%E4%B9%A0.md)、[SQL 语法](https://github.com/CyC2018/CS-Notes/blob/master/notes/SQL%20%E8%AF%AD%E6%B3%95.md)
+
+### **一、什么是数据库,数据库管理系统,数据库系统,数据库管理员?**
+
+- **数据库** :数据库(DataBase 简称 DB)就是信息的集合或者说数据库是由数据库管理系统管理的数据的集合。">
+<meta property="og:title" content="数据库知识概述">
+<meta property="og:description" content="### 参考文献：[MySQL](https://github.com/CyC2018/CS-Notes/blob/master/notes/MySQL.md)、[SQL 练习](https://github.com/CyC2018/CS-Notes/blob/master/notes/SQL%20%E7%BB%83%E4%B9%A0.md)、[SQL 语法](https://github.com/CyC2018/CS-Notes/blob/master/notes/SQL%20%E8%AF%AD%E6%B3%95.md)
+
+### **一、什么是数据库,数据库管理系统,数据库系统,数据库管理员?**
+
+- **数据库** :数据库(DataBase 简称 DB)就是信息的集合或者说数据库是由数据库管理系统管理的数据的集合。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://shuaiwang888.github.io/appStore-Blog.github.io/post/shu-ju-ku-zhi-shi-gai-shu.html">
+<meta property="og:image" content="https://github.githubassets.com/favicons/favicon.svg">
+<title>数据库知识概述</title>
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+.copy-feedback {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    color: var(--color-fg-on-emphasis);
+    background-color: var(--color-fg-muted);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
+</style>
+
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">数据库知识概述</h1>
+<div class="title-right">
+    <a href="https://shuaiwang888.github.io/appStore-Blog.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/shuaiwang888/appStore-Blog.github.io/issues/8" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><h3>参考文献：<a href="https://github.com/CyC2018/CS-Notes/blob/master/notes/MySQL.md">MySQL</a>、<a href="https://github.com/CyC2018/CS-Notes/blob/master/notes/SQL%20%E7%BB%83%E4%B9%A0.md">SQL 练习</a>、<a href="https://github.com/CyC2018/CS-Notes/blob/master/notes/SQL%20%E8%AF%AD%E6%B3%95.md">SQL 语法</a></h3>
+<h3><strong>一、什么是数据库,数据库管理系统,数据库系统,数据库管理员?</strong></h3>
+<ul>
+<li><strong>数据库</strong> :数据库(DataBase 简称 DB)就是信息的集合或者说数据库是由数据库管理系统管理的数据的集合。</li>
+<li><strong>数据库管理系统</strong> : 数据库管理系统(Database Management System 简称 DBMS)是一种操纵和管理数据库的大型软件，通常用于建立、使用和维护数据库。</li>
+<li><strong>数据库系统</strong> : 数据库系统(Data Base System，简称 DBS)通常由软件、数据库和数据管理员(DBA)组成。</li>
+<li><strong>数据库管理员</strong> : 数据库管理员(Database Administrator,简称 DBA)负责全面管理和控制数据库系统。</li>
+</ul>
+<h3><strong>二、什么是 ER 图？</strong></h3>
+<blockquote>
+<p>我们做一个项目的时候一定要试着画 ER 图来捋清数据库设计，这个也是面试官问你项目的时候经常会被问道的。</p>
+</blockquote>
+<p><strong>E-R 图</strong>也称实体-联系图(Entity Relationship Diagram)，提供了表示实体类型、属性和联系的方法，用来描述现实世界的概念模型。 它是描述现实世界关系概念模型的有效方法。是表示概念关系模型的一种方式。</p>
+<p>下图是一个学生选课的 ER 图，每个学生可以选若干门课程，同一门课程也可以被若干人选择，所以它们之间的关系是多对多（M:N）。另外，还有其他两种关系是：1 对 1（1:1）、1 对多（1:N）。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/0a7ec206e6fea9043057607361c5c80759a483a50488a394d1e4ef33eadf875c/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f696d675f636f6e766572742f34373137363733653336393636653065346233336663636664373533663665612e706e67"><img src="https://camo.githubusercontent.com/0a7ec206e6fea9043057607361c5c80759a483a50488a394d1e4ef33eadf875c/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f696d675f636f6e766572742f34373137363733653336393636653065346233336663636664373533663665612e706e67" alt="ER图示例" data-canonical-src="https://img-blog.csdnimg.cn/img_convert/4717673e36966e0e4b33fccfd753f6ea.png" style="max-width: 100%;"></a></p>
+<p>我们试着将上面的 ER 图转换成数据库实际的关系模型(实际设计中，我们通常会将任课教师也作为一个实体来处理)：</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/c423631627b948e88827e138a2bf1599edd7cfaadd8ee1ad212940e8ff6895eb/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f696d675f636f6e766572742f35383937373533646662333031646661336138313461623036653731386135652e706e67"><img src="https://camo.githubusercontent.com/c423631627b948e88827e138a2bf1599edd7cfaadd8ee1ad212940e8ff6895eb/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f696d675f636f6e766572742f35383937373533646662333031646661336138313461623036653731386135652e706e67" alt="关系模型" data-canonical-src="https://img-blog.csdnimg.cn/img_convert/5897753dfb301dfa3a814ab06e718a5e.png" style="max-width: 100%;"></a></p>
+<h3><strong>三、数据库范式了解吗?</strong></h3>
+<p><strong>1NF(第一范式)</strong></p>
+<ul>
+<li>属性（对应于表中的字段）不能再被分割，也就是这个字段只能是一个值，不能再分为多个其他的字段了。<strong>1NF 是所有关系型数据库的最基本要求</strong> ，也就是说关系型数据库中创建的表一定满足第一范式。</li>
+</ul>
+<p><strong>2NF(第二范式)</strong></p>
+<ul>
+<li>2NF 在 1NF 的基础之上，消除了非主属性对于码的部分函数依赖。如下图所示，展示了第一范式到第二范式的过渡。第二范式在第一范式的基础上增加了一个列，这个列称为主键，非主属性都依赖于主键。</li>
+</ul>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/fdd8b7f69b685d24750d8b23fe88551735760df6a5710bc0b9ad4ebae842fd42/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f696d675f636f6e766572742f62643164333162653337373933343234323766633965343632626637663035632e706e67"><img src="https://camo.githubusercontent.com/fdd8b7f69b685d24750d8b23fe88551735760df6a5710bc0b9ad4ebae842fd42/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f696d675f636f6e766572742f62643164333162653337373933343234323766633965343632626637663035632e706e67" alt="第二范式" data-canonical-src="https://img-blog.csdnimg.cn/img_convert/bd1d31be3779342427fc9e462bf7f05c.png" style="max-width: 100%;"></a></p>
+<p><strong>3NF(第三范式)</strong></p>
+<ul>
+<li>3NF 在 2NF 的基础之上，消除了非主属性对于码的传递函数依赖 。符合 3NF 要求的数据库设计，<strong>基本</strong>上解决了数据冗余过大，插入异常，修改异常，删除异常的问题。比如在关系 R(学号 ,姓名, 系名，系主任)中，学号 → 系名，系名 → 系主任，所以存在非主属性系主任对于学号的传递函数依赖，所以该表的设计，不符合 3NF 的要求。</li>
+</ul>
+<p><strong>总结</strong><br>
+第一范式：每个列都不可以再拆分。<br>
+第二范式：在第一范式的基础上，非主键列完全依赖于主键，而不能是依赖于主键的一部分。<br>
+第三范式：在第二范式的基础上，非主键列只依赖于主键，不依赖于其他非主键。</p>
+<h3><strong>四、drop、delete 与 truncate 区别？</strong></h3>
+<p><strong>1. 用法不同</strong></p>
+<ul>
+<li>drop(丢弃数据): <code class="notranslate">drop table 表名</code> ，直接将表都删除掉，在删除表的时候使用。</li>
+<li>truncate (清空数据) : <code class="notranslate">truncate table 表名</code> ，只删除表中的数据，再插入数据的时候自增长 id 又从 1 开始，在清空表中数据的时候使用。</li>
+<li>delete（删除数据） : <code class="notranslate">delete from 表名 where 列名=值</code>，删除某一列的数据，如果不加 where 子句和<code class="notranslate">truncate table 表名</code>作用类似。</li>
+<li>truncate 和不带 where 子句的 delete、以及 drop 都会删除表内的数据，但是 <strong>truncate 和 delete 只删除数据不删除表的结构(定义)，执行 drop 语句，此表的结构也会删除，也就是执行 drop 之后对应的表不复存在。</strong></li>
+</ul>
+<p><strong>2. 属于不同的数据库语言</strong></p>
+<ul>
+<li>truncate 和 drop 属于 DDL(数据定义语言)语句，操作立即生效，原数据不放到 rollback segment 中，不能回滚，操作不触发 trigger。</li>
+<li>而 delete 语句是 DML (数据库操作语言)语句，这个操作会放到 rollback segement 中，事务提交之后才生效。</li>
+</ul>
+<h3><strong>DML 语句和 DDL 语句区别?</strong></h3>
+<ul>
+<li>DML 是数据库操作语言（Data Manipulation Language）的缩写，<strong>是指对数据库中表记录的操作，</strong> 主要包括表记录的插入（insert）、更新（update）、删除（delete）和查询（select），是开发人员日常使用最频繁的操作。</li>
+<li>DDL （Data Definition Language）是数据定义语言的缩写，简单来说，<strong>就是对数据库内部的对象进行创建、删除、修改的操作语言。</strong> 它和 DML 语言的最大区别是 DML 只是对表内部数据的操作，而不涉及到表的定义、结构的修改，更不会涉及到其他对象。DDL 语句更多的被数据库管理员（DBA）所使用，一般的开发人员很少使用。</li>
+</ul>
+<p><strong>3. 执行速度不同</strong></p>
+<p>一般来说:drop&gt;truncate&gt;delete（这个我没有设计测试过）。</p>
+<h3><strong>五、数据库设计通常分为哪几步?</strong></h3>
+<ol>
+<li><strong>需求分析</strong> : 分析用户的需求，包括数据、功能和性能需求。</li>
+<li><strong>概念结构设计</strong> : 主要采用 E-R 模型进行设计，包括画 E-R 图。</li>
+<li><strong>逻辑结构设计</strong> : 通过将 E-R 图转换成表，实现从 E-R 模型到关系模型的转换。</li>
+<li><strong>物理结构设计</strong> : 主要是为所设计的数据库选择合适的存储结构和存取路径。</li>
+<li><strong>数据库实施</strong> : 包括编程、测试和试运行</li>
+<li><strong>数据库的运行和维护</strong> : 系统的运行与数据库的日常维护。</li>
+</ol>
+<h3><strong>六、MySQL 基础</strong></h3>
+<h4><strong>关系型数据库介绍</strong></h4>
+<p>顾名思义，关系型数据库就是一种建立在关系模型的基础上的数据库。关系模型表明了数据库中所存储的数据之间的联系（一对一、一对多、多对多）。</p>
+<p>关系型数据库中，我们的数据都被存放在了各种表中（比如用户表），表中的每一行就存放着一条数据（比如一个用户的信息）。</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/5e3c1a71724a38245aa43b02_99bf70d46cc247be878de9d3a88f0c44-dc3bd3d3d85643f986af5689a147ca1a.png"><img src="/upload/2021/10/5e3c1a71724a38245aa43b02_99bf70d46cc247be878de9d3a88f0c44-dc3bd3d3d85643f986af5689a147ca1a.png" alt="5e3c1a71724a38245aa43b02_99bf70d46cc247be878de9d3a88f0c44.png" style="max-width: 100%;"></a></p>
+<p>大部分关系型数据库都使用 SQL 来操作数据库中的数据。并且，大部分关系型数据库都支持事务的四大特性(ACID)。</p>
+<h4><strong>有哪些常见的关系型数据库呢？</strong></h4>
+<p>MySQL、PostgreSQL、Oracle、SQL Server、SQLite（微信本地的聊天记录的存储就是用的 SQLite） ......。</p>
+<h4><strong>MySQL 介绍</strong></h4>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/5bde69507974b0498c22ab871e55fc0c6cc1d93af740bfb863b743676629b3e9/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f32303231303332373134333335313832332e706e67"><img src="https://camo.githubusercontent.com/5bde69507974b0498c22ab871e55fc0c6cc1d93af740bfb863b743676629b3e9/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f32303231303332373134333335313832332e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/20210327143351823.png" style="max-width: 100%;"></a></p>
+<ul>
+<li><strong>MySQL 是一种关系型数据库，主要用于持久化存储我们的系统中的一些数据比如用户信息。</strong></li>
+<li>由于 MySQL 是开源免费并且比较成熟的数据库，因此，MySQL 被大量使用在各种系统中。任何人都可以在 GPL(General Public License) 的许可下下载并根据个性化的需要对其进行修改。MySQL 的默认端口号是<strong>3306</strong>。</li>
+</ul>
+<h4><strong>存储引擎</strong></h4>
+<p><strong>1. 存储引擎相关的命令</strong></p>
+<p><strong>查看 MySQL 提供的所有存储引擎</strong></p>
+<div class="highlight highlight-source-sql"><pre class="notranslate">mysql<span class="pl-k">&gt;</span> show engines;</pre></div>
+<p>从以上指令可以查看出 MySQL 当前默认的存储引擎是 <code class="notranslate">InnoDB</code>，并且在 5.7 版本所有的存储引擎中只有 InnoDB 是事务性存储引擎，也就是说只有 InnoDB 支持事务。</p>
+<p><strong>2. 查看 MySQL 当前默认的存储引擎</strong></p>
+<p>我们也可以通过下面的命令查看默认的存储引擎。</p>
+<div class="highlight highlight-source-sql"><pre class="notranslate">mysql<span class="pl-k">&gt;</span> show variables <span class="pl-k">like</span> <span class="pl-s"><span class="pl-pds">'</span>%storage_engine%<span class="pl-pds">'</span></span>;</pre></div>
+<p><strong>3. 查看表的存储引擎</strong></p>
+<div class="highlight highlight-source-sql"><pre class="notranslate">show table status <span class="pl-k">like</span> <span class="pl-s"><span class="pl-pds">"</span>table_name<span class="pl-pds">"</span></span> ;</pre></div>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/%E6%9F%A5%E7%9C%8B%E8%A1%A8%E7%9A%84%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E-276fcb6193ce485eb4a0cfa64f452a55.png"><img src="/upload/2021/10/%E6%9F%A5%E7%9C%8B%E8%A1%A8%E7%9A%84%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E-276fcb6193ce485eb4a0cfa64f452a55.png" alt="查看表的存储引擎.png" style="max-width: 100%;"></a></p>
+<h4>MyISAM 和 InnoDB 的区别</h4>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/5126ae70522f012668a27dd75caa348c1989206774c3f6bbd4b96482f8169d2d/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f32303231303332373134353234383936302e706e673f782d6f73732d70726f636573733d696d6167652f77617465726d61726b2c747970655f5a6d46755a33706f5a57356e6147567064476b2c736861646f775f31302c746578745f6148523063484d364c7939696247396e4c6d4e7a5a473475626d56304c334678587a4d304d7a4d334d6a63792c73697a655f31362c636f6c6f725f4646464646462c745f3730"><img src="https://camo.githubusercontent.com/5126ae70522f012668a27dd75caa348c1989206774c3f6bbd4b96482f8169d2d/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f32303231303332373134353234383936302e706e673f782d6f73732d70726f636573733d696d6167652f77617465726d61726b2c747970655f5a6d46755a33706f5a57356e6147567064476b2c736861646f775f31302c746578745f6148523063484d364c7939696247396e4c6d4e7a5a473475626d56304c334678587a4d304d7a4d334d6a63792c73697a655f31362c636f6c6f725f4646464646462c745f3730" alt="" data-canonical-src="https://img-blog.csdnimg.cn/20210327145248960.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzM0MzM3Mjcy,size_16,color_FFFFFF,t_70" style="max-width: 100%;"></a></p>
+<p>MySQL 5.5 之前，MyISAM 引擎是 MySQL 的默认存储引擎，可谓是风光一时。</p>
+<p>虽然，MyISAM 的性能还行，各种特性也还不错（比如全文索引、压缩、空间函数等）。但是，MyISAM 不支持事务和行级锁，而且最大的缺陷就是崩溃后无法安全恢复。</p>
+<p>5.5 版本之后，MySQL 引入了 InnoDB（事务性数据库引擎），MySQL 5.5 版本后默认的存储引擎为 InnoDB。小伙子，一定要记好这个 InnoDB ，你每次使用 MySQL 数据库都是用的这个存储引擎吧？</p>
+<p>言归正传！咱们下面还是来简单对比一下两者：</p>
+<ul>
+<li><strong>1.是否支持行级锁</strong></li>
+</ul>
+<p>MyISAM 只有表级锁(table-level locking)，而 InnoDB 支持行级锁(row-level locking)和表级锁,默认为行级锁。</p>
+<p>也就说，MyISAM 一锁就是锁住了整张表，这在并发写的情况下是多么滴憨憨啊！这也是为什么 InnoDB 在并发写的时候，性能更牛皮了！</p>
+<ul>
+<li><strong>2.是否支持事务</strong></li>
+</ul>
+<p>MyISAM 不提供事务支持。</p>
+<p>InnoDB 提供事务支持，具有提交(commit)和回滚(rollback)事务的能力。</p>
+<ul>
+<li><strong>3.是否支持外键</strong></li>
+</ul>
+<p>MyISAM 不支持，而 InnoDB 支持。</p>
+<p>🌈 拓展一下：</p>
+<p>一般我们也是不建议在数据库层面使用外键的，应用层面可以解决。不过，这样会对数据的一致性造成威胁。具体要不要使用外键还是要根据你的项目来决定。</p>
+<ul>
+<li><strong>4.是否支持数据库异常崩溃后的安全恢复</strong></li>
+</ul>
+<p>MyISAM 不支持，而 InnoDB 支持。</p>
+<p>使用 InnoDB 的数据库在异常崩溃后，数据库重新启动的时候会保证数据库恢复到崩溃前的状态。这个恢复的过程依赖于 <code class="notranslate">redo log</code> 。</p>
+<p><strong>🌈 拓展一下：</strong></p>
+<blockquote>
+<ul>
+<li><strong>MySQL InnoDB 引擎使用 redo log(重做日志) 保证事务的</strong>持久性**，使用 <strong>undo log(回滚日志)</strong> 来保证事务的<strong>原子性</strong>。**</li>
+<li><strong>MySQL InnoDB 引擎通过 锁机制、MVCC 等手段来保证事务的隔离性（ 默认支持的隔离级别是 <code class="notranslate">REPEATABLE-READ</code> ）。</strong></li>
+<li><strong>保证了事务的持久性、原子性、隔离性之后，一致性才能得到保障。</strong></li>
+</ul>
+</blockquote>
+<ul>
+<li><strong>5.是否支持 MVCC</strong></li>
+</ul>
+<p>MyISAM 不支持，而 InnoDB 支持。</p>
+<p>讲真，这个对比有点废话，毕竟 MyISAM 连行级锁都不支持。</p>
+<p>MVCC 可以看作是行级锁的一个升级，可以有效减少加锁操作，提供性能。</p>
+<h4>锁机制与 InnoDB 锁算法</h4>
+<p><strong>MyISAM 和 InnoDB 存储引擎使用的锁：</strong></p>
+<ul>
+<li>MyISAM 采用表级锁(table-level locking)。</li>
+<li>InnoDB 支持行级锁(row-level locking)和表级锁,默认为行级锁</li>
+</ul>
+<p><strong>表级锁和行级锁对比：</strong></p>
+<ul>
+<li><strong>表级锁：</strong> MySQL 中锁定 <strong>粒度最大</strong> 的一种锁，对当前操作的整张表加锁，实现简单，资源消耗也比较少，加锁快，不会出现死锁。其锁定粒度最大，触发锁冲突的概率最高，并发度最低，MyISAM 和 InnoDB 引擎都支持表级锁。</li>
+<li><strong>行级锁：</strong> MySQL 中锁定 <strong>粒度最小</strong> 的一种锁，只针对当前操作的行进行加锁。 行级锁能大大减少数据库操作的冲突。其加锁粒度最小，并发度高，但加锁的开销也最大，加锁慢，会出现死锁。</li>
+</ul>
+<p><strong>InnoDB 存储引擎的锁的算法有三种：</strong></p>
+<ul>
+<li>sjisnh- Record lock：记录锁，单个行记录上的锁</li>
+<li>Gap lock：间隙锁，锁定一个范围，不包括记录本身</li>
+<li>Next-key lock：record+gap 临键锁，锁定一个范围，包含记录本身</li>
+</ul>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/967daeb8f81083f66c441d5e02aa05a06bcdc19adff4d2d210d6492f05a74202/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f34616162643961346539333334353464383362336437356661636266643832632e706e67"><img src="https://camo.githubusercontent.com/967daeb8f81083f66c441d5e02aa05a06bcdc19adff4d2d210d6492f05a74202/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f34616162643961346539333334353464383362336437356661636266643832632e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/4aabd9a4e933454d83b3d75facbfd82c.png" style="max-width: 100%;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/264de6bdda908f003e8939a397eff7ee18f56ae39952b5f121d6c41b93d1b712/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f63343335383065623930393534376163623066623035613333353139623865352e706e67"><img src="https://camo.githubusercontent.com/264de6bdda908f003e8939a397eff7ee18f56ae39952b5f121d6c41b93d1b712/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f63343335383065623930393534376163623066623035613333353139623865352e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/c43580eb909547acb0fb05a33519b8e5.png" style="max-width: 100%;"></a></p>
+<h4><strong>查询缓存</strong></h4>
+<p>执行查询语句的时候，会先查询缓存。不过，MySQL 8.0 版本后移除，因为这个功能不太实用</p>
+<p><code class="notranslate">my.cnf</code> 加入以下配置，重启 MySQL 开启查询缓存</p>
+<div class="highlight highlight-source-ini"><pre class="notranslate"><span class="pl-k">query_cache_type</span>=1
+<span class="pl-k">query_cache_size</span>=600000</pre></div>
+<p>MySQL 执行以下命令也可以开启查询缓存</p>
+<div class="highlight highlight-source-ini"><pre class="notranslate">set global  <span class="pl-k">query_cache_type</span>=1<span class="pl-c"><span class="pl-c">;</span></span>
+set global  <span class="pl-k">query_cache_size</span>=600000<span class="pl-c"><span class="pl-c">;</span></span></pre></div>
+<p>如上，<strong>开启查询缓存后在同样的查询条件以及数据情况下，会直接在缓存中返回结果</strong>。这里的查询条件包括查询本身、当前要查询的数据库、客户端协议版本号等一些可能影响结果的信息。（<strong>查询缓存不命中的情况：（1）</strong>）因此任何两个查询在任何字符上的不同都会导致缓存不命中。此外，（<strong>查询缓存不命中的情况：（2）</strong>）如果查询中包含任何用户自定义函数、存储函数、用户变量、临时表、MySQL 库中的系统表，其查询结果也不会被缓存。</p>
+<p>（<strong>查询缓存不命中的情况：（3）</strong>）<strong>缓存建立之后</strong>，MySQL 的查询缓存系统会跟踪查询中涉及的每张表，如果这些表（数据或结构）发生变化，那么和这张表相关的所有缓存数据都将失效。</p>
+<p><strong>缓存虽然能够提升数据库的查询性能，但是缓存同时也带来了额外的开销，每次查询后都要做一次缓存操作，失效后还要销毁。</strong> 因此，开启查询缓存要谨慎，尤其对于写密集的应用来说更是如此。如果开启，要注意合理控制缓存空间大小，一般来说其大小设置为几十 MB 比较合适。此外，<strong>还可以通过 sql_cache 和 sql_no_cache 来控制某个查询语句是否需要缓存：</strong></p>
+<div class="highlight highlight-source-sql"><pre class="notranslate"><span class="pl-k">select</span> sql_no_cache <span class="pl-c1">count</span>(<span class="pl-k">*</span>) <span class="pl-k">from</span> usr;</pre></div>
+<h4><strong>事务</strong></h4>
+<p><strong>1. 何为事务？</strong></p>
+<p>一言蔽之，<strong>事务是逻辑上的一组操作，要么都执行，要么都不执行。</strong></p>
+<p><strong>可以简单举一个例子不？</strong></p>
+<p>事务最经典也经常被拿出来说例子就是转账了。假如小明要给小红转账 1000 元，这个转账会涉及到两个关键操作就是：</p>
+<ol>
+<li>将小明的余额减少 1000 元</li>
+<li>将小红的余额增加 1000 元。</li>
+</ol>
+<p>事务会把这两个操作就可以看成逻辑上的一个整体，这个整体包含的操作要么都成功，要么都要失败。</p>
+<p>这样就不会出现小明余额减少而小红的余额却并没有增加的情况。</p>
+<p><strong>2. 何为数据库事务？</strong></p>
+<p>数据库事务在我们日常开发中接触的最多了。如果你的项目属于单体架构的话，你接触到的往往就是数据库事务了。</p>
+<p>平时，我们在谈论事务的时候，如果没有特指<strong>分布式事务</strong>，往往指的就是<strong>数据库事务</strong>。</p>
+<p><strong>那数据库事务有什么作用呢？</strong></p>
+<p>简单来说：数据库事务可以保证多个对数据库的操作（也就是 SQL 语句）构成一个逻辑上的整体。构成这个逻辑上的整体的这些数据库操作遵循：<strong>要么全部执行成功,要么全部不执行</strong> 。</p>
+<div class="highlight highlight-source-sql"><pre class="notranslate"><span class="pl-c"><span class="pl-c">#</span> 开启一个事务</span>
+<span class="pl-k">START TRANSACTION</span>;
+<span class="pl-c"><span class="pl-c">#</span> 多条 SQL 语句</span>
+SQL1,SQL2...
+<span class="pl-c"><span class="pl-c">#</span># 提交事务</span>
+<span class="pl-k">COMMIT</span>;</pre></div>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/640-20201207160554677-6320cf4a03034c8e940937180cda66d6.png"><img src="/upload/2021/10/640-20201207160554677-6320cf4a03034c8e940937180cda66d6.png" alt="64020201207160554677.png" style="max-width: 100%;"></a></p>
+<p>另外，关系型数据库（例如：<code class="notranslate">MySQL</code>、<code class="notranslate">SQL Server</code>、<code class="notranslate">Oracle</code> 等）事务都有 <strong>ACID</strong> 特性：</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/%E4%BA%8B%E5%8A%A1%E7%89%B9%E6%80%A7-a11e7a7c32a14da797a86fb3f1c2edeb.png"><img src="/upload/2021/10/%E4%BA%8B%E5%8A%A1%E7%89%B9%E6%80%A7-a11e7a7c32a14da797a86fb3f1c2edeb.png" alt="事务特性.png" style="max-width: 100%;"></a></p>
+<p><strong>3. 何为 ACID 特性呢？</strong></p>
+<ul>
+<li>
+<ol>
+<li><strong>原子性</strong>（<code class="notranslate">Atomicity</code>） ： 事务是最小的执行单位，不允许分割。事务的原子性确保动作要么全部完成，要么完全不起作用；</li>
+</ol>
+</li>
+<li>
+<ol start="2">
+<li><strong>一致性</strong>（<code class="notranslate">Consistency</code>）： 执行事务前后，数据保持一致，例如转账业务中，无论事务是否成功，转账者和收款人的总额应该是不变的；</li>
+</ol>
+</li>
+<li>
+<ol start="3">
+<li><strong>隔离性</strong>（<code class="notranslate">Isolation</code>）： 并发访问数据库时，一个用户的事务不被其他事务所干扰，各并发事务之间数据库是独立的；</li>
+</ol>
+</li>
+<li>
+<ol start="4">
+<li><strong>持久性</strong>（<code class="notranslate">Durability</code>）： 一个事务被提交之后。它对数据库中数据的改变是持久的，即使数据库发生故障也不应该对其有任何影响。</li>
+</ol>
+</li>
+</ul>
+<p><strong>数据事务的实现原理呢？</strong></p>
+<p>我们这里以 MySQL 的 InnoDB 引擎为例来简单说一下。</p>
+<p>MySQL InnoDB 引擎使用 <strong>redo log(重做日志)</strong> 保证事务的<strong>持久性</strong>，使用 <strong>undo log(回滚日志)</strong> 来保证事务的<strong>原子性</strong>。</p>
+<p>MySQL InnoDB 引擎通过 <strong>锁机制</strong>、<strong>MVCC</strong> 等手段来保证事务的隔离性（ 默认支持的隔离级别是 <strong><code class="notranslate">REPEATABLE-READ</code></strong> ）。</p>
+<p>保证了事务的持久性、原子性、隔离性之后，一致性才能得到保障。</p>
+<p><strong>4. 并发事务带来哪些问题?</strong></p>
+<p>在典型的应用程序中，多个事务并发运行，经常会操作相同的数据来完成各自的任务（多个用户对同一数据进行操作）。并发虽然是必须的，但可能会导致以下的问题。</p>
+<ul>
+<li><strong>脏读（Dirty read）:</strong> 当一个事务正在访问数据并且对数据进行了修改，而这种修改还没有提交到数据库中，这时另外一个事务也访问了这个数据，然后使用了这个数据。因为这个数据是还没有提交的数据，那么另外一个事务读到的这个数据是“脏数据”，依据“脏数据”所做的操作可能是不正确的。</li>
+<li><strong>丢失修改（Lost to modify）:</strong> 指在一个事务读取一个数据时，另外一个事务也访问了该数据，那么在第一个事务中修改了这个数据后，第二个事务也修改了这个数据。这样第一个事务内的修改结果就被丢失，因此称为丢失修改。 例如：事务 1 读取某表中的数据 A=20，事务 2 也读取 A=20，事务 1 修改 A=A-1，事务 2 也修改 A=A-1，最终结果 A=19，事务 1 的修改被丢失。</li>
+<li><strong>不可重复读（Unrepeatable read）:</strong> 指在一个事务内多次读同一数据。在这个事务还没有结束时，另一个事务也访问该数据。那么，在第一个事务中的两次读数据之间，由于第二个事务的修改导致第一个事务两次读取的数据可能不太一样。这就发生了在一个事务内两次读到的数据是不一样的情况，因此称为不可重复读。</li>
+<li><strong>幻读（Phantom read）:</strong> 幻读与不可重复读类似。它发生在一个事务（T1）读取了几行数据，接着另一个并发事务（T2）插入了一些数据时。在随后的查询中，第一个事务（T1）就会发现多了一些原本不存在的记录，就好像发生了幻觉一样，所以称为幻读。</li>
+</ul>
+<p><strong>不可重复读和幻读区别：</strong></p>
+<p>不可重复读的重点是修改比如多次读取一条记录发现其中某些列的值被修改，幻读的重点在于新增或者删除比如多次读取一条记录发现记录增多或减少了。</p>
+<p><strong>5. 事务隔离级别有哪些?</strong></p>
+<p>SQL 标准定义了四个隔离级别：</p>
+<ul>
+<li><strong>READ-UNCOMMITTED(读取未提交)：</strong> 最低的隔离级别，允许读取尚未提交的数据变更，<strong>可能会导致脏读、幻读或不可重复读</strong>。</li>
+<li><strong>READ-COMMITTED(读取已提交)：</strong> 允许读取并发事务已经提交的数据，<strong>可以阻止脏读，但是幻读或不可重复读仍有可能发生</strong>。</li>
+<li><strong>REPEATABLE-READ(可重复读)：</strong> 对同一字段的多次读取结果都是一致的，除非数据是被本身事务自己所修改，<strong>可以阻止脏读和不可重复读，但幻读仍有可能发生</strong>。</li>
+<li><strong>SERIALIZABLE(可串行化)：</strong> 最高的隔离级别，完全服从 ACID 的隔离级别。所有的事务依次逐个执行，这样事务之间就完全不可能产生干扰，也就是说，<strong>该级别可以防止脏读、不可重复读以及幻读</strong>。</li>
+</ul>
+<hr>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th align="center">隔离级别</th>
+<th align="center">脏读</th>
+<th align="center">不可重复读</th>
+<th align="center">幻读</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">READ-UNCOMMITTED</td>
+<td align="center">√</td>
+<td align="center">√</td>
+<td align="center">√</td>
+</tr>
+<tr>
+<td align="center">READ-COMMITTED</td>
+<td align="center">×</td>
+<td align="center">√</td>
+<td align="center">√</td>
+</tr>
+<tr>
+<td align="center">REPEATABLE-READ</td>
+<td align="center">×</td>
+<td align="center">×</td>
+<td align="center">√</td>
+</tr>
+<tr>
+<td align="center">SERIALIZABLE</td>
+<td align="center">×</td>
+<td align="center">×</td>
+<td align="center">×</td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<p><strong>6. MySQL 的默认隔离级别是什么?</strong></p>
+<p>MySQL InnoDB 存储引擎的默认支持的隔离级别是 <strong>REPEATABLE-READ（可重读）</strong>。我们可以通过<code class="notranslate">SELECT @@tx_isolation;</code>命令来查看，MySQL 8.0 该命令改为<code class="notranslate">SELECT @@transaction_isolation;</code></p>
+<div class="highlight highlight-source-sql"><pre class="notranslate">mysql<span class="pl-k">&gt;</span> <span class="pl-k">SELECT</span> @@tx_isolation;
+<span class="pl-k">+</span><span class="pl-c"><span class="pl-c">--</span>---------------+</span>
+| @@tx_isolation  |
+<span class="pl-k">+</span><span class="pl-c"><span class="pl-c">--</span>---------------+</span>
+| REPEATABLE<span class="pl-k">-</span>READ |
+<span class="pl-k">+</span><span class="pl-c"><span class="pl-c">--</span>---------------+</span></pre></div>
+<p><del>这里需要注意的是：与 SQL 标准不同的地方在于 InnoDB 存储引擎在 <strong>REPEATABLE-READ（可重读）</strong> 事务隔离级别下使用的是 Next-Key Lock 锁算法，因此可以避免幻读的产生，这与其他数据库系统(如 SQL Server)是不同的。所以说 InnoDB 存储引擎的默认支持的隔离级别是 <strong>REPEATABLE-READ（可重读）</strong> 已经可以完全保证事务的隔离性要求，即达到了 SQL 标准的 <strong>SERIALIZABLE(可串行化)</strong> 隔离级别。</del></p>
+<p>🐛 问题更正：<strong>MySQL InnoDB 的 REPEATABLE-READ（可重读）并不保证避免幻读，需要应用使用加锁读来保证。而这个加锁度使用到的机制就是 Next-Key Locks。</strong></p>
+<p>因为隔离级别越低，事务请求的锁越少，所以大部分数据库系统的隔离级别都是 <strong>READ-COMMITTED(读取提交内容)</strong> ，但是你要知道的是 InnoDB 存储引擎默认使用 <strong>REPEATABLE-READ（可重读）</strong> 并不会有任何性能损失。</p>
+<p>InnoDB 存储引擎在 <strong>分布式事务</strong> 的情况下一般会用到 <strong>SERIALIZABLE(可串行化)</strong> 隔离级别。</p>
+<p>🌈 拓展一下(以下内容摘自《MySQL 技术内幕：InnoDB 存储引擎(第 2 版)》7.7 章)：</p>
+<blockquote>
+<p>InnoDB 存储引擎提供了对 XA 事务的支持，并通过 XA 事务来支持分布式事务的实现。分布式事务指的是允许多个独立的事务资源（transactional resources）参与到一个全局的事务中。事务资源通常是关系型数据库系统，但也可以是其他类型的资源。全局事务要求在其中的所有参与的事务要么都提交，要么都回滚，这对于事务原有的 ACID 要求又有了提高。另外，在使用分布式事务时，InnoDB 存储引擎的事务隔离级别必须设置为 SERIALIZABLE。</p>
+</blockquote>
+<h3><strong>实战注意</strong></h3>
+<h4><strong>1、模糊查询</strong></h4>
+<p>对于模糊查询阿里巴巴开发手册这样说到：</p>
+<blockquote>
+<p>【强制】页面搜索严禁左模糊或者全模糊，如果需要请走搜索引擎来解决。</p>
+<p>说明:索引文件具有 B-Tree 的最左前缀匹配特性，如果左边的值未确定，那么无法使用此索引。</p>
+</blockquote>
+<h4><strong>2、外键和级联</strong></h4>
+<p>对于外键和级联，阿里巴巴开发手册这样说到：</p>
+<blockquote>
+<p>【强制】不得使用外键与级联，一切外键概念必须在应用层解决。</p>
+<p>说明:以学生和成绩的关系为例，学生表中的 student_id 是主键，那么成绩表中的 student_id 则为外键。如果更新学生表中的 student_id，同时触发成绩表中的 student_id 更新，即为级联更新。外键与级联更新适用于单机低并发，不适合分布式、高并发集群;级联更新是强阻塞，存在数据库更新风暴的风 险;外键影响数据库的插入速度</p>
+</blockquote>
+<p>为什么不要用外键呢？大部分人可能会这样回答：</p>
+<blockquote>
+<ol>
+<li><strong>增加了复杂性：</strong> a.每次做DELETE 或者UPDATE都必须考虑外键约束，会导致开发的时候很痛苦,测试数据极为不方便;b.外键的主从关系是定的，假如那天需求有变化，数据库中的这个字段根本不需要和其他表有关联的话就会增加很多麻烦。</li>
+<li><strong>增加了额外工作</strong>： 数据库需要增加维护外键的工作，比如当我们做一些涉及外键字段的增，删，更新操作之后，需要触发相关操作去检查，保证数据的的一致性和正确性，这样会不得不消耗资源；（个人觉得这个不是不用外键的原因，因为即使你不使用外键，你在应用层面也还是要保证的。所以，我觉得这个影响可以忽略不计。）</li>
+<li>外键还会因为需要请求对其他表内部加锁而容易出现死锁情况；</li>
+<li><strong>对分库分表不友好</strong> ：因为分库分表下外键是无法生效的。</li>
+<li>......</li>
+</ol>
+</blockquote>
+<p>我个人觉得上面这种回答不是特别的全面，只是说了外键存在的一个常见的问题。实际上，我们知道外键也是有很多好处的，比如：</p>
+<ol>
+<li>保证了数据库数据的一致性和完整性；</li>
+<li>级联操作方便，减轻了程序代码量；</li>
+<li>......</li>
+</ol>
+<p>所以说，不要一股脑的就抛弃了外键这个概念，既然它存在就有它存在的道理，如果系统不涉及分库分表，并发量不是很高的情况还是可以考虑使用外键的。</p>
+<p>我个人是不太喜欢外键约束，比较喜欢在应用层去进行相关操作。</p>
+<h4>3、关于<a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/transactional/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/transactional">@transactional</a>注解</h4>
+<p>对于<code class="notranslate">@Transactional</code>事务注解，阿里巴巴开发手册这样说到：</p>
+<blockquote>
+<p>【参考】<a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/transactional/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/transactional">@transactional</a>事务不要滥用。事务会影响数据库的QPS，另外使用事务的地方需要考虑各方面的回滚方案，包括缓存回滚、搜索引擎回滚、消息补偿、统计修正等。</p>
+</blockquote>
+<blockquote>
+<p>我们平时开发中不可避免的就是要存储时间，比如我们要记录操作表中这条记录的时间、记录转账的交易时间、记录出发时间等等。你会发现时间这个东西与我们开发的联系还是非常紧密的，用的好与不好会给我们的业务甚至功能带来很大的影响。所以，我们有必要重新出发，好好认识一下这个东西。</p>
+</blockquote>
+<h4><strong>4、切记不要用字符串存储日期</strong></h4>
+<p>字符串这种存储日期的方式的优点还是有的，就是简单直白，容易上手。但是，这是不正确的做法，主要会有下面两个问题：</p>
+<ul>
+<li>字符串占用的空间更大！</li>
+<li>字符串存储的日期效率比较低（逐个字符进行比对），无法用日期相关的 API 进行计算和比较。</li>
+</ul>
+<h3><strong>5、Datetime 和 Timestamp 之间抉择</strong></h3>
+<p>Datetime 和 Timestamp 是 MySQL 提供的两种比较相似的保存时间的数据类型。他们两者究竟该如何选择呢？</p>
+<p><strong>通常我们都会首选 Timestamp。</strong> 下面说一下为什么这样做!</p>
+<p><strong>5.1 DateTime 类型没有时区信息</strong></p>
+<p><strong>DateTime 类型是没有时区信息的（时区无关）</strong> ，DateTime 类型保存的时间都是当前会话所设置的时区对应的时间。这样就会有什么问题呢？当你的时区更换之后，比如你的服务器更换地址或者更换客户端连接时区设置的话，就会导致你从数据库中读出的时间错误。不要小看这个问题，很多系统就是因为这个问题闹出了很多笑话。</p>
+<p><strong>Timestamp 和时区有关</strong>。Timestamp 类型字段的值会随着服务器时区的变化而变化，自动换算成相应的时间，说简单点就是在不同时区，查询到同一个条记录此字段的值会不一样。</p>
+<p>下面实际演示一下！</p>
+<p>建表 SQL 语句：</p>
+<div class="highlight highlight-source-sql"><pre class="notranslate"><span class="pl-k">CREATE</span> <span class="pl-k">TABLE</span> `<span class="pl-en">time_zone_test</span>` (
+  <span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span> <span class="pl-k">bigint</span>(<span class="pl-c1">20</span>) <span class="pl-k">NOT NULL</span> AUTO_INCREMENT,
+  <span class="pl-s"><span class="pl-pds">`</span>date_time<span class="pl-pds">`</span></span> datetime DEFAULT <span class="pl-k">NULL</span>,
+  <span class="pl-s"><span class="pl-pds">`</span>time_stamp<span class="pl-pds">`</span></span> <span class="pl-k">timestamp</span> <span class="pl-k">NOT NULL</span> DEFAULT <span class="pl-c1">CURRENT_TIMESTAMP</span> <span class="pl-k">ON</span> <span class="pl-k">UPDATE</span> <span class="pl-c1">CURRENT_TIMESTAMP</span>,
+  <span class="pl-k">PRIMARY KEY</span> (<span class="pl-s"><span class="pl-pds">`</span>id<span class="pl-pds">`</span></span>)
+) ENGINE<span class="pl-k">=</span>InnoDB DEFAULT CHARSET<span class="pl-k">=</span>utf8;</pre></div>
+<p>插入数据：</p>
+<div class="highlight highlight-source-sql"><pre class="notranslate"><span class="pl-k">INSERT INTO</span> time_zone_test(date_time,time_stamp) <span class="pl-k">VALUES</span>(NOW(),NOW());</pre></div>
+<p>查看数据：</p>
+<div class="highlight highlight-source-sql"><pre class="notranslate"><span class="pl-k">select</span> date_time,time_stamp <span class="pl-k">from</span> time_zone_test;</pre></div>
+<p>结果：</p>
+<pre class="notranslate"><code class="notranslate">+---------------------+---------------------+
+| date_time           | time_stamp          |
++---------------------+---------------------+
+| 2020-01-11 09:53:32 | 2020-01-11 09:53:32 |
++---------------------+---------------------+
+</code></pre>
+<p>现在我们运行</p>
+<p>修改当前会话的时区:</p>
+<div class="highlight highlight-source-sql"><pre class="notranslate"><span class="pl-k">set</span> time_zone<span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">'</span>+8:00<span class="pl-pds">'</span></span>;</pre></div>
+<p>再次查看数据：</p>
+<pre class="notranslate"><code class="notranslate">+---------------------+---------------------+
+| date_time           | time_stamp          |
++---------------------+---------------------+
+| 2020-01-11 09:53:32 | 2020-01-11 17:53:32 |
++---------------------+---------------------+
+</code></pre>
+<p><strong>扩展：一些关于 MySQL 时区设置的一个常用 sql 命令</strong></p>
+<div class="highlight highlight-source-sql"><pre class="notranslate"><span class="pl-c"><span class="pl-c">#</span> 查看当前会话时区</span>
+<span class="pl-k">SELECT</span> @@<span class="pl-c1">session</span>.<span class="pl-c1">time_zone</span>;
+<span class="pl-c"><span class="pl-c">#</span> 设置当前会话时区</span>
+<span class="pl-k">SET</span> time_zone <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>Europe/Helsinki<span class="pl-pds">'</span></span>;
+<span class="pl-k">SET</span> time_zone <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>+00:00<span class="pl-pds">"</span></span>;
+<span class="pl-c"><span class="pl-c">#</span> 数据库全局时区设置</span>
+<span class="pl-k">SELECT</span> @@<span class="pl-c1">global</span>.<span class="pl-c1">time_zone</span>;
+<span class="pl-c"><span class="pl-c">#</span> 设置全局时区</span>
+<span class="pl-k">SET</span> GLOBAL time_zone <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>+8:00<span class="pl-pds">'</span></span>;
+<span class="pl-k">SET</span> GLOBAL time_zone <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>Europe/Helsinki<span class="pl-pds">'</span></span>;</pre></div>
+<p><strong>5.2 DateTime 类型耗费空间更大</strong></p>
+<p>Timestamp 只需要使用 4 个字节的存储空间，但是 DateTime 需要耗费 8 个字节的存储空间。但是，这样同样造成了一个问题，Timestamp 表示的时间范围更小。</p>
+<ul>
+<li>DateTime ：1000-01-01 00:00:00 ~ 9999-12-31 23:59:59</li>
+<li>Timestamp： 1970-01-01 00:00:01 ~ 2037-12-31 23:59:59</li>
+</ul>
+<blockquote>
+<p>Timestamp 在不同版本的 MySQL 中有细微差别。</p>
+</blockquote>
+<h4><strong>6、再看 MySQL 日期类型存储空间</strong></h4>
+<p>下图是 MySQL 5.6 版本中日期类型所占的存储空间：</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/193439220edccc6c50db5825b5140a954ee245a8d0aa1e5f549b62551b9a9f23/68747470733a2f2f6d792d626c6f672d746f2d7573652e6f73732d636e2d6265696a696e672e616c6979756e63732e636f6d2f323031392d31312f46685247555648464b30756a52504e413735663643754f58514854452e6a706567"><img src="https://camo.githubusercontent.com/193439220edccc6c50db5825b5140a954ee245a8d0aa1e5f549b62551b9a9f23/68747470733a2f2f6d792d626c6f672d746f2d7573652e6f73732d636e2d6265696a696e672e616c6979756e63732e636f6d2f323031392d31312f46685247555648464b30756a52504e413735663643754f58514854452e6a706567" alt="" style="max-width: 100%;"></a></p>
+<p>可以看出 5.6.4 之后的 MySQL 多出了一个需要 0 ～ 3 字节的小数位。DateTime 和 Timestamp 会有几种不同的存储空间占用。</p>
+<p>为了方便，本文我们还是默认 Timestamp 只需要使用 4 个字节的存储空间，但是 DateTime 需要耗费 8 个字节的存储空间。</p>
+<h3><strong>7、数值型时间戳是更好的选择吗？</strong></h3>
+<p>很多时候，我们也会使用 int 或者 bigint 类型的数值也就是时间戳来表示时间。</p>
+<p>这种存储方式的具有 Timestamp 类型的所具有一些优点，并且使用它的进行日期排序以及对比等操作的效率会更高，跨系统也很方便，毕竟只是存放的数值。缺点也很明显，就是<strong>数据的可读性太差了，你无法直观的看到具体时间</strong>。</p>
+<p>时间戳的定义如下：</p>
+<blockquote>
+<p>时间戳的定义是从一个基准时间开始算起，这个基准时间是「1970-1-1 00:00:00 +0:00」，从这个时间开始，用整数表示，以秒计时，随着时间的流逝这个时间整数不断增加。这样一来，我只需要一个数值，就可以完美地表示时间了，而且这个数值是一个绝对数值，即无论的身处地球的任何角落，这个表示时间的时间戳，都是一样的，生成的数值都是一样的，并且没有时区的概念，所以在系统的中时间的传输中，都不需要进行额外的转换了，只有在显示给用户的时候，才转换为字符串格式的本地时间。</p>
+</blockquote>
+<p>数据库中实际操作：</p>
+<div class="highlight highlight-source-sql"><pre class="notranslate">mysql<span class="pl-k">&gt;</span> <span class="pl-k">select</span> UNIX_TIMESTAMP(<span class="pl-s"><span class="pl-pds">'</span>2020-01-11 09:53:32<span class="pl-pds">'</span></span>);
+<span class="pl-k">+</span><span class="pl-c"><span class="pl-c">--</span>-------------------------------------+</span>
+| UNIX_TIMESTAMP(<span class="pl-s"><span class="pl-pds">'</span>2020-01-11 09:53:32<span class="pl-pds">'</span></span>) |
+<span class="pl-k">+</span><span class="pl-c"><span class="pl-c">--</span>-------------------------------------+</span>
+|                            <span class="pl-c1">1578707612</span> |
+<span class="pl-k">+</span><span class="pl-c"><span class="pl-c">--</span>-------------------------------------+</span>
+<span class="pl-c1">1</span> row <span class="pl-k">in</span> <span class="pl-k">set</span> (<span class="pl-c1">0</span>.<span class="pl-c1">00</span> sec)
+
+mysql<span class="pl-k">&gt;</span> <span class="pl-k">select</span> FROM_UNIXTIME(<span class="pl-c1">1578707612</span>);
+<span class="pl-k">+</span><span class="pl-c"><span class="pl-c">--</span>-------------------------+</span>
+| FROM_UNIXTIME(<span class="pl-c1">1578707612</span>) |
+<span class="pl-k">+</span><span class="pl-c"><span class="pl-c">--</span>-------------------------+</span>
+| <span class="pl-c1">2020</span><span class="pl-k">-</span><span class="pl-c1">01</span><span class="pl-k">-</span><span class="pl-c1">11</span> <span class="pl-c1">09</span>:<span class="pl-c1">53</span>:<span class="pl-c1">32</span>       |
+<span class="pl-k">+</span><span class="pl-c"><span class="pl-c">--</span>-------------------------+</span>
+<span class="pl-c1">1</span> row <span class="pl-k">in</span> <span class="pl-k">set</span> (<span class="pl-c1">0</span>.<span class="pl-c1">01</span> sec)</pre></div>
+<h4><strong>8、总结</strong></h4>
+<p>MySQL 中时间到底怎么存储才好？Datetime?Timestamp? 数值保存的时间戳？</p>
+<p>好像并没有一个银弹，很多程序员会觉得数值型时间戳是真的好，效率又高还各种兼容，但是很多人又觉得它表现的不够直观。这里插一嘴，《高性能 MySQL 》这本神书的作者就是推荐 Timestamp，原因是数值表示时间不够直观。下面是原文：</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/7f4b655e258ebf5e4c9f92602f9c007b5b29be5fca64aef78537bbeab48551c1/68747470733a2f2f6d792d626c6f672d746f2d7573652e6f73732d636e2d6265696a696e672e616c6979756e63732e636f6d2f323031392d31312fe9ab98e680a7e883bd6d7973716c2de4b88de68ea8e88d90e794a8e695b0e580bce697b6e997b4e688b32e6a7067"><img src="https://camo.githubusercontent.com/7f4b655e258ebf5e4c9f92602f9c007b5b29be5fca64aef78537bbeab48551c1/68747470733a2f2f6d792d626c6f672d746f2d7573652e6f73732d636e2d6265696a696e672e616c6979756e63732e636f6d2f323031392d31312fe9ab98e680a7e883bd6d7973716c2de4b88de68ea8e88d90e794a8e695b0e580bce697b6e997b4e688b32e6a7067" style="max-width: 100%;"></a></p>
+<p>每种方式都有各自的优势，根据实际场景才是王道。下面再对这三种方式做一个简单的对比，以供大家实际开发中选择正确的存放时间的数据类型：</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/2aec385842a68b7efd18ca2cc477667a09081c1a1e8d7cc21aa61998c42380c0/68747470733a2f2f6d792d626c6f672d746f2d7573652e6f73732d636e2d6265696a696e672e616c6979756e63732e636f6d2f323031392d31312fe680bbe7bb932de5b8b8e794a8e697a5e69c9fe5ad98e582a8e696b9e5bc8f2e6a7067"><img src="https://camo.githubusercontent.com/2aec385842a68b7efd18ca2cc477667a09081c1a1e8d7cc21aa61998c42380c0/68747470733a2f2f6d792d626c6f672d746f2d7573652e6f73732d636e2d6265696a696e672e616c6979756e63732e636f6d2f323031392d31312fe680bbe7bb932de5b8b8e794a8e697a5e69c9fe5ad98e582a8e696b9e5bc8f2e6a7067" style="max-width: 100%;"></a></p>
+<h4>9、如何实现 MySQL 的读写分离？</h4>
+<p>⾼并发这个阶段，肯定是需要做读写分离的，因为实际上⼤部分的互联⽹公司，⼀些⽹站，或者是 app，其实都是读多写少。所以针对这个情况，就是写⼀个主库，但是主库挂多个从库，然后从多个从库来读，那不就可以⽀撑更⾼的读并发压⼒了吗？</p>
+<blockquote>
+<p>其实实现MySQL的读写分离很简单，就是基于主从复制架构，简单来说，就搞⼀个主库，挂多个从库，然后我们就单单只是写主库，然后主库会⾃动把数据给同步到从库上去。</p>
+</blockquote>
+<h4>10、MySQL 主从复制原理的是啥？</h4>
+<p><strong>主库将变更写⼊ binlog ⽇志，然后从库连接到主库之后，从库有⼀个 IO 线程，将主库的 binlog ⽇志拷贝到⾃⼰本地，写⼊⼀个 relay 中继⽇志中。接着从库中有⼀个 SQL 线程会从中继⽇志读取 binlog，然后执⾏ binlog ⽇志中的内容，也就是在⾃⼰本地再次执⾏⼀遍SQL，这样就可以保证⾃⼰跟主库的数据是⼀样的。</strong></p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/6120ba8cc040641f00c4521a11dc527776949f0b32e3d7014d285196ef3a2115/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f30303638343162653466643334656261613139613039313534616130396662302e706e67"><img src="https://camo.githubusercontent.com/6120ba8cc040641f00c4521a11dc527776949f0b32e3d7014d285196ef3a2115/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f30303638343162653466643334656261613139613039313534616130396662302e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/006841be4fd34ebaa19a09154aa09fb0.png" style="max-width: 100%;"></a></p>
+<p>这⾥有⼀个⾮常重要的⼀点，就是从库同步主库数据的过程是串⾏化的，也就是说主库上并⾏的操作，在从库上会串⾏执⾏。所以这就是⼀个⾮常重要的点了，由于从库从主库拷贝⽇志以及串⾏执⾏ SQL 的特点，在⾼并发场景下，从库的数据⼀定会⽐主库慢⼀些，是有延时的。所以经常出现，刚写⼊主库的数据可能是读不到的，要过⼏⼗毫秒，甚⾄⼏百毫秒才能读取到。<br>
+⽽且这⾥还有另外⼀个问题，就是如果主库突然宕机，然后恰好数据还没同步到从库，那么有些数据可能在从库上是没有的，有些数据可能就丢失了。<br>
+所以 MySQL 实际上在这⼀块有两个机制，⼀个是<code class="notranslate">半同步复制</code>，<strong>⽤来解决主库数据丢失问题</strong>；⼀个是<code class="notranslate">并⾏复制</code>，<strong>⽤来解决主从同步延时问题。</strong></p>
+<p>这个所谓半同步复制，也叫复制，指的就是主库写⼊ binlog ⽇志之后，就会将强制此时⽴即将数据同步到从库，从库将⽇志写semi-sync⼊⾃⼰本地的 relay log 之后，接着会返回⼀个 ack 给主库，主库接收到⾄少⼀个从库的 ack 之后才会认为写操作完成了。</p>
+<p>所谓并⾏复制，指的是从库开启多个线程，并⾏读取 relay log 中不同库的⽇志，然后并⾏重放不同库的⽇志，这是库级别的并⾏。</p>
+<h4>10、MySQL 主从同步延时问题（精华）</h4>
+<p>以前线上确实处理过因为主从同步延时问题⽽导致的线上的 bug，属于⼩型的⽣产事故。<br>
+是这个么场景。有个同学是这样写代码逻辑的。先插⼊⼀条数据，再把它查出来，然后更新这条数据。在⽣产环境⾼峰期，写并发达到了2000/s，这个时候，主从复制延时⼤概是在⼩⼏⼗毫秒。线上会发现，每天总有那么⼀些数据，我们期望更新⼀些重要的数据状态，但在⾼峰期时候却没更新。⽤户跟客服反馈，⽽客服就会反馈给我们。<br>
+我们通过 MySQL 命令：</p>
+<pre class="notranslate"><code class="notranslate">show slave status
+</code></pre>
+<p>查看可以看到从库复制主库的数据落后了⼏ ms。</p>
+<pre class="notranslate"><code class="notranslate">Seconds_Behind_Master
+</code></pre>
+<p>⼀般来说，如果主从延迟较为严重，有以下解决⽅案：</p>
+<ul>
+<li>分库，将⼀个主库拆分为多个主库，每个主库的写并发就减少了⼏倍，此时主从延迟可以忽略不计。</li>
+<li>打开 MySQL ⽀持的并⾏复制，多个库并⾏复制。如果说某个库的写⼊并发就是特别⾼，单库写并发达到了 2000/s，并⾏复制还是没意义。</li>
+<li>重写代码，写代码的同学，要慎重，插⼊数据时⽴马查询可能查不到。</li>
+<li>如果确实是存在必须先插⼊，⽴马要求就查询到，然后⽴马就要反过来执⾏⼀些操作，对这个查询设置直连主库。不推荐这种⽅法，你要是这么搞，读写分离的意义就丧失了。</li>
+</ul></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+
+</div>
+    <div id="footer"><div id="footer1">Copyright © <span id="copyrightYear"></span> <a href="https://shuaiwang888.github.io/appStore-Blog.github.io">Blog Title</a></div>
+<div id="footer2">
+    <span id="runday"></span><span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>
+</div>
+
+<script>
+var now=new Date();
+document.getElementById("copyrightYear").innerHTML=now.getFullYear();
+
+if(""!=""){
+    var startSite=new Date("");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";
+}
+</script></div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z', 'copy': 'M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z', 'check': 'M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","shuaiwang888/appStore-Blog.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const createClipboardHTML = (codeContent, additionalClasses = '') => `
+        <pre class="notranslate"><code class="notranslate">${codeContent}</code></pre>
+        <div class="clipboard-container position-absolute right-0 top-0 ${additionalClasses}">
+            <clipboard-copy class="ClipboardButton btn m-2 p-0" role="button" style="display: inherit;">
+                <svg height="16" width="16" class="octicon octicon-copy m-2"><path d="${IconList["copy"]}"></path></svg>
+                <svg height="16" width="16" class="octicon octicon-check color-fg-success m-2 d-none"><path d="${IconList["check"]}"></path></svg>
+            </clipboard-copy>
+            <div class="copy-feedback">Copied!</div>
+        </div>
+    `;
+
+    const handleCodeElements = (selector = '') => {
+        document.querySelectorAll(selector).forEach(codeElement => {
+            const codeContent = codeElement.innerHTML;
+            const newStructure = document.createElement('div');
+            newStructure.className = 'snippet-clipboard-content position-relative overflow-auto';
+            newStructure.innerHTML = createClipboardHTML(codeContent);
+
+            const parentElement = codeElement.parentElement;
+            if (selector.includes('highlight')) {
+                parentElement.insertBefore(newStructure, codeElement.nextSibling);
+                parentElement.removeChild(codeElement);
+            } else {
+                parentElement.parentElement.replaceChild(newStructure, parentElement);
+            }
+        });
+    };
+
+    handleCodeElements('pre.notranslate > code.notranslate');
+    handleCodeElements('div.highlight > pre.notranslate');
+
+    let currentFeedback = null;
+    document.querySelectorAll('clipboard-copy').forEach(copyButton => {
+        copyButton.addEventListener('click', () => {
+            const codeContent = copyButton.closest('.snippet-clipboard-content').innerText;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = codeContent;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            const copyIcon = copyButton.querySelector('.octicon-copy');
+            const checkIcon = copyButton.querySelector('.octicon-check');
+            const copyFeedback = copyButton.nextElementSibling;
+
+            if (currentFeedback && currentFeedback !== copyFeedback) {currentFeedback.style.display = 'none';}
+            currentFeedback = copyFeedback;
+
+            copyIcon.classList.add('d-none');
+            checkIcon.classList.remove('d-none');
+            copyFeedback.style.display = 'block';
+            copyButton.style.borderColor = 'var(--color-success-fg)';
+
+            setTimeout(() => {
+                copyIcon.classList.remove('d-none');
+                checkIcon.classList.add('d-none');
+                copyFeedback.style.display = 'none';
+                copyButton.style.borderColor = '';
+            }, 2000);
+        });
+    });
+});
+
+</script>
+
+
+</html>
