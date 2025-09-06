@@ -1,5 +1,23 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>Blog Title</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link><description>Blog description</description><copyright>Blog Title</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://github.githubassets.com/favicons/favicon.svg</url><title>avatar</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link></image><lastBuildDate>Sat, 06 Sep 2025 09:07:04 +0000</lastBuildDate><managingEditor>Blog Title</managingEditor><ttl>60</ttl><webMaster>Blog Title</webMaster><item><title>SpringBoot的自动装配原理</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/SpringBoot-de-zi-dong-zhuang-pei-yuan-li.html</link><description>## 前言
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>Blog Title</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link><description>Blog description</description><copyright>Blog Title</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://github.githubassets.com/favicons/favicon.svg</url><title>avatar</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link></image><lastBuildDate>Sat, 06 Sep 2025 09:07:47 +0000</lastBuildDate><managingEditor>Blog Title</managingEditor><ttl>60</ttl><webMaster>Blog Title</webMaster><item><title>SpringBoot项目汇总</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/SpringBoot-xiang-mu-hui-zong.html</link><description>## 一、项目简述
+
+### 企业开发中常见的后台管理系统？
+
+**CRM（客户关系管理）：**  管理客户信息，如个人信息、订单信息等；
+
+![QQ图片20210928140559.png](/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210928140559-5ded626505dc4242a5e30a8f297b9d87.png)
+
+**OA（办公自动化）：** 基于工作流概念，使企业内部人员方便快捷地共享信息，高效协同工作；
+
+![QQ图片20210928140611.png](/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210928140611-b584b2a7e9c343e3b5feb97319cc1604.png)
+
+**ERP（企业资源计划）：** 物资资源管理、人力资源管理、财务资源管理、信息资源管理等集成一体化；
+
+![QQ图片20210928140615.png](/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210928140615-e3a4ef17394348d5b4509566c6f7d8a9.png)
+
+### 基础构建
+
+**1. pom.xml依赖：** Spring单元测试、数据库、AOP、后端校验、接口文档Springfox、对象转换、验证码、缓存、权限控制Shiro等等。</description><guid isPermaLink="true">https://shuaiwang888.github.io/appStore-Blog.github.io/post/SpringBoot-xiang-mu-hui-zong.html</guid><pubDate>Sat, 06 Sep 2025 09:07:16 +0000</pubDate></item><item><title>SpringBoot的自动装配原理</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/SpringBoot-de-zi-dong-zhuang-pei-yuan-li.html</link><description>## 前言
 
 我觉得我们可以从以下几个方面回答：
 1. 什么是 SpringBoot 自动装配？
