@@ -1,5 +1,69 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>Blog Title</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link><description>Blog description</description><copyright>Blog Title</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://github.githubassets.com/favicons/favicon.svg</url><title>avatar</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link></image><lastBuildDate>Sat, 06 Sep 2025 09:02:16 +0000</lastBuildDate><managingEditor>Blog Title</managingEditor><ttl>60</ttl><webMaster>Blog Title</webMaster><item><title>Java并发基础总结</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/Java-bing-fa-ji-chu-zong-jie.html</link><description>&lt;!-- TOC --&gt;
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>Blog Title</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link><description>Blog description</description><copyright>Blog Title</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://github.githubassets.com/favicons/favicon.svg</url><title>avatar</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link></image><lastBuildDate>Sat, 06 Sep 2025 09:02:57 +0000</lastBuildDate><managingEditor>Blog Title</managingEditor><ttl>60</ttl><webMaster>Blog Title</webMaster><item><title>并发进阶总结</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/bing-fa-jin-jie-zong-jie.html</link><description>&lt;!-- @import '[TOC]' {cmd='toc' depthFrom=1 depthTo=6 orderedList=false} --&gt;
+
+&lt;!-- code_chunk_output --&gt;
+
+- [Java 并发进阶常见面试题总结](#java-并发进阶常见面试题总结)
+  - [1.synchronized 关键字](#1synchronized-关键字)
+    - [1.1.说一说自己对于 synchronized 关键字的了解](#11说一说自己对于-synchronized-关键字的了解)
+    - [1.2. 说说自己是怎么使用 synchronized 关键字](#12-说说自己是怎么使用-synchronized-关键字)
+    - [1.3. 构造方法可以使用 synchronized 关键字修饰么？](#13-构造方法可以使用-synchronized-关键字修饰么)
+    - [1.3. 讲一下 synchronized 关键字的底层原理](#13-讲一下-synchronized-关键字的底层原理)
+      - [1.3.1. synchronized 同步语句块的情况](#131-synchronized-同步语句块的情况)
+      - [1.3.2. synchronized 修饰方法的的情况](#132-synchronized-修饰方法的的情况)
+      - [1.3.3.总结](#133总结)
+    - [1.4. 说说 JDK1.6 之后的 synchronized 关键字底层做了哪些优化，可以详细介绍一下这些优化吗](#14-说说-jdk16-之后的-synchronized-关键字底层做了哪些优化可以详细介绍一下这些优化吗)
+    - [1.5. 谈谈 synchronized 和 ReentrantLock 的区别](#15-谈谈-synchronized-和-reentrantlock-的区别)
+      - [1.5.1. 两者都是可重入锁](#151-两者都是可重入锁)
+      - [1.5.2.synchronized 依赖于 JVM 而 ReentrantLock 依赖于 API](#152synchronized-依赖于-jvm-而-reentrantlock-依赖于-api)
+      - [1.5.3.ReentrantLock 比 synchronized 增加了一些高级功能](#153reentrantlock-比-synchronized-增加了一些高级功能)
+  - [2. volatile 关键字](#2-volatile-关键字)
+    - [2.1. CPU 缓存模型](#21-cpu-缓存模型)
+    - [2.2. 讲一下 JMM(Java 内存模型)](#22-讲一下-jmmjava-内存模型)
+    - [2.3. 并发编程的三个重要特性](#23-并发编程的三个重要特性)
+    - [2.4. 说说 synchronized 关键字和 volatile 关键字的区别](#24-说说-synchronized-关键字和-volatile-关键字的区别)
+  - [3. ThreadLocal](#3-threadlocal)
+    - [3.1. ThreadLocal 简介](#31-threadlocal-简介)
+    - [3.2. ThreadLocal 示例](#32-threadlocal-示例)
+    - [3.3. ThreadLocal 原理](#33-threadlocal-原理)
+    - [3.4. ThreadLocal 内存泄露问题](#34-threadlocal-内存泄露问题)
+  - [4. 线程池](#4-线程池)
+    - [4.1. 为什么要用线程池？](#41-为什么要用线程池)
+    - [4.2. 实现 Runnable 接口和 Callable 接口的区别](#42-实现-runnable-接口和-callable-接口的区别)
+    - [4.3. 执行 execute()方法和 submit()方法的区别是什么呢？](#43-执行-execute方法和-submit方法的区别是什么呢)
+    - [4.4. 如何创建线程池](#44-如何创建线程池)
+    - [4.5 ThreadPoolExecutor 类分析](#45-threadpoolexecutor-类分析)
+      - [4.5.1 `ThreadPoolExecutor`构造函数重要参数分析](#451-threadpoolexecutor构造函数重要参数分析)
+      - [4.5.2 `ThreadPoolExecutor` 饱和策略](#452-threadpoolexecutor-饱和策略)
+    - [4.6 一个简单的线程池 Demo](#46-一个简单的线程池-demo)
+    - [4.7 线程池原理分析](#47-线程池原理分析)
+  - [5. Atomic 原子类](#5-atomic-原子类)
+    - [5.1. 介绍一下 Atomic 原子类](#51-介绍一下-atomic-原子类)
+    - [5.2. JUC 包中的原子类是哪 4 类?](#52-juc-包中的原子类是哪-4-类)
+    - [5.3. 讲讲 AtomicInteger 的使用](#53-讲讲-atomicinteger-的使用)
+    - [5.4. 能不能给我简单介绍一下 AtomicInteger 类的原理](#54-能不能给我简单介绍一下-atomicinteger-类的原理)
+  - [6. AQS](#6-aqs)
+    - [6.1. AQS 介绍](#61-aqs-介绍)
+    - [6.2. AQS 原理分析](#62-aqs-原理分析)
+      - [6.2.1. AQS 原理概览](#621-aqs-原理概览)
+      - [6.2.2. AQS 对资源的共享方式](#622-aqs-对资源的共享方式)
+      - [6.2.3. AQS 底层使用了模板方法模式](#623-aqs-底层使用了模板方法模式)
+    - [6.3. AQS 组件总结](#63-aqs-组件总结)
+    - [6.4. 用过 CountDownLatch 么？什么场景下用的？](#64-用过-countdownlatch-么什么场景下用的)
+  - [7 Reference](#7-reference)
+
+&lt;!-- /code_chunk_output --&gt;
+
+
+# **Java 并发进阶常见面试题总结**
+
+## **1.synchronized 关键字**
+
+![synchronized关键字.png](/upload/2021/10/synchronized%E5%85%B3%E9%94%AE%E5%AD%97-bf5a1263796649aba1b54cc9201a40a6.png)
+
+&gt; ### 问：知道synchronized原理吗？
+
+synchronized是java提供的原子性内置锁，这种内置的并且使用者看不到的锁也被称为**监视器锁**，使用synchronized之后，会在编译之后在同步的代码块前后加上monitorenter和monitorexit字节码指令，他依赖操作系统底层互斥锁实现。</description><guid isPermaLink="true">https://shuaiwang888.github.io/appStore-Blog.github.io/post/bing-fa-jin-jie-zong-jie.html</guid><pubDate>Sat, 06 Sep 2025 09:02:26 +0000</pubDate></item><item><title>Java并发基础总结</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/Java-bing-fa-ji-chu-zong-jie.html</link><description>&lt;!-- TOC --&gt;
 
 - [Java 并发基础常见面试题总结](#Java-并发基础常见面试题总结)
   - [1. 什么是线程和进程?](#1-什么是线程和进程)

@@ -1,0 +1,1745 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark" data-light-theme="light" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
+    
+    <link rel="icon" href="https://github.githubassets.com/favicons/favicon.svg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="<!-- @import '[TOC]' {cmd='toc' depthFrom=1 depthTo=6 orderedList=false} -->
+
+<!-- code_chunk_output -->
+
+- [Java 并发进阶常见面试题总结](#java-并发进阶常见面试题总结)
+  - [1.synchronized 关键字](#1synchronized-关键字)
+    - [1.1.说一说自己对于 synchronized 关键字的了解](#11说一说自己对于-synchronized-关键字的了解)
+    - [1.2. 说说自己是怎么使用 synchronized 关键字](#12-说说自己是怎么使用-synchronized-关键字)
+    - [1.3. 构造方法可以使用 synchronized 关键字修饰么？](#13-构造方法可以使用-synchronized-关键字修饰么)
+    - [1.3. 讲一下 synchronized 关键字的底层原理](#13-讲一下-synchronized-关键字的底层原理)
+      - [1.3.1. synchronized 同步语句块的情况](#131-synchronized-同步语句块的情况)
+      - [1.3.2. synchronized 修饰方法的的情况](#132-synchronized-修饰方法的的情况)
+      - [1.3.3.总结](#133总结)
+    - [1.4. 说说 JDK1.6 之后的 synchronized 关键字底层做了哪些优化，可以详细介绍一下这些优化吗](#14-说说-jdk16-之后的-synchronized-关键字底层做了哪些优化可以详细介绍一下这些优化吗)
+    - [1.5. 谈谈 synchronized 和 ReentrantLock 的区别](#15-谈谈-synchronized-和-reentrantlock-的区别)
+      - [1.5.1. 两者都是可重入锁](#151-两者都是可重入锁)
+      - [1.5.2.synchronized 依赖于 JVM 而 ReentrantLock 依赖于 API](#152synchronized-依赖于-jvm-而-reentrantlock-依赖于-api)
+      - [1.5.3.ReentrantLock 比 synchronized 增加了一些高级功能](#153reentrantlock-比-synchronized-增加了一些高级功能)
+  - [2. volatile 关键字](#2-volatile-关键字)
+    - [2.1. CPU 缓存模型](#21-cpu-缓存模型)
+    - [2.2. 讲一下 JMM(Java 内存模型)](#22-讲一下-jmmjava-内存模型)
+    - [2.3. 并发编程的三个重要特性](#23-并发编程的三个重要特性)
+    - [2.4. 说说 synchronized 关键字和 volatile 关键字的区别](#24-说说-synchronized-关键字和-volatile-关键字的区别)
+  - [3. ThreadLocal](#3-threadlocal)
+    - [3.1. ThreadLocal 简介](#31-threadlocal-简介)
+    - [3.2. ThreadLocal 示例](#32-threadlocal-示例)
+    - [3.3. ThreadLocal 原理](#33-threadlocal-原理)
+    - [3.4. ThreadLocal 内存泄露问题](#34-threadlocal-内存泄露问题)
+  - [4. 线程池](#4-线程池)
+    - [4.1. 为什么要用线程池？](#41-为什么要用线程池)
+    - [4.2. 实现 Runnable 接口和 Callable 接口的区别](#42-实现-runnable-接口和-callable-接口的区别)
+    - [4.3. 执行 execute()方法和 submit()方法的区别是什么呢？](#43-执行-execute方法和-submit方法的区别是什么呢)
+    - [4.4. 如何创建线程池](#44-如何创建线程池)
+    - [4.5 ThreadPoolExecutor 类分析](#45-threadpoolexecutor-类分析)
+      - [4.5.1 `ThreadPoolExecutor`构造函数重要参数分析](#451-threadpoolexecutor构造函数重要参数分析)
+      - [4.5.2 `ThreadPoolExecutor` 饱和策略](#452-threadpoolexecutor-饱和策略)
+    - [4.6 一个简单的线程池 Demo](#46-一个简单的线程池-demo)
+    - [4.7 线程池原理分析](#47-线程池原理分析)
+  - [5. Atomic 原子类](#5-atomic-原子类)
+    - [5.1. 介绍一下 Atomic 原子类](#51-介绍一下-atomic-原子类)
+    - [5.2. JUC 包中的原子类是哪 4 类?](#52-juc-包中的原子类是哪-4-类)
+    - [5.3. 讲讲 AtomicInteger 的使用](#53-讲讲-atomicinteger-的使用)
+    - [5.4. 能不能给我简单介绍一下 AtomicInteger 类的原理](#54-能不能给我简单介绍一下-atomicinteger-类的原理)
+  - [6. AQS](#6-aqs)
+    - [6.1. AQS 介绍](#61-aqs-介绍)
+    - [6.2. AQS 原理分析](#62-aqs-原理分析)
+      - [6.2.1. AQS 原理概览](#621-aqs-原理概览)
+      - [6.2.2. AQS 对资源的共享方式](#622-aqs-对资源的共享方式)
+      - [6.2.3. AQS 底层使用了模板方法模式](#623-aqs-底层使用了模板方法模式)
+    - [6.3. AQS 组件总结](#63-aqs-组件总结)
+    - [6.4. 用过 CountDownLatch 么？什么场景下用的？](#64-用过-countdownlatch-么什么场景下用的)
+  - [7 Reference](#7-reference)
+
+<!-- /code_chunk_output -->
+
+
+# **Java 并发进阶常见面试题总结**
+
+## **1.synchronized 关键字**
+
+![synchronized关键字.png](/upload/2021/10/synchronized%E5%85%B3%E9%94%AE%E5%AD%97-bf5a1263796649aba1b54cc9201a40a6.png)
+
+> ### 问：知道synchronized原理吗？
+
+synchronized是java提供的原子性内置锁，这种内置的并且使用者看不到的锁也被称为**监视器锁**，使用synchronized之后，会在编译之后在同步的代码块前后加上monitorenter和monitorexit字节码指令，他依赖操作系统底层互斥锁实现。">
+<meta property="og:title" content="并发进阶总结">
+<meta property="og:description" content="<!-- @import '[TOC]' {cmd='toc' depthFrom=1 depthTo=6 orderedList=false} -->
+
+<!-- code_chunk_output -->
+
+- [Java 并发进阶常见面试题总结](#java-并发进阶常见面试题总结)
+  - [1.synchronized 关键字](#1synchronized-关键字)
+    - [1.1.说一说自己对于 synchronized 关键字的了解](#11说一说自己对于-synchronized-关键字的了解)
+    - [1.2. 说说自己是怎么使用 synchronized 关键字](#12-说说自己是怎么使用-synchronized-关键字)
+    - [1.3. 构造方法可以使用 synchronized 关键字修饰么？](#13-构造方法可以使用-synchronized-关键字修饰么)
+    - [1.3. 讲一下 synchronized 关键字的底层原理](#13-讲一下-synchronized-关键字的底层原理)
+      - [1.3.1. synchronized 同步语句块的情况](#131-synchronized-同步语句块的情况)
+      - [1.3.2. synchronized 修饰方法的的情况](#132-synchronized-修饰方法的的情况)
+      - [1.3.3.总结](#133总结)
+    - [1.4. 说说 JDK1.6 之后的 synchronized 关键字底层做了哪些优化，可以详细介绍一下这些优化吗](#14-说说-jdk16-之后的-synchronized-关键字底层做了哪些优化可以详细介绍一下这些优化吗)
+    - [1.5. 谈谈 synchronized 和 ReentrantLock 的区别](#15-谈谈-synchronized-和-reentrantlock-的区别)
+      - [1.5.1. 两者都是可重入锁](#151-两者都是可重入锁)
+      - [1.5.2.synchronized 依赖于 JVM 而 ReentrantLock 依赖于 API](#152synchronized-依赖于-jvm-而-reentrantlock-依赖于-api)
+      - [1.5.3.ReentrantLock 比 synchronized 增加了一些高级功能](#153reentrantlock-比-synchronized-增加了一些高级功能)
+  - [2. volatile 关键字](#2-volatile-关键字)
+    - [2.1. CPU 缓存模型](#21-cpu-缓存模型)
+    - [2.2. 讲一下 JMM(Java 内存模型)](#22-讲一下-jmmjava-内存模型)
+    - [2.3. 并发编程的三个重要特性](#23-并发编程的三个重要特性)
+    - [2.4. 说说 synchronized 关键字和 volatile 关键字的区别](#24-说说-synchronized-关键字和-volatile-关键字的区别)
+  - [3. ThreadLocal](#3-threadlocal)
+    - [3.1. ThreadLocal 简介](#31-threadlocal-简介)
+    - [3.2. ThreadLocal 示例](#32-threadlocal-示例)
+    - [3.3. ThreadLocal 原理](#33-threadlocal-原理)
+    - [3.4. ThreadLocal 内存泄露问题](#34-threadlocal-内存泄露问题)
+  - [4. 线程池](#4-线程池)
+    - [4.1. 为什么要用线程池？](#41-为什么要用线程池)
+    - [4.2. 实现 Runnable 接口和 Callable 接口的区别](#42-实现-runnable-接口和-callable-接口的区别)
+    - [4.3. 执行 execute()方法和 submit()方法的区别是什么呢？](#43-执行-execute方法和-submit方法的区别是什么呢)
+    - [4.4. 如何创建线程池](#44-如何创建线程池)
+    - [4.5 ThreadPoolExecutor 类分析](#45-threadpoolexecutor-类分析)
+      - [4.5.1 `ThreadPoolExecutor`构造函数重要参数分析](#451-threadpoolexecutor构造函数重要参数分析)
+      - [4.5.2 `ThreadPoolExecutor` 饱和策略](#452-threadpoolexecutor-饱和策略)
+    - [4.6 一个简单的线程池 Demo](#46-一个简单的线程池-demo)
+    - [4.7 线程池原理分析](#47-线程池原理分析)
+  - [5. Atomic 原子类](#5-atomic-原子类)
+    - [5.1. 介绍一下 Atomic 原子类](#51-介绍一下-atomic-原子类)
+    - [5.2. JUC 包中的原子类是哪 4 类?](#52-juc-包中的原子类是哪-4-类)
+    - [5.3. 讲讲 AtomicInteger 的使用](#53-讲讲-atomicinteger-的使用)
+    - [5.4. 能不能给我简单介绍一下 AtomicInteger 类的原理](#54-能不能给我简单介绍一下-atomicinteger-类的原理)
+  - [6. AQS](#6-aqs)
+    - [6.1. AQS 介绍](#61-aqs-介绍)
+    - [6.2. AQS 原理分析](#62-aqs-原理分析)
+      - [6.2.1. AQS 原理概览](#621-aqs-原理概览)
+      - [6.2.2. AQS 对资源的共享方式](#622-aqs-对资源的共享方式)
+      - [6.2.3. AQS 底层使用了模板方法模式](#623-aqs-底层使用了模板方法模式)
+    - [6.3. AQS 组件总结](#63-aqs-组件总结)
+    - [6.4. 用过 CountDownLatch 么？什么场景下用的？](#64-用过-countdownlatch-么什么场景下用的)
+  - [7 Reference](#7-reference)
+
+<!-- /code_chunk_output -->
+
+
+# **Java 并发进阶常见面试题总结**
+
+## **1.synchronized 关键字**
+
+![synchronized关键字.png](/upload/2021/10/synchronized%E5%85%B3%E9%94%AE%E5%AD%97-bf5a1263796649aba1b54cc9201a40a6.png)
+
+> ### 问：知道synchronized原理吗？
+
+synchronized是java提供的原子性内置锁，这种内置的并且使用者看不到的锁也被称为**监视器锁**，使用synchronized之后，会在编译之后在同步的代码块前后加上monitorenter和monitorexit字节码指令，他依赖操作系统底层互斥锁实现。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://shuaiwang888.github.io/appStore-Blog.github.io/post/bing-fa-jin-jie-zong-jie.html">
+<meta property="og:image" content="https://github.githubassets.com/favicons/favicon.svg">
+<title>并发进阶总结</title>
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+.copy-feedback {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    color: var(--color-fg-on-emphasis);
+    background-color: var(--color-fg-muted);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
+</style>
+
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">并发进阶总结</h1>
+<div class="title-right">
+    <a href="https://shuaiwang888.github.io/appStore-Blog.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/shuaiwang888/appStore-Blog.github.io/issues/14" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody">
+
+<ul>
+<li><a href="#java-%E5%B9%B6%E5%8F%91%E8%BF%9B%E9%98%B6%E5%B8%B8%E8%A7%81%E9%9D%A2%E8%AF%95%E9%A2%98%E6%80%BB%E7%BB%93">Java 并发进阶常见面试题总结</a>
+<ul>
+<li><a href="#1synchronized-%E5%85%B3%E9%94%AE%E5%AD%97">1.synchronized 关键字</a>
+<ul>
+<li><a href="#11%E8%AF%B4%E4%B8%80%E8%AF%B4%E8%87%AA%E5%B7%B1%E5%AF%B9%E4%BA%8E-synchronized-%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E4%BA%86%E8%A7%A3">1.1.说一说自己对于 synchronized 关键字的了解</a></li>
+<li><a href="#12-%E8%AF%B4%E8%AF%B4%E8%87%AA%E5%B7%B1%E6%98%AF%E6%80%8E%E4%B9%88%E4%BD%BF%E7%94%A8-synchronized-%E5%85%B3%E9%94%AE%E5%AD%97">1.2. 说说自己是怎么使用 synchronized 关键字</a></li>
+<li><a href="#13-%E6%9E%84%E9%80%A0%E6%96%B9%E6%B3%95%E5%8F%AF%E4%BB%A5%E4%BD%BF%E7%94%A8-synchronized-%E5%85%B3%E9%94%AE%E5%AD%97%E4%BF%AE%E9%A5%B0%E4%B9%88">1.3. 构造方法可以使用 synchronized 关键字修饰么？</a></li>
+<li><a href="#13-%E8%AE%B2%E4%B8%80%E4%B8%8B-synchronized-%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86">1.3. 讲一下 synchronized 关键字的底层原理</a>
+<ul>
+<li><a href="#131-synchronized-%E5%90%8C%E6%AD%A5%E8%AF%AD%E5%8F%A5%E5%9D%97%E7%9A%84%E6%83%85%E5%86%B5">1.3.1. synchronized 同步语句块的情况</a></li>
+<li><a href="#132-synchronized-%E4%BF%AE%E9%A5%B0%E6%96%B9%E6%B3%95%E7%9A%84%E7%9A%84%E6%83%85%E5%86%B5">1.3.2. synchronized 修饰方法的的情况</a></li>
+<li><a href="#133%E6%80%BB%E7%BB%93">1.3.3.总结</a></li>
+</ul>
+</li>
+<li><a href="#14-%E8%AF%B4%E8%AF%B4-jdk16-%E4%B9%8B%E5%90%8E%E7%9A%84-synchronized-%E5%85%B3%E9%94%AE%E5%AD%97%E5%BA%95%E5%B1%82%E5%81%9A%E4%BA%86%E5%93%AA%E4%BA%9B%E4%BC%98%E5%8C%96%E5%8F%AF%E4%BB%A5%E8%AF%A6%E7%BB%86%E4%BB%8B%E7%BB%8D%E4%B8%80%E4%B8%8B%E8%BF%99%E4%BA%9B%E4%BC%98%E5%8C%96%E5%90%97">1.4. 说说 JDK1.6 之后的 synchronized 关键字底层做了哪些优化，可以详细介绍一下这些优化吗</a></li>
+<li><a href="#15-%E8%B0%88%E8%B0%88-synchronized-%E5%92%8C-reentrantlock-%E7%9A%84%E5%8C%BA%E5%88%AB">1.5. 谈谈 synchronized 和 ReentrantLock 的区别</a>
+<ul>
+<li><a href="#151-%E4%B8%A4%E8%80%85%E9%83%BD%E6%98%AF%E5%8F%AF%E9%87%8D%E5%85%A5%E9%94%81">1.5.1. 两者都是可重入锁</a></li>
+<li><a href="#152synchronized-%E4%BE%9D%E8%B5%96%E4%BA%8E-jvm-%E8%80%8C-reentrantlock-%E4%BE%9D%E8%B5%96%E4%BA%8E-api">1.5.2.synchronized 依赖于 JVM 而 ReentrantLock 依赖于 API</a></li>
+<li><a href="#153reentrantlock-%E6%AF%94-synchronized-%E5%A2%9E%E5%8A%A0%E4%BA%86%E4%B8%80%E4%BA%9B%E9%AB%98%E7%BA%A7%E5%8A%9F%E8%83%BD">1.5.3.ReentrantLock 比 synchronized 增加了一些高级功能</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#2-volatile-%E5%85%B3%E9%94%AE%E5%AD%97">2. volatile 关键字</a>
+<ul>
+<li><a href="#21-cpu-%E7%BC%93%E5%AD%98%E6%A8%A1%E5%9E%8B">2.1. CPU 缓存模型</a></li>
+<li><a href="#22-%E8%AE%B2%E4%B8%80%E4%B8%8B-jmmjava-%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B">2.2. 讲一下 JMM(Java 内存模型)</a></li>
+<li><a href="#23-%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E7%9A%84%E4%B8%89%E4%B8%AA%E9%87%8D%E8%A6%81%E7%89%B9%E6%80%A7">2.3. 并发编程的三个重要特性</a></li>
+<li><a href="#24-%E8%AF%B4%E8%AF%B4-synchronized-%E5%85%B3%E9%94%AE%E5%AD%97%E5%92%8C-volatile-%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E5%8C%BA%E5%88%AB">2.4. 说说 synchronized 关键字和 volatile 关键字的区别</a></li>
+</ul>
+</li>
+<li><a href="#3-threadlocal">3. ThreadLocal</a>
+<ul>
+<li><a href="#31-threadlocal-%E7%AE%80%E4%BB%8B">3.1. ThreadLocal 简介</a></li>
+<li><a href="#32-threadlocal-%E7%A4%BA%E4%BE%8B">3.2. ThreadLocal 示例</a></li>
+<li><a href="#33-threadlocal-%E5%8E%9F%E7%90%86">3.3. ThreadLocal 原理</a></li>
+<li><a href="#34-threadlocal-%E5%86%85%E5%AD%98%E6%B3%84%E9%9C%B2%E9%97%AE%E9%A2%98">3.4. ThreadLocal 内存泄露问题</a></li>
+</ul>
+</li>
+<li><a href="#4-%E7%BA%BF%E7%A8%8B%E6%B1%A0">4. 线程池</a>
+<ul>
+<li><a href="#41-%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E7%94%A8%E7%BA%BF%E7%A8%8B%E6%B1%A0">4.1. 为什么要用线程池？</a></li>
+<li><a href="#42-%E5%AE%9E%E7%8E%B0-runnable-%E6%8E%A5%E5%8F%A3%E5%92%8C-callable-%E6%8E%A5%E5%8F%A3%E7%9A%84%E5%8C%BA%E5%88%AB">4.2. 实现 Runnable 接口和 Callable 接口的区别</a></li>
+<li><a href="#43-%E6%89%A7%E8%A1%8C-execute%E6%96%B9%E6%B3%95%E5%92%8C-submit%E6%96%B9%E6%B3%95%E7%9A%84%E5%8C%BA%E5%88%AB%E6%98%AF%E4%BB%80%E4%B9%88%E5%91%A2">4.3. 执行 execute()方法和 submit()方法的区别是什么呢？</a></li>
+<li><a href="#44-%E5%A6%82%E4%BD%95%E5%88%9B%E5%BB%BA%E7%BA%BF%E7%A8%8B%E6%B1%A0">4.4. 如何创建线程池</a></li>
+<li><a href="#45-threadpoolexecutor-%E7%B1%BB%E5%88%86%E6%9E%90">4.5 ThreadPoolExecutor 类分析</a>
+<ul>
+<li><a href="#451-threadpoolexecutor%E6%9E%84%E9%80%A0%E5%87%BD%E6%95%B0%E9%87%8D%E8%A6%81%E5%8F%82%E6%95%B0%E5%88%86%E6%9E%90">4.5.1 <code class="notranslate">ThreadPoolExecutor</code>构造函数重要参数分析</a></li>
+<li><a href="#452-threadpoolexecutor-%E9%A5%B1%E5%92%8C%E7%AD%96%E7%95%A5">4.5.2 <code class="notranslate">ThreadPoolExecutor</code> 饱和策略</a></li>
+</ul>
+</li>
+<li><a href="#46-%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E7%9A%84%E7%BA%BF%E7%A8%8B%E6%B1%A0-demo">4.6 一个简单的线程池 Demo</a></li>
+<li><a href="#47-%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90">4.7 线程池原理分析</a></li>
+</ul>
+</li>
+<li><a href="#5-atomic-%E5%8E%9F%E5%AD%90%E7%B1%BB">5. Atomic 原子类</a>
+<ul>
+<li><a href="#51-%E4%BB%8B%E7%BB%8D%E4%B8%80%E4%B8%8B-atomic-%E5%8E%9F%E5%AD%90%E7%B1%BB">5.1. 介绍一下 Atomic 原子类</a></li>
+<li><a href="#52-juc-%E5%8C%85%E4%B8%AD%E7%9A%84%E5%8E%9F%E5%AD%90%E7%B1%BB%E6%98%AF%E5%93%AA-4-%E7%B1%BB">5.2. JUC 包中的原子类是哪 4 类?</a></li>
+<li><a href="#53-%E8%AE%B2%E8%AE%B2-atomicinteger-%E7%9A%84%E4%BD%BF%E7%94%A8">5.3. 讲讲 AtomicInteger 的使用</a></li>
+<li><a href="#54-%E8%83%BD%E4%B8%8D%E8%83%BD%E7%BB%99%E6%88%91%E7%AE%80%E5%8D%95%E4%BB%8B%E7%BB%8D%E4%B8%80%E4%B8%8B-atomicinteger-%E7%B1%BB%E7%9A%84%E5%8E%9F%E7%90%86">5.4. 能不能给我简单介绍一下 AtomicInteger 类的原理</a></li>
+</ul>
+</li>
+<li><a href="#6-aqs">6. AQS</a>
+<ul>
+<li><a href="#61-aqs-%E4%BB%8B%E7%BB%8D">6.1. AQS 介绍</a></li>
+<li><a href="#62-aqs-%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90">6.2. AQS 原理分析</a>
+<ul>
+<li><a href="#621-aqs-%E5%8E%9F%E7%90%86%E6%A6%82%E8%A7%88">6.2.1. AQS 原理概览</a></li>
+<li><a href="#622-aqs-%E5%AF%B9%E8%B5%84%E6%BA%90%E7%9A%84%E5%85%B1%E4%BA%AB%E6%96%B9%E5%BC%8F">6.2.2. AQS 对资源的共享方式</a></li>
+<li><a href="#623-aqs-%E5%BA%95%E5%B1%82%E4%BD%BF%E7%94%A8%E4%BA%86%E6%A8%A1%E6%9D%BF%E6%96%B9%E6%B3%95%E6%A8%A1%E5%BC%8F">6.2.3. AQS 底层使用了模板方法模式</a></li>
+</ul>
+</li>
+<li><a href="#63-aqs-%E7%BB%84%E4%BB%B6%E6%80%BB%E7%BB%93">6.3. AQS 组件总结</a></li>
+<li><a href="#64-%E7%94%A8%E8%BF%87-countdownlatch-%E4%B9%88%E4%BB%80%E4%B9%88%E5%9C%BA%E6%99%AF%E4%B8%8B%E7%94%A8%E7%9A%84">6.4. 用过 CountDownLatch 么？什么场景下用的？</a></li>
+</ul>
+</li>
+<li><a href="#7-reference">7 Reference</a></li>
+</ul>
+</li>
+</ul>
+
+<h1><strong>Java 并发进阶常见面试题总结</strong></h1>
+<h2><strong>1.synchronized 关键字</strong></h2>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/synchronized%E5%85%B3%E9%94%AE%E5%AD%97-bf5a1263796649aba1b54cc9201a40a6.png"><img src="/upload/2021/10/synchronized%E5%85%B3%E9%94%AE%E5%AD%97-bf5a1263796649aba1b54cc9201a40a6.png" alt="synchronized关键字.png" style="max-width: 100%;"></a></p>
+<blockquote>
+<h3>问：知道synchronized原理吗？</h3>
+</blockquote>
+<p>synchronized是java提供的原子性内置锁，这种内置的并且使用者看不到的锁也被称为<strong>监视器锁</strong>，使用synchronized之后，会在编译之后在同步的代码块前后加上monitorenter和monitorexit字节码指令，他依赖操作系统底层互斥锁实现。<strong>他的作用主要就是实现原子性操作和解决共享变量的内存可见性问题。</strong></p>
+<p>执行monitorenter指令时会尝试获取对象锁，如果对象没有被锁定或者已经获得了锁，锁的计数器+1。此时其他竞争锁的线程则会进入等待队列中。</p>
+<p>执行monitorexit指令时则会把计数器-1，当计数器值为0时，则锁释放，处于等待队列中的线程再继续竞争锁。</p>
+<p>synchronized是排它锁，当一个线程获得锁之后，其他线程必须等待该线程释放锁后才能获得锁，而且由于Java中的线程和操作系统原生线程是一一对应的，线程被阻塞或者唤醒时时会从用户态切换到内核态，这种转换非常消耗性能。</p>
+<p>从内存语义来说，加锁的过程会清除工作内存中的共享变量，再从主内存读取，而释放锁的过程则是将工作内存中的共享变量写回主内存。</p>
+<p>实际上大部分时候我认为说到monitorenter就行了，但是为了更清楚的描述，还是再具体一点。</p>
+<p>如果再深入到源码来说，synchronized实际上有两个队列waitSet和entryList。</p>
+<ol>
+<li>当多个线程进入同步代码块时，首先进入entryList</li>
+<li>有一个线程获取到monitor锁后，就赋值给当前线程，并且计数器+1</li>
+<li>如果线程调用wait方法，将释放锁，当前线程置为null，计数器-1，同时进入waitSet等待被唤醒，调用notify或者notifyAll之后又会进入entryList竞争锁</li>
+<li>如果线程执行完毕，同样释放锁，计数器-1，当前线程置为null</li>
+</ol>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/5a1ef7ab124d3631f2dda97714b84c9dadaf8ffeb158d9231eaeca1679ca6240/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f65653238633431643032636534383062393538303663646532393631616562372e706e67"><img src="https://camo.githubusercontent.com/5a1ef7ab124d3631f2dda97714b84c9dadaf8ffeb158d9231eaeca1679ca6240/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f65653238633431643032636534383062393538303663646532393631616562372e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/ee28c41d02ce480b95806cde2961aeb7.png" style="max-width: 100%;"></a></p>
+<h3><strong>1.1.说一说自己对于 synchronized 关键字的了解</strong></h3>
+<p><strong><code class="notranslate">synchronized</code> 关键字解决的是多个线程之间访问资源的同步性，<code class="notranslate">synchronized</code>关键字可以保证被它修饰的方法或者代码块在任意时刻只能有一个线程执行。</strong></p>
+<p>另外，在 Java 早期版本中，<code class="notranslate">synchronized</code> 属于 <strong>重量级锁</strong>，效率低下。</p>
+<p><strong>为什么呢？</strong></p>
+<p>因为监视器锁（monitor）是依赖于底层的操作系统的 <code class="notranslate">Mutex Lock</code> 来实现的，Java 的线程是映射到操作系统的原生线程之上的。如果要挂起或者唤醒一个线程，都需要操作系统帮忙完成，而操作系统实现线程之间的切换时需要从用户态转换到内核态，这个状态之间的转换需要相对比较长的时间，时间成本相对较高。</p>
+<p>庆幸的是在 Java 6 之后 Java 官方对从 JVM 层面对 <code class="notranslate">synchronized</code> 较大优化，所以现在的 <code class="notranslate">synchronized</code> 锁效率也优化得很不错了。JDK1.6 对锁的实现引入了大量的优化，如自旋锁、适应性自旋锁、锁消除、锁粗化、偏向锁、轻量级锁等技术来减少锁操作的开销。</p>
+<p>所以，你会发现目前的话，不论是各种开源框架还是 JDK 源码都大量使用了 <code class="notranslate">synchronized</code> 关键字。</p>
+<h3><strong>1.2. 说说自己是怎么使用 synchronized 关键字</strong></h3>
+<p><strong>synchronized 关键字最主要的三种使用方式：</strong></p>
+<p><strong>1.修饰实例方法:</strong> 作用于当前对象实例加锁，进入同步代码前要获得 <strong>当前对象实例的锁</strong></p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">synchronized</span> <span class="pl-smi">void</span> <span class="pl-en">method</span>() {
+    <span class="pl-c">//业务代码</span>
+}</pre></div>
+<p><strong>2.修饰静态方法:</strong> 也就是给当前类加锁，会作用于类的所有对象实例 ，进入同步代码前要获得 <strong>当前 class 的锁</strong>。因为静态成员不属于任何一个实例对象，是类成员（ <em>static 表明这是该类的一个静态资源，不管 new 了多少个对象，只有一份</em>）。所以，如果一个线程 A 调用一个实例对象的非静态 <code class="notranslate">synchronized</code> 方法，而线程 B 需要调用这个实例对象所属类的静态 <code class="notranslate">synchronized</code> 方法，是允许的，不会发生互斥现象，<strong>因为访问静态 <code class="notranslate">synchronized</code> 方法占用的锁是当前类的锁，而访问非静态 <code class="notranslate">synchronized</code> 方法占用的锁是当前实例对象锁</strong>。</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">synchronized</span> <span class="pl-k">static</span> <span class="pl-smi">void</span> <span class="pl-en">method</span>() {
+    <span class="pl-c">//业务代码</span>
+}</pre></div>
+<p><strong>3.修饰代码块</strong> ：指定加锁对象，对给定对象/类加锁。<code class="notranslate">synchronized(this|object)</code> 表示进入同步代码库前要获得<strong>给定对象的锁</strong>。<code class="notranslate">synchronized(类.class)</code> 表示进入同步代码前要获得 <strong>当前 class 的锁</strong></p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">synchronized</span>(<span class="pl-smi">this</span>) {
+    <span class="pl-c">//业务代码</span>
+}</pre></div>
+<p><strong>总结：</strong></p>
+<ul>
+<li><code class="notranslate">synchronized</code> 关键字加到 <code class="notranslate">static</code> 静态方法和 <code class="notranslate">synchronized(class)</code> 代码块上都是是给 Class 类上锁。</li>
+<li><code class="notranslate">synchronized</code> 关键字加到实例方法上是给对象实例上锁。</li>
+<li>尽量不要使用 <code class="notranslate">synchronized(String a)</code> 因为 JVM 中，字符串常量池具有缓存功能！</li>
+</ul>
+<p>下面我以一个常见的面试题为例讲解一下 <code class="notranslate">synchronized</code> 关键字的具体使用。</p>
+<p>面试中面试官经常会说：“单例模式了解吗？来给我手写一下！给我解释一下双重检验锁方式实现单例模式的原理呗！”</p>
+<p><strong>双重校验锁实现对象单例（线程安全）</strong></p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">Singleton</span> {
+    <span class="pl-k">private</span> <span class="pl-k">volatile</span> <span class="pl-k">static</span> <span class="pl-smi">Singleton</span> <span class="pl-s1">uniqueInstance</span>;
+    <span class="pl-k">private</span> <span class="pl-smi">Singleton</span>() {
+    }
+    <span class="pl-k">public</span>  <span class="pl-k">static</span> <span class="pl-smi">Singleton</span> <span class="pl-en">getUniqueInstance</span>() {
+       <span class="pl-c">//先判断对象是否已经实例过，没有实例化过才进入加锁代码</span>
+        <span class="pl-k">if</span> (<span class="pl-s1">uniqueInstance</span> == <span class="pl-c1">null</span>) {
+            <span class="pl-c">//类对象加锁</span>
+            <span class="pl-k">synchronized</span> (<span class="pl-smi">Singleton</span>.<span class="pl-k">class</span>) {
+                <span class="pl-k">if</span> (<span class="pl-s1">uniqueInstance</span> == <span class="pl-c1">null</span>) {
+                    <span class="pl-s1">uniqueInstance</span> = <span class="pl-k">new</span> <span class="pl-smi">Singleton</span>();
+                }
+            }
+        }
+        <span class="pl-k">return</span> <span class="pl-s1">uniqueInstance</span>;
+    }
+}</pre></div>
+<p>另外，需要注意 <code class="notranslate">uniqueInstance</code> 采用 <code class="notranslate">volatile</code> 关键字修饰也是很有必要。</p>
+<p><code class="notranslate">uniqueInstance</code> 采用 <code class="notranslate">volatile</code> 关键字修饰也是很有必要的， <code class="notranslate">uniqueInstance = new Singleton();</code> 这段代码其实是分为三步执行：</p>
+<ol>
+<li>为 <code class="notranslate">uniqueInstance</code> 分配内存空间</li>
+<li>初始化 <code class="notranslate">uniqueInstance</code></li>
+<li>将 <code class="notranslate">uniqueInstance</code> 指向分配的内存地址</li>
+</ol>
+<p>但是由于 JVM 具有指令重排的特性，执行顺序有可能变成 1-&gt;3-&gt;2。指令重排在单线程环境下不会出现问题，但是在多线程环境下会导致一个线程获得还没有初始化的实例。例如，线程 T1 执行了 1 和 3，此时 T2 调用 <code class="notranslate">getUniqueInstance</code>() 后发现 <code class="notranslate">uniqueInstance</code> 不为空，因此返回 <code class="notranslate">uniqueInstance</code>，但此时 <code class="notranslate">uniqueInstance</code> 还未被初始化，但是别的线程去判断uniqueInstance！=null，直接拿去用了，其实这个对象是个半成品，那就有<strong>空指针异常</strong>了。。</p>
+<p>使用 <code class="notranslate">volatile</code> 可以禁止 JVM 的指令重排，保证在多线程环境下也能正常运行。</p>
+<h3><strong>1.3. 构造方法可以使用 synchronized 关键字修饰么？</strong></h3>
+<p>先说结论：<strong>构造方法不能使用 synchronized 关键字修饰。</strong></p>
+<p>构造方法本身就属于线程安全的，不存在同步的构造方法一说。</p>
+<h3><strong>1.3. 讲一下 synchronized 关键字的底层原理</strong></h3>
+<p><strong>synchronized 关键字底层原理属于 JVM 层面。</strong></p>
+<h4><strong>1.3.1. synchronized 同步语句块的情况</strong></h4>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">SynchronizedDemo</span> {
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">method</span>() {
+        <span class="pl-k">synchronized</span> (<span class="pl-smi">this</span>) {
+            <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"synchronized 代码块"</span>);
+        }
+    }
+}</pre></div>
+<p>通过 JDK 自带的 <code class="notranslate">javap</code> 命令查看 <code class="notranslate">SynchronizedDemo</code> 类的相关字节码信息：首先切换到类的对应目录执行 <code class="notranslate">javac SynchronizedDemo.java</code> 命令生成编译后的 .class 文件，然后执行<code class="notranslate">javap -c -s -v -l SynchronizedDemo.class</code>。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/9267e77408fc8264eda461245fd7c4bff15def3e502f099c922b6ed15a703b84/68747470733a2f2f6d792d626c6f672d746f2d7573652e6f73732d636e2d6265696a696e672e616c6979756e63732e636f6d2f323031392d362f73796e6368726f6e697a65642545352538352542332545392539342541452545352541442539372545352538452539462545372539302538362e706e67"><img src="https://camo.githubusercontent.com/9267e77408fc8264eda461245fd7c4bff15def3e502f099c922b6ed15a703b84/68747470733a2f2f6d792d626c6f672d746f2d7573652e6f73732d636e2d6265696a696e672e616c6979756e63732e636f6d2f323031392d362f73796e6368726f6e697a65642545352538352542332545392539342541452545352541442539372545352538452539462545372539302538362e706e67" alt="synchronized关键字原理" style="max-width: 100%;"></a></p>
+<p>从上面我们可以看出：</p>
+<p><strong><code class="notranslate">synchronized</code> 同步语句块的实现使用的是 <code class="notranslate">monitorenter</code> 和 <code class="notranslate">monitorexit</code> 指令，其中 <code class="notranslate">monitorenter</code> 指令指向同步代码块的开始位置，<code class="notranslate">monitorexit</code> 指令则指明同步代码块的结束位置。</strong></p>
+<p>当执行 <code class="notranslate">monitorenter</code> 指令时，线程试图获取锁也就是获取 <strong>对象监视器 <code class="notranslate">monitor</code></strong> 的持有权。</p>
+<blockquote>
+<p>在 Java 虚拟机(HotSpot)中，Monitor 是基于 C++实现的，由<a href="https://github.com/openjdk-mirror/jdk7u-hotspot/blob/50bdefc3afe944ca74c3093e7448d6b889cd20d1/src/share/vm/runtime/objectMonitor.cpp">ObjectMonitor</a>实现的。每个对象中都内置了一个 <code class="notranslate">ObjectMonitor</code>对象。</p>
+<p>另外，<code class="notranslate">wait/notify</code>等方法也依赖于<code class="notranslate">monitor</code>对象，这就是为什么只有在同步的块或者方法中才能调用<code class="notranslate">wait/notify</code>等方法，否则会抛出<code class="notranslate">java.lang.IllegalMonitorStateException</code>的异常的原因。<br>
+在执行<code class="notranslate">monitorenter</code>时，会尝试获取对象的锁，如果锁的计数器为 0 则表示锁可以被获取，获取后将锁计数器设为 1 也就是加 1。</p>
+</blockquote>
+<p>在执行 <code class="notranslate">monitorexit</code> 指令后，将锁计数器设为 0，表明锁被释放。如果获取对象锁失败，那当前线程就要阻塞等待，直到锁被另外一个线程释放为止。</p>
+<h4><strong>1.3.2. synchronized 修饰方法的的情况</strong></h4>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">SynchronizedDemo2</span> {
+    <span class="pl-k">public</span> <span class="pl-k">synchronized</span> <span class="pl-smi">void</span> <span class="pl-en">method</span>() {
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"synchronized 方法"</span>);
+    }
+}</pre></div>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/78774e083f6db4eb50d52b9b7a730eadfcc205ab1a05f2438bbbc66936dc32ca/68747470733a2f2f6d792d626c6f672d746f2d7573652e6f73732d636e2d6265696a696e672e616c6979756e63732e636f6d2f323031392d362f73796e6368726f6e697a6564254535253835254233254539253934254145254535254144253937254535253845253946254537253930253836322e706e67"><img src="https://camo.githubusercontent.com/78774e083f6db4eb50d52b9b7a730eadfcc205ab1a05f2438bbbc66936dc32ca/68747470733a2f2f6d792d626c6f672d746f2d7573652e6f73732d636e2d6265696a696e672e616c6979756e63732e636f6d2f323031392d362f73796e6368726f6e697a6564254535253835254233254539253934254145254535254144253937254535253845253946254537253930253836322e706e67" alt="synchronized关键字原理" style="max-width: 100%;"></a></p>
+<p><code class="notranslate">synchronized</code> 修饰的方法并没有 <code class="notranslate">monitorenter</code> 指令和 <code class="notranslate">monitorexit</code> 指令，取得代之的确实是 <code class="notranslate">ACC_SYNCHRONIZED</code> 标识，该标识指明了该方法是一个同步方法。JVM 通过该 <code class="notranslate">ACC_SYNCHRONIZED</code> 访问标志来辨别一个方法是否声明为同步方法，从而执行相应的同步调用。</p>
+<h4><strong>1.3.3.总结</strong></h4>
+<p><code class="notranslate">synchronized</code> 同步语句块的实现使用的是 <code class="notranslate">monitorenter</code> 和 <code class="notranslate">monitorexit</code> 指令，其中 <code class="notranslate">monitorenter</code> 指令指向同步代码块的开始位置，<code class="notranslate">monitorexit</code> 指令则指明同步代码块的结束位置。</p>
+<p><code class="notranslate">synchronized</code> 修饰的方法并没有 <code class="notranslate">monitorenter</code> 指令和 <code class="notranslate">monitorexit</code> 指令，取得代之的确实是 <code class="notranslate">ACC_SYNCHRONIZED</code> 标识，该标识指明了该方法是一个同步方法。</p>
+<p><strong>不过两者的本质都是对对象监视器 monitor 的获取。</strong></p>
+<h3><strong>1.4. 说说 JDK1.6 之后的 synchronized 关键字底层做了哪些优化，可以详细介绍一下这些优化吗</strong></h3>
+<p>从JDK1.6版本之后，synchronized本身也在不断优化锁的机制，有些情况下他并不会是一个很重量级的锁了。优化机制包括<strong>自适应锁、自旋锁、锁消除、锁粗化、轻量级锁和偏向锁。</strong></p>
+<p>锁的状态从低到高依次为<strong>无锁-&gt;偏向锁-&gt;轻量级锁-&gt;重量级锁</strong>，升级的过程就是从低到高，降级在一定条件也是有可能发生的。</p>
+<p><strong>自旋锁：</strong> 由于大部分时候，锁被占用的时间很短，共享变量的锁定时间也很短，所有没有必要挂起线程，用户态和内核态的来回上下文切换严重影响性能。自旋的概念就是让线程执行一个忙循环，可以理解为就是啥也不干，防止从用户态转入内核态，自旋锁可以通过设置-XX:+UseSpining来开启，自旋的默认次数是10次，可以使用-XX:PreBlockSpin设置。</p>
+<p><strong>自适应锁：</strong> 自适应锁就是自适应的自旋锁，自旋的时间不是固定时间，而是由前一次在同一个锁上的自旋时间和锁的持有者状态来决定。</p>
+<p><strong>锁消除：</strong> 锁消除指的是JVM检测到一些同步的代码块，完全不存在数据竞争的场景，也就是不需要加锁，就会进行锁消除。</p>
+<p><strong>锁粗化：</strong> 锁粗化指的是有很多操作都是对同一个对象进行加锁，就会把锁的同步范围扩展到整个操作序列之外。</p>
+<p><strong>偏向锁：</strong> 当线程访问同步块获取锁时，会在对象头和栈帧中的锁记录里存储偏向锁的线程ID，之后这个线程再次进入同步块时都不需要CAS来加锁和解锁了，偏向锁会永远偏向第一个获得锁的线程，如果后续没有其他线程获得过这个锁，持有锁的线程就永远不需要进行同步，反之，当有其他线程竞争偏向锁时，持有偏向锁的线程就会释放偏向锁。可以用过设置-XX:+UseBiasedLocking开启偏向锁。</p>
+<p><strong>轻量级锁：</strong> JVM的对象的对象头中包含有一些锁的标志位，代码进入同步块的时候，JVM将会使用CAS方式来尝试获取锁，如果更新成功则会把对象头中的状态位标记为轻量级锁，如果更新失败，当前线程就尝试自旋来获得锁。</p>
+<p><strong>简单点说，偏向锁就是通过对象头的偏向线程ID来对比，甚至都不需要CAS了，而轻量级锁主要就是通过CAS修改对象头锁记录和自旋来实现，重量级锁则是除了拥有锁的线程其他全部阻塞。</strong></p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/213a0e077263b324ad2de3e7bae4aff6d68698597dbb21c9c7df6ed0d3a08a3b/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f66343236653361393932663434373831383535363432343536376333363132622e706e67"><img src="https://camo.githubusercontent.com/213a0e077263b324ad2de3e7bae4aff6d68698597dbb21c9c7df6ed0d3a08a3b/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f66343236653361393932663434373831383535363432343536376333363132622e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/f426e3a992f447818556424567c3612b.png" style="max-width: 100%;"></a></p>
+<p>关于这几种优化的详细信息可以查看下面这篇文章：<a href="https://www.cnblogs.com/wuqinglong/p/9945618.html" rel="nofollow">Java6 及以上版本对 synchronized 的优化</a></p>
+<h3><strong>1.5. 谈谈 synchronized 和 ReentrantLock 的区别</strong></h3>
+<blockquote>
+<p>synchronized是一个关键字，ReentrantLock是一个类；</p>
+</blockquote>
+<blockquote>
+<p>synchronized锁的是对象，锁信息保存在对象头中，ReentrantLock通过代码中的int类型的state标识来标识锁的状态，<strong>当这个state==0时，表示锁是空闲的，大于零表示锁已经被占用， 它的数值表示当前线程重复占用这个锁的次数；</strong></p>
+</blockquote>
+<blockquote>
+<p>synchronized是关键字，是JVM层面的底层啥都帮我们做了，而Lock是一个接口，是JDK层面的有丰富的API。<strong>synchronized会自动释放锁，而Lock必须手动释放锁</strong>。<strong>synchronized是不可中断的，Lock可以中断也可以不中断</strong>。<strong>通过Lock可以知道线程有没有拿到锁，而synchronized不能</strong>。<strong>synchronized能锁住方法和代码块，而Lock只能锁住代码块</strong>。<strong>Lock可以使用读锁提高多线程读效率。synchronized是非公平锁，ReentrantLock可以控制是否是公平锁。</strong></p>
+</blockquote>
+<blockquote>
+<p>场景：比如我现在是滴滴，我早上有打车高峰，我代码使用了大量的synchronized，有什么问题？锁升级过程是不可逆的，过了高峰我们还是重量级的锁，那效率是不是大打折扣了？这个时候你用Lock是不是很好？</p>
+</blockquote>
+<blockquote>
+<p>synchronized的底层有一个锁升级的过程，无锁-》偏向锁-〉轻量级锁-》重量级锁；</p>
+</blockquote>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/431db8d17006aa1c5fd786b14fde3d3261022c72b6fa91797818998631cd0076/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f31623164633630636234663034326331613930623135313131346331323061652e706e67"><img src="https://camo.githubusercontent.com/431db8d17006aa1c5fd786b14fde3d3261022c72b6fa91797818998631cd0076/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f31623164633630636234663034326331613930623135313131346331323061652e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/1b1dc60cb4f042c1a90b151114c120ae.png" style="max-width: 100%;"></a></p>
+<h4><strong>1.5.1. 两者都是可重入锁</strong></h4>
+<p><strong>“可重入锁”</strong> 指的是自己可以再次获取自己的内部锁。比如一个线程获得了某个对象的锁，此时这个对象锁还没有释放，当其再次想要获取这个对象的锁的时候还是可以获取的，如果不可锁重入的话，就会造成死锁。同一个线程每次获取锁，锁的计数器都自增 1，所以要等到锁的计数器下降为 0 时才能释放锁。</p>
+<h4><strong>1.5.2.synchronized 依赖于 JVM 而 ReentrantLock 依赖于 API</strong></h4>
+<p><code class="notranslate">synchronized</code> 是依赖于 JVM 实现的，前面我们也讲到了 虚拟机团队在 JDK1.6 为 <code class="notranslate">synchronized</code> 关键字进行了很多优化，但是这些优化都是在虚拟机层面实现的，并没有直接暴露给我们。<code class="notranslate">ReentrantLock</code> 是 JDK 层面实现的（也就是 API 层面，需要 lock() 和 unlock() 方法配合 try/finally 语句块来完成），所以我们可以通过查看它的源代码，来看它是如何实现的。</p>
+<h4><strong>1.5.3.ReentrantLock 比 synchronized 增加了一些高级功能</strong></h4>
+<p>相比于synchronized，ReentrantLock需要显式的获取锁和释放锁，相对现在基本都是用JDK7和JDK8的版本，ReentrantLock的效率和synchronized区别基本可以持平了。主要来说主要有三点：</p>
+<ul>
+<li><strong>等待可中断</strong> : <code class="notranslate">ReentrantLock</code>提供了一种能够中断等待锁的线程的机制，通过 <code class="notranslate">lock.lockInterruptibly()</code> 来实现这个机制。也就是说正在等待的线程可以选择放弃等待，改为处理其他事情。(boolean tryLock(long timeout, TimeUnit unit) throws InterruptedException：尝试获取锁，等待timeout时间，<strong>可以不用进行无限等待，如果一段时间等不到锁，可以直接放弃，同时释放自己已经得到的资源</strong>。同时，<strong>可以响应中断</strong>。<strong>可以在应用程序这层进行进行自旋</strong>，你可以自己决定尝试几次，或者是放弃。）</li>
+<li><strong>可实现公平锁</strong> : <code class="notranslate">ReentrantLock</code>可以指定是公平锁还是非公平锁。而<code class="notranslate">synchronized</code>只能是非公平锁。所谓的公平锁就是先等待的线程先获得锁。<code class="notranslate">ReentrantLock</code>默认情况是非公平的，可以通过 <code class="notranslate">ReentrantLock</code>类的<code class="notranslate">ReentrantLock(boolean fair)</code>构造方法来制定是否是公平的。</li>
+<li><strong>可实现选择性通知（锁可以绑定多个条件）</strong>: <code class="notranslate">synchronized</code>关键字与<code class="notranslate">wait()</code>和<code class="notranslate">notify()</code>/<code class="notranslate">notifyAll()</code>方法相结合可以实现等待/通知机制。<code class="notranslate">ReentrantLock</code>类当然也可以实现，但是需要借助于<code class="notranslate">Condition</code>接口与<code class="notranslate">newCondition()</code>方法，<strong>Condition提供了await()和singal()的功能，可以用于线程间消息通信。</strong></li>
+</ul>
+<blockquote>
+<p><code class="notranslate">Condition</code>是 JDK1.5 之后才有的，它具有很好的灵活性，比如可以实现多路通知功能也就是在一个<code class="notranslate">Lock</code>对象中可以创建多个<code class="notranslate">Condition</code>实例（即对象监视器），<strong>线程对象可以注册在指定的<code class="notranslate">Condition</code>中，从而可以有选择性的进行线程通知，在调度线程上更加灵活。 在使用<code class="notranslate">notify()/notifyAll()</code>方法进行通知时，被通知的线程是由 JVM 选择的，用<code class="notranslate">ReentrantLock</code>类结合<code class="notranslate">Condition</code>实例可以实现“选择性通知”</strong> ，这个功能非常重要，而且是 Condition 接口默认提供的。而<code class="notranslate">synchronized</code>关键字就相当于整个 Lock 对象中只有一个<code class="notranslate">Condition</code>实例，所有的线程都注册在它一个身上。如果执行<code class="notranslate">notifyAll()</code>方法的话就会通知所有处于等待状态的线程这样会造成很大的效率问题，而<code class="notranslate">Condition</code>实例的<code class="notranslate">signalAll()</code>方法 只会唤醒注册在该<code class="notranslate">Condition</code>实例中的所有等待线程。<br>
+<strong>如果你想使用上述功能，那么选择 ReentrantLock 是一个不错的选择。性能已不是选择标准</strong></p>
+</blockquote>
+<p>ReentrantLock基于AQS(AbstractQueuedSynchronizer 抽象队列同步器)实现。AQS内部维护一个state状态位，尝试加锁的时候通过<strong>CAS(CompareAndSwap)</strong> 修改值，如果成功设置为1，并且把当前线程ID赋值，则代表加锁成功，一旦获取到锁，其他的线程将会被阻塞进入阻塞队列自旋，获得锁的线程释放锁的时候将会唤醒阻塞队列中的线程，释放锁的时候则会把state重新置为0，同时当前线程ID置为空。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/15989831829bb812d0595966c4e0da63398e068979968a861da0186fff0e1cb9/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f64333432353332373765313134343936386331616136333766343765613062382e706e67"><img src="https://camo.githubusercontent.com/15989831829bb812d0595966c4e0da63398e068979968a861da0186fff0e1cb9/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f64333432353332373765313134343936386331616136333766343765613062382e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/d34253277e1144968c1aa637f47ea0b8.png" style="max-width: 100%;"></a></p>
+<blockquote>
+<h3>问：CAS的原理呢？缺点？</h3>
+</blockquote>
+<p>CAS叫做CompareAndSwap，比较并交换，主要是通过处理器的指令来保证操作的原子性，它包含三个操作数：</p>
+<ul>
+<li>变量内存地址，V表示</li>
+<li>旧的预期值，A表示</li>
+<li>准备设置的新值，B表示</li>
+</ul>
+<p>当执行CAS指令时，只有当V等于A时，才会用B去更新V的值，否则就不会执行更新操作。</p>
+<p><strong>CAS的缺点主要有3点：</strong></p>
+<ol>
+<li>ABA问题：ABA的问题指的是在CAS更新的过程中，当读取到的值是A，然后准备赋值的时候仍然是A，但是实际上有可能A的值被改成了B，然后又被改回了A，这个CAS更新的漏洞就叫做ABA。只是ABA的问题大部分场景下都不影响并发的最终效果。</li>
+</ol>
+<p>Java中有AtomicStampedReference来解决这个问题，他加入了预期标志和更新后标志两个字段，更新时不光检查值，还要检查当前的标志是否等于预期标志，全部相等的话才会更新。（类似于版本号和时间戳）</p>
+<ol start="2">
+<li>
+<p>循环时间长开销大：自旋CAS的方式如果长时间不成功，会给CPU带来很大的开销。</p>
+</li>
+<li>
+<p>只能保证一个共享变量的原子操作：只对一个共享变量操作可以保证原子性，但是多个则不行，多个可以通过AtomicReference来处理或者使用锁synchronized实现。</p>
+</li>
+</ol>
+<blockquote>
+<h3>问：那对象头具体都包含哪些内容？</h3>
+</blockquote>
+<p>在我们常用的Hotspot虚拟机中，对象在内存中布局实际包含3个部分：</p>
+<ul>
+<li>对象头</li>
+<li>实例数据</li>
+<li>对齐填充</li>
+</ul>
+<p>而对象头包含两部分内容，Mark Word中的内容会随着锁标志位而发生变化，所以只说存储结构就好了。</p>
+<ol>
+<li>对象自身运行时所需的数据，也被称为Mark Word，也就是用于轻量级锁和偏向锁的关键点。具体的内容包含对象的<strong>hashcode、分代年龄、轻量级锁指针、重量级锁指针、GC标记、偏向锁线程ID、偏向锁时间戳。</strong></li>
+<li>存储类型指针，也就是指向类的元数据的指针，通过这个指针才能确定对象是属于哪个类的实例。</li>
+<li>如果是数组的话，则还包含了数组的长度。</li>
+</ol>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/d584ed20ab9bcf888448000bb483dbb6bdff5c9376b6cd69e08c13151b48fd2d/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f38333431663538643237306534346662383362656434653463633362333437662e706e67"><img src="https://camo.githubusercontent.com/d584ed20ab9bcf888448000bb483dbb6bdff5c9376b6cd69e08c13151b48fd2d/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f38333431663538643237306534346662383362656434653463633362333437662e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/8341f58d270e44fb83bed4e4cc3b347f.png" style="max-width: 100%;"></a></p>
+<h2><strong>2. volatile 关键字</strong></h2>
+<p>我们先要从 <strong>CPU 缓存模型</strong> 说起！</p>
+<h3><strong>2.1. CPU 缓存模型</strong></h3>
+<p><strong>为什么要弄一个 CPU 高速缓存呢？</strong></p>
+<p>类比我们开发网站后台系统使用的缓存（比如 Redis）是为了解决程序处理速度和访问常规关系型数据库速度不对等的问题。 <strong>CPU 缓存则是为了解决 CPU 处理速度和内存处理速度不对等的问题。</strong></p>
+<p>我们甚至可以把 <strong>内存可以看作外存的高速缓存</strong>，程序运行的时候我们把外存的数据复制到内存，由于内存的处理速度远远高于外存，这样提高了处理速度。</p>
+<p>总结：<strong>CPU Cache 缓存的是内存数据用于解决 CPU 处理速度和内存不匹配的问题，内存缓存的是硬盘数据用于解决硬盘访问速度过慢的问题。</strong></p>
+<p>为了更好地理解，我画了一个简单的 CPU Cache 示意图如下（实际上，现代的 CPU Cache 通常分为三层，分别叫 L1,L2,L3 Cache）:</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/10faf1718f9588939aec61c9128ccd58febba20458530ac1563aac353e3d0471/68747470733a2f2f67756964652d626c6f672d696d616765732e6f73732d636e2d7368656e7a68656e2e616c6979756e63732e636f6d2f323032302d382f33303361333030662d373064642d346565312d393937342d3366333361666663363537342e706e67"><img src="https://camo.githubusercontent.com/10faf1718f9588939aec61c9128ccd58febba20458530ac1563aac353e3d0471/68747470733a2f2f67756964652d626c6f672d696d616765732e6f73732d636e2d7368656e7a68656e2e616c6979756e63732e636f6d2f323032302d382f33303361333030662d373064642d346565312d393937342d3366333361666663363537342e706e67" alt="CPU Cache" style="max-width: 100%;"></a></p>
+<p><strong>CPU Cache 的工作方式：</strong></p>
+<p>先从主内存中复制一份数据到 CPU Cache 中，当 CPU 需要用到的时候就可以直接从 CPU Cache 中读取数据，当运算完成后，再将运算得到的数据写回 Main Memory 中。但是，这样存在 <strong>内存缓存不一致性的问题</strong> ！比如我执行一个 i++操作的话，如果两个线程同时执行的话，假设两个线程从 CPU Cache 中读取的 i=1，两个线程做了 1++运算完之后再写回 Main Memory 之后 i=2，而正确结果应该是 i=3。</p>
+<p><strong>CPU 为了解决内存缓存不一致性问题可以通过制定缓存一致协议或者其他手段来解决。</strong></p>
+<h3><strong>2.2. 讲一下 JMM(Java 内存模型)</strong></h3>
+<blockquote>
+<h3>问：那么说说你对JMM内存模型的理解？为什么需要JMM？</h3>
+</blockquote>
+<p>本身随着CPU和内存的发展速度差异的问题，导致CPU的速度远快于内存，所以现在的CPU加入了高速缓存，高速缓存一般可以分为L1、L2、L3三级缓存。基于上面的例子我们知道了这导致了缓存一致性的问题，所以加入了<strong>缓存一致性协议，同时导致了内存可见性的问题</strong> ，而编译器和CPU的重排序导致了原子性和有序性的问题，JMM内存模型正是对多线程操作下的一系列规范约束，因为不可能让陈雇员的代码去兼容所有的CPU，通过JMM我们才屏蔽了不同硬件和操作系统内存的访问差异，这样保证了Java程序在不同的平台下达到一致的内存访问效果，同时也是保证在高效并发的时候程序能够正确执行。</p>
+<p>在 JDK1.2 之前，Java 的内存模型实现总是从<strong>主存</strong>（即共享内存）读取变量，是不需要进行特别的注意的。而在当前的 Java 内存模型下，线程可以把变量保存<strong>本地内存</strong>（比如机器的寄存器）中，而不是直接在主存中进行读写。这就可能造成一个线程在主存中修改了一个变量的值，而另外一个线程还继续使用它在寄存器中的变量值的拷贝，造成<strong>数据的不一致</strong>。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/0d7249a3f7a61706f94ff429328e2d28c19ccc4801370fa8d4f8cd2d290b895a/68747470733a2f2f67756964652d626c6f672d696d616765732e6f73732d636e2d7368656e7a68656e2e616c6979756e63732e636f6d2f323032302d382f30616337653636332d376462382d346239352d386438652d3764326231373966363765382e706e67"><img src="https://camo.githubusercontent.com/0d7249a3f7a61706f94ff429328e2d28c19ccc4801370fa8d4f8cd2d290b895a/68747470733a2f2f67756964652d626c6f672d696d616765732e6f73732d636e2d7368656e7a68656e2e616c6979756e63732e636f6d2f323032302d382f30616337653636332d376462382d346239352d386438652d3764326231373966363765382e706e67" alt="JMM(Java内存模型)" style="max-width: 100%;"></a></p>
+<p>要解决这个问题，就需要把变量声明为 <strong><code class="notranslate">volatile</code></strong> ，这就指示 JVM，这个变量是共享且不稳定的，每次使用它都到主存中进行读取。</p>
+<blockquote>
+<p><strong>1. 对于加了volatile关键字的成员变量，在对这个变量进行修改时，会直接将cpu cache （CPU高级缓存）中的数据写回到主内存中，对这个变量的读取也是直接从主内存中读取，从而保证了可见性；</strong><br>
+<strong>2. 在对volatile修饰的成员变量进行读写时，会插入内存屏障，而内存屏障可以达到禁止重排序的效果，从而保证有序性。</strong></p>
+</blockquote>
+<p>所以，<strong><code class="notranslate">volatile</code> 关键字 除了防止 JVM 的指令重排 ，还有一个重要的作用就是保证变量的可见性。</strong></p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/21e256db07eef2a3b355db9d1ffbf2036dd3dc8c3a6fb41cd2fa4df0f4ba0e00/68747470733a2f2f67756964652d626c6f672d696d616765732e6f73732d636e2d7368656e7a68656e2e616c6979756e63732e636f6d2f323032302d382f64343963353535372d313430622d346162662d616461642d3861616333633930333663662e706e67"><img src="https://camo.githubusercontent.com/21e256db07eef2a3b355db9d1ffbf2036dd3dc8c3a6fb41cd2fa4df0f4ba0e00/68747470733a2f2f67756964652d626c6f672d696d616765732e6f73732d636e2d7368656e7a68656e2e616c6979756e63732e636f6d2f323032302d382f64343963353535372d313430622d346162662d616461642d3861616333633930333663662e706e67" alt="volatile关键字的可见性" style="max-width: 100%;"></a></p>
+<blockquote>
+<h2>问：volatile原理知道吗？</h2>
+</blockquote>
+<p><strong>原理：每个线程操作数据的时候会把数据从主内存读取到自己的工作内存，如果他操作了数据并且写会了，他其他已经读取的线程的变量副本就会失效了，需要都数据进行操作又要再次去主内存中读取了。</strong></p>
+<p><strong>volatile保证不同线程对共享变量操作的可见性，也就是说一个线程修改了volatile修饰的变量，当修改写回主内存时，另外一个线程立即看到最新的值。</strong></p>
+<p><strong>缺点：由于Volatile的MESI缓存一致性协议，需要不断的从主内存嗅探和cas不断循环，无效交互会导致总线带宽达到峰值。且无法保证原子性</strong></p>
+<p>相比synchronized的加锁方式来解决共享变量的内存可见性问题，<strong>volatile就是更轻量的选择，他没有上下文切换的额外开销成本。</strong> 使用volatile声明的变量，可以确保值被更新的时候对其他线程立刻可见。volatile使用内存屏障来保证不会发生指令重排，解决了内存可见性的问题。</p>
+<p><strong>我们知道，线程都是从主内存中读取共享变量到工作内存来操作，完成之后再把结果写会主内存，但是这样就会带来可见性问题。</strong> 举个例子，假设现在我们是两级缓存的双核CPU架构，包含L1、L2两级缓存。</p>
+<ol>
+<li>线程A首先获取变量X的值，由于最初两级缓存都是空，所以直接从主内存中读取X，假设X初始值为0，线程A读取之后把X值都修改为1，同时写回主内存。这时候缓存和主内存的情况如下图。</li>
+</ol>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/6affd1ff58271f27c434f01b78f08bce401e61d7e3130b2f56d83ec468f8d00f/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f62373764613530333362306434393465626432326364336438373363643563622e706e67"><img src="https://camo.githubusercontent.com/6affd1ff58271f27c434f01b78f08bce401e61d7e3130b2f56d83ec468f8d00f/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f62373764613530333362306434393465626432326364336438373363643563622e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/b77da5033b0d494ebd22cd3d873cd5cb.png" style="max-width: 100%;"></a></p>
+<ol start="2">
+<li>
+<p>线程B也同样读取变量X的值，由于L2缓存已经有缓存X=1，所以直接从L2缓存读取，之后线程B把X修改为2，同时写回L2和主内存。这时候的X值入下图所示。</p>
+</li>
+<li>
+<p>那么线程A如果再想获取变量X的值，因为L1缓存已经有x=1了，所以这时候变量内存不可见问题就产生了，B修改为2的值对A来说没有感知。</p>
+</li>
+</ol>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/59660d4fff7093250846c8e39a30b028ebbe75b65ca399c41c0c19d7da932bbf/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f65636262383139623861386234626239393063313530356562643436336639642e706e67"><img src="https://camo.githubusercontent.com/59660d4fff7093250846c8e39a30b028ebbe75b65ca399c41c0c19d7da932bbf/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f65636262383139623861386234626239393063313530356562643436336639642e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/ecbb819b8a8b4bb990c1505ebd463f9d.png" style="max-width: 100%;"></a></p>
+<ol start="4">
+<li>那么，如果X变量用<code class="notranslate">volatile</code>修饰的话，当线程A再次读取变量X的话，CPU就会根据缓存一致性协议强制线程A重新从主内存加载最新的值到自己的工作内存，而不是直接用缓存中的值。</li>
+</ol>
+<p>再来说<strong>内存屏障</strong>的问题，volatile修饰之后会加入不同的内存屏障来保证可见性的问题能正确执行。这里写的屏障基于书中提供的内容，但是实际上由于CPU架构不同，重排序的策略不同，提供的内存屏障也不一样，比如x86平台上，只有StoreLoad一种内存屏障。</p>
+<ul>
+<li>StoreStore屏障，保证上面的普通写不和volatile写发生重排序</li>
+<li>StoreLoad屏障，保证volatile写与后面可能的volatile读写不发生重排序</li>
+<li>LoadLoad屏障，禁止volatile读与后面的普通读重排序</li>
+<li>LoadStore屏障，禁止volatile读和后面的普通写重排序</li>
+</ul>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/b19ef1a027de66b9c48776f9642ae6774cc1ae749dea3301f04370aaafd589fc/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f63666161373764633761663234363166623430623261653865316662666139342e706e67"><img src="https://camo.githubusercontent.com/b19ef1a027de66b9c48776f9642ae6774cc1ae749dea3301f04370aaafd589fc/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f63666161373764633761663234363166623430623261653865316662666139342e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/cfaa77dc7af2461fb40b2ae8e1fbfa94.png" style="max-width: 100%;"></a></p>
+<h3><strong>2.3. 并发编程的三个重要特性</strong></h3>
+<ol>
+<li><strong>原子性</strong> : 一个的操作或者多次操作，要么所有的操作全部都得到执行并且不会收到任何因素的干扰而中断，要么所有的操作都执行，要么都不执行。Java内存模型通过read、load、assign、use、store、write来保证原子性操作，此外还有lock和unlock，直接对应着synchronized关键字的monitorenter和monitorexit字节码指令。<code class="notranslate">synchronized</code> 可以保证代码片段的原子性。</li>
+<li><strong>可见性</strong> ：当一个变量对共享变量进行了修改，那么另外的线程都是立即可以看到修改后的最新值。<code class="notranslate">volatile</code> 关键字可以保证共享变量的可见性。</li>
+<li><strong>有序性</strong> ：代码在执行的过程中的先后顺序，Java 在编译器以及运行期间的优化，代码的执行顺序未必就是编写代码时候的顺序。<code class="notranslate">volatile</code> 关键字可以禁止指令进行重排序优化。</li>
+</ol>
+<p><strong>happen-before规则</strong></p>
+<p>虽然指令重排提高了并发的性能，但是Java虚拟机会对指令重排做出一些规则限制，并不能让所有的指令都随意的改变执行位置，主要有以下几点：</p>
+<ol>
+<li>单线程每个操作，happen-before于该线程中任意后续操作</li>
+<li>volatile写happen-before与后续对这个变量的读</li>
+<li>synchronized解锁happen-before后续对这个锁的加锁</li>
+<li>final变量的写happen-before于final域对象的读，happen-before后续对final变量的读</li>
+<li>传递性规则，A先于B，B先于C，那么A一定先于C发生</li>
+</ol>
+<h3>2.4. 说说 synchronized 关键字和 volatile 关键字的区别</h3>
+<p><code class="notranslate">synchronized</code> 关键字和 <code class="notranslate">volatile</code> 关键字是两个互补的存在，而不是对立的存在！</p>
+<ul>
+<li><strong><code class="notranslate">volatile</code> 关键字</strong>是线程同步的<strong>轻量级实现</strong>，所以 <strong><code class="notranslate">volatile </code>性能肯定比<code class="notranslate">synchronized</code>关键字要好</strong> 。但是 <strong><code class="notranslate">volatile</code> 关键字只能用于变量而 <code class="notranslate">synchronized</code> 关键字可以修饰方法以及代码块</strong> 。</li>
+<li><strong><code class="notranslate">volatile</code> 关键字能保证数据的可见性，但不能保证数据的原子性。<code class="notranslate">synchronized</code> 关键字两者都能保证。</strong></li>
+<li><strong><code class="notranslate">volatile</code>关键字主要用于解决变量在多个线程之间的可见性，而 <code class="notranslate">synchronized</code> 关键字解决的是多个线程之间访问资源的同步性。</strong></li>
+<li><strong><code class="notranslate">volatile</code>用于禁止指令重排序：可以解决单例双重检查对象初始化代码执行乱序问题。</strong></li>
+</ul>
+<h3>2.5 为啥加锁可以解决可见性问题呢？</h3>
+<p>因为某一个线程进入synchronized代码块前后，线程会获得锁，<strong>清空工作内存</strong>，从主内存拷贝共享变量最新的值到工作内存成为副本，执行代码，将修改后的副本的值刷新回主内存中，线程释放锁。而获取不到锁的线程会阻塞等待，所以变量的值肯定一直都是最新的。</p>
+<h2><strong>3. ThreadLocal</strong></h2>
+<h3><strong>3.1. ThreadLocal 简介</strong></h3>
+<p>通常情况下，我们创建的变量是可以被任何一个线程访问并修改的。<strong>如果想实现每一个线程都有自己的专属本地变量该如何解决呢？</strong> JDK 中提供的<code class="notranslate">ThreadLocal</code>类正是为了解决这样的问题。 <strong><code class="notranslate">ThreadLocal</code>类主要解决的就是让每个线程绑定自己的值，可以将<code class="notranslate">ThreadLocal</code>类形象的比喻成存放数据的盒子，盒子中可以存储每个线程的私有数据。</strong></p>
+<p><strong>如果你创建了一个<code class="notranslate">ThreadLocal</code>变量，那么访问这个变量的每个线程都会有这个变量的本地副本，这也是<code class="notranslate">ThreadLocal</code>变量名的由来。他们可以使用 <code class="notranslate">get（）</code> 和 <code class="notranslate">set（）</code> 方法来获取默认值或将其值更改为当前线程所存的副本的值，从而避免了线程安全问题。</strong></p>
+<p>再举个简单的例子：</p>
+<p>比如有两个人去宝屋收集宝物，这两个共用一个袋子的话肯定会产生争执，但是给他们两个人每个人分配一个袋子的话就不会出现这样的问题。如果把这两个人比作线程的话，那么 ThreadLocal 就是用来避免这两个线程竞争的。</p>
+<h3><strong>3.2. ThreadLocal 示例</strong></h3>
+<p>相信看了上面的解释，大家已经搞懂 ThreadLocal 类是个什么东西了。</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">import</span> <span class="pl-s1">java</span>.<span class="pl-s1">text</span>.<span class="pl-s1">SimpleDateFormat</span>;
+<span class="pl-k">import</span> <span class="pl-s1">java</span>.<span class="pl-s1">util</span>.<span class="pl-s1">Random</span>;
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">ThreadLocalExample</span> <span class="pl-k">implements</span> <span class="pl-smi">Runnable</span>{
+     <span class="pl-c">// SimpleDateFormat 不是线程安全的，所以每个线程都要有自己独立的副本</span>
+    <span class="pl-k">private</span> <span class="pl-k">static</span> <span class="pl-k">final</span> <span class="pl-smi">ThreadLocal</span>&lt;<span class="pl-smi">SimpleDateFormat</span>&gt; <span class="pl-s1">formatter</span> = <span class="pl-smi">ThreadLocal</span>.<span class="pl-en">withInitial</span>(() -&gt; <span class="pl-k">new</span> <span class="pl-smi">SimpleDateFormat</span>(<span class="pl-s">"yyyyMMdd HHmm"</span>));
+    <span class="pl-k">public</span> <span class="pl-k">static</span> <span class="pl-smi">void</span> <span class="pl-en">main</span>(<span class="pl-smi">String</span>[] <span class="pl-s1">args</span>) <span class="pl-k">throws</span> <span class="pl-smi">InterruptedException</span> {
+        <span class="pl-smi">ThreadLocalExample</span> <span class="pl-s1">obj</span> = <span class="pl-k">new</span> <span class="pl-smi">ThreadLocalExample</span>();
+        <span class="pl-k">for</span>(<span class="pl-smi">int</span> <span class="pl-s1">i</span>=<span class="pl-c1">0</span> ; <span class="pl-s1">i</span>&lt;<span class="pl-c1">10</span>; <span class="pl-s1">i</span>++){
+            <span class="pl-smi">Thread</span> <span class="pl-s1">t</span> = <span class="pl-k">new</span> <span class="pl-smi">Thread</span>(<span class="pl-s1">obj</span>, <span class="pl-s">""</span>+<span class="pl-s1">i</span>);
+            <span class="pl-smi">Thread</span>.<span class="pl-en">sleep</span>(<span class="pl-k">new</span> <span class="pl-smi">Random</span>().<span class="pl-en">nextInt</span>(<span class="pl-c1">1000</span>));
+            <span class="pl-s1">t</span>.<span class="pl-en">start</span>();
+        }
+    }
+    <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">run</span>() {
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"Thread Name= "</span>+<span class="pl-smi">Thread</span>.<span class="pl-en">currentThread</span>().<span class="pl-en">getName</span>()+<span class="pl-s">" default Formatter = "</span>+<span class="pl-s1">formatter</span>.<span class="pl-en">get</span>().<span class="pl-en">toPattern</span>());
+        <span class="pl-k">try</span> {
+            <span class="pl-smi">Thread</span>.<span class="pl-en">sleep</span>(<span class="pl-k">new</span> <span class="pl-smi">Random</span>().<span class="pl-en">nextInt</span>(<span class="pl-c1">1000</span>));
+        } <span class="pl-k">catch</span> (<span class="pl-smi">InterruptedException</span> <span class="pl-s1">e</span>) {
+            <span class="pl-s1">e</span>.<span class="pl-en">printStackTrace</span>();
+        }
+        <span class="pl-c">//formatter pattern is changed here by thread, but it won't reflect to other threads</span>
+        <span class="pl-s1">formatter</span>.<span class="pl-en">set</span>(<span class="pl-k">new</span> <span class="pl-smi">SimpleDateFormat</span>());
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"Thread Name= "</span>+<span class="pl-smi">Thread</span>.<span class="pl-en">currentThread</span>().<span class="pl-en">getName</span>()+<span class="pl-s">" formatter = "</span>+<span class="pl-s1">formatter</span>.<span class="pl-en">get</span>().<span class="pl-en">toPattern</span>());
+    }
+}</pre></div>
+<p>Output:</p>
+<pre class="notranslate"><code class="notranslate">Thread Name= 0 default Formatter = yyyyMMdd HHmm
+Thread Name= 0 formatter = yy-M-d ah:mm
+Thread Name= 1 default Formatter = yyyyMMdd HHmm
+Thread Name= 2 default Formatter = yyyyMMdd HHmm
+Thread Name= 1 formatter = yy-M-d ah:mm
+Thread Name= 3 default Formatter = yyyyMMdd HHmm
+Thread Name= 2 formatter = yy-M-d ah:mm
+Thread Name= 4 default Formatter = yyyyMMdd HHmm
+Thread Name= 3 formatter = yy-M-d ah:mm
+Thread Name= 4 formatter = yy-M-d ah:mm
+Thread Name= 5 default Formatter = yyyyMMdd HHmm
+Thread Name= 5 formatter = yy-M-d ah:mm
+Thread Name= 6 default Formatter = yyyyMMdd HHmm
+Thread Name= 6 formatter = yy-M-d ah:mm
+Thread Name= 7 default Formatter = yyyyMMdd HHmm
+Thread Name= 7 formatter = yy-M-d ah:mm
+Thread Name= 8 default Formatter = yyyyMMdd HHmm
+Thread Name= 9 default Formatter = yyyyMMdd HHmm
+Thread Name= 8 formatter = yy-M-d ah:mm
+Thread Name= 9 formatter = yy-M-d ah:mm
+</code></pre>
+<p>从输出中可以看出，Thread-0 已经改变了 formatter 的值，但仍然是 thread-2 默认格式化程序与初始化值相同，其他线程也一样。</p>
+<p>上面有一段代码用到了创建 <code class="notranslate">ThreadLocal</code> 变量的那段代码用到了 Java8 的知识，它等于下面这段代码，如果你写了下面这段代码的话，IDEA 会提示你转换为 Java8 的格式(IDEA 真的不错！)。因为 ThreadLocal 类在 Java 8 中扩展，使用一个新的方法<code class="notranslate">withInitial()</code>，将 Supplier 功能接口作为参数。</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">private</span> <span class="pl-k">static</span> <span class="pl-k">final</span> <span class="pl-smi">ThreadLocal</span>&lt;<span class="pl-smi">SimpleDateFormat</span>&gt; <span class="pl-s1">formatter</span> = <span class="pl-k">new</span> <span class="pl-smi">ThreadLocal</span>&lt;<span class="pl-smi">SimpleDateFormat</span>&gt;(){
+    <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+    <span class="pl-k">protected</span> <span class="pl-smi">SimpleDateFormat</span> <span class="pl-en">initialValue</span>(){
+        <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-smi">SimpleDateFormat</span>(<span class="pl-s">"yyyyMMdd HHmm"</span>);
+    }
+};</pre></div>
+<h3><strong>3.3. ThreadLocal 原理</strong></h3>
+<p>从 <code class="notranslate">Thread</code>类源代码入手。</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">Thread</span> <span class="pl-k">implements</span> <span class="pl-smi">Runnable</span> {
+    <span class="pl-c">//......</span>
+    <span class="pl-c">//与此线程有关的ThreadLocal值。由ThreadLocal类维护</span>
+    <span class="pl-smi">ThreadLocal</span>.<span class="pl-smi">ThreadLocalMap</span> <span class="pl-s1">threadLocals</span> = <span class="pl-c1">null</span>;
+    <span class="pl-c">//与此线程有关的InheritableThreadLocal值。由InheritableThreadLocal类维护</span>
+    <span class="pl-smi">ThreadLocal</span>.<span class="pl-smi">ThreadLocalMap</span> <span class="pl-s1">inheritableThreadLocals</span> = <span class="pl-c1">null</span>;
+    <span class="pl-c">//......</span>
+}</pre></div>
+<p>从上面<code class="notranslate">Thread</code>类 源代码可以看出<code class="notranslate">Thread</code> 类中有一个 <code class="notranslate">threadLocals</code> 和 一个 <code class="notranslate">inheritableThreadLocals</code> 变量，它们都是 <code class="notranslate">ThreadLocalMap</code> 类型的变量,我们可以把 <code class="notranslate">ThreadLocalMap</code> 理解为<code class="notranslate">ThreadLocal</code> 类实现的定制化的 <code class="notranslate">HashMap</code>。默认情况下这两个变量都是 null，只有当前线程调用 <code class="notranslate">ThreadLocal</code> 类的 <code class="notranslate">set</code>或<code class="notranslate">get</code>方法时才创建它们，实际上调用这两个方法的时候，我们调用的是<code class="notranslate">ThreadLocalMap</code>类对应的 <code class="notranslate">get()</code>、<code class="notranslate">set()</code>方法。</p>
+<p><code class="notranslate">ThreadLocal</code>类的<code class="notranslate">set()</code>方法</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">set</span>(<span class="pl-smi">T</span> <span class="pl-s1">value</span>) {
+    <span class="pl-smi">Thread</span> <span class="pl-s1">t</span> = <span class="pl-smi">Thread</span>.<span class="pl-en">currentThread</span>();
+    <span class="pl-smi">ThreadLocalMap</span> <span class="pl-s1">map</span> = <span class="pl-en">getMap</span>(<span class="pl-s1">t</span>);
+    <span class="pl-k">if</span> (<span class="pl-s1">map</span> != <span class="pl-c1">null</span>)
+        <span class="pl-s1">map</span>.<span class="pl-en">set</span>(<span class="pl-smi">this</span>, <span class="pl-s1">value</span>);
+    <span class="pl-k">else</span>
+        <span class="pl-en">createMap</span>(<span class="pl-s1">t</span>, <span class="pl-s1">value</span>);
+}
+<span class="pl-smi">ThreadLocalMap</span> <span class="pl-en">getMap</span>(<span class="pl-smi">Thread</span> <span class="pl-s1">t</span>) {
+    <span class="pl-k">return</span> <span class="pl-s1">t</span>.<span class="pl-s1">threadLocals</span>;
+}</pre></div>
+<p>通过上面这些内容，我们足以通过猜测得出结论：<strong>最终的变量是放在了当前线程的 <code class="notranslate">ThreadLocalMap</code> 中，并不是存在 <code class="notranslate">ThreadLocal</code> 上，<code class="notranslate">ThreadLocal</code> 可以理解为只是<code class="notranslate">ThreadLocalMap</code>的封装，传递了变量值。</strong> <code class="notranslate">ThrealLocal</code> 类中可以通过<code class="notranslate">Thread.currentThread()</code>获取到当前线程对象后，直接通过<code class="notranslate">getMap(Thread t)</code>可以访问到该线程的<code class="notranslate">ThreadLocalMap</code>对象。</p>
+<p><strong>每个<code class="notranslate">Thread</code>中都具备一个<code class="notranslate">ThreadLocalMap</code>，而<code class="notranslate">ThreadLocalMap</code>可以存储以<code class="notranslate">ThreadLocal</code>为 key ，Object 对象为 value 的键值对。</strong></p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-en">ThreadLocalMap</span>(<span class="pl-smi">ThreadLocal</span>&lt;?&gt; <span class="pl-s1">firstKey</span>, <span class="pl-smi">Object</span> <span class="pl-s1">firstValue</span>) {
+    <span class="pl-c">//......</span>
+}</pre></div>
+<p>比如我们在同一个线程中声明了两个 <code class="notranslate">ThreadLocal</code> 对象的话，会使用 <code class="notranslate">Thread</code>内部都是使用仅有那个<code class="notranslate">ThreadLocalMap</code> 存放数据的，<code class="notranslate">ThreadLocalMap</code>的 key 就是 <code class="notranslate">ThreadLocal</code>对象，value 就是 <code class="notranslate">ThreadLocal</code> 对象调用<code class="notranslate">set</code>方法设置的值。</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/threadlocal%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84-430bca842bcf456e864eec993a816be2.png"><img src="/upload/2021/10/threadlocal%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84-430bca842bcf456e864eec993a816be2.png" alt="threadlocal数据结构.png" style="max-width: 100%;"></a></p>
+<p><code class="notranslate">ThreadLocalMap</code>是<code class="notranslate">ThreadLocal</code>的静态内部类。</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/ThreadLocal%E5%86%85%E9%83%A8%E7%B1%BB-36702394dc9346619ea9a21976d440bb.png"><img src="/upload/2021/10/ThreadLocal%E5%86%85%E9%83%A8%E7%B1%BB-36702394dc9346619ea9a21976d440bb.png" alt="ThreadLocal内部类.png" style="max-width: 100%;"></a></p>
+<h3><strong>3.4. ThreadLocal 内存泄露问题</strong></h3>
+<p><code class="notranslate">ThreadLocalMap</code> 中使用的 key 为 <code class="notranslate">ThreadLocal</code> 的弱引用,而 value 是强引用。所以，如果 <code class="notranslate">ThreadLocal</code> 没有被外部强引用的情况下，在垃圾回收的时候，key 会被清理掉，而 value 不会被清理掉。这样一来，<code class="notranslate">ThreadLocalMap</code> 中就会出现 key 为 null 的 Entry。假如我们不做任何措施的话，value 永远无法被 GC 回收，这个时候就可能会产生内存泄露。ThreadLocalMap 实现中已经考虑了这种情况，在调用 <code class="notranslate">set()</code>、<code class="notranslate">get()</code>、<code class="notranslate">remove()</code> 方法的时候，会清理掉 key 为 null 的记录。使用完 <code class="notranslate">ThreadLocal</code>方法后 最好手动调用<code class="notranslate">remove()</code>方法</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">static</span> <span class="pl-k">class</span> <span class="pl-smi">Entry</span> <span class="pl-k">extends</span> <span class="pl-smi">WeakReference</span>&lt;<span class="pl-smi">ThreadLocal</span>&lt;?&gt;&gt; {
+    <span class="pl-c">/** The value associated with this ThreadLocal. */</span>
+    <span class="pl-smi">Object</span> <span class="pl-s1">value</span>;
+    <span class="pl-smi">Entry</span>(<span class="pl-smi">ThreadLocal</span>&lt;?&gt; <span class="pl-s1">k</span>, <span class="pl-smi">Object</span> <span class="pl-s1">v</span>) {
+        <span class="pl-en">super</span>(<span class="pl-s1">k</span>);
+        <span class="pl-s1">value</span> = <span class="pl-s1">v</span>;
+    }
+}</pre></div>
+<p><strong>弱引用介绍：</strong></p>
+<blockquote>
+<p>如果一个对象只具有弱引用，那就类似于<strong>可有可无的生活用品</strong>。弱引用与软引用的区别在于：只具有弱引用的对象拥有更短暂的生命周期。在垃圾回收器线程扫描它 所管辖的内存区域的过程中，一旦发现了只具有弱引用的对象，不管当前内存空间足够与否，都会回收它的内存。不过，由于垃圾回收器是一个优先级很低的线程， 因此不一定会很快发现那些只具有弱引用的对象。</p>
+<p>弱引用可以和一个引用队列（ReferenceQueue）联合使用，如果弱引用所引用的对象被垃圾回收，Java 虚拟机就会把这个弱引用加入到与之关联的引用队列中。</p>
+</blockquote>
+<h2>4. 线程池</h2>
+<h3><strong>4.1. 为什么要用线程池？</strong></h3>
+<blockquote>
+<p><strong>池化技术相比大家已经屡见不鲜了，线程池、数据库连接池、Http 连接池等等都是对这个思想的应用。池化技术的思想主要是为了减少每次获取资源的消耗，提高对资源的利用率。</strong><br>
+<strong>线程池</strong>提供了一种限制和管理资源（包括执行一个任务）。 每个<strong>线程池</strong>还维护一些基本统计信息，例如已完成任务的数量。</p>
+</blockquote>
+<p>这里借用《Java 并发编程的艺术》提到的来说一下<strong>使用线程池的好处</strong>：</p>
+<ul>
+<li><strong>降低资源消耗</strong>。通过重复利用已创建的线程降低线程创建和销毁造成的消耗。</li>
+<li><strong>提高响应速度</strong>。当任务到达时，任务可以不需要的等到线程创建就能立即执行。</li>
+<li><strong>提高线程的可管理性</strong>。线程是稀缺资源，如果无限制的创建，不仅会消耗系统资源，还会降低系统的稳定性，使用线程池可以进行统一的分配，调优和监控。</li>
+</ul>
+<h3><strong>4.2. 实现 Runnable 接口和 Callable 接口的区别</strong></h3>
+<p><code class="notranslate">Runnable</code>自 Java 1.0 以来一直存在，但<code class="notranslate">Callable</code>仅在 Java 1.5 中引入,目的就是为了来处理<code class="notranslate">Runnable</code>不支持的用例。<strong><code class="notranslate">Runnable</code> 接口</strong> 不会返回结果或抛出检查异常，但是 <strong><code class="notranslate">Callable</code> 接口</strong> 可以。所以，如果任务不需要返回结果或抛出异常推荐使用 <strong><code class="notranslate">Runnable</code> 接口</strong> ，这样代码看起来会更加简洁。</p>
+<p>工具类 <code class="notranslate">Executors</code> 可以实现将 <code class="notranslate">Runnable</code> 对象转换成 <code class="notranslate">Callable</code> 对象。（<code class="notranslate">Executors.callable(Runnable task)</code> 或 <code class="notranslate">Executors.callable(Runnable task, Object result)</code>）。</p>
+<p><code class="notranslate">Runnable.java</code></p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c1">@</span><span class="pl-c1">FunctionalInterface</span>
+<span class="pl-k">public</span> <span class="pl-k">interface</span> <span class="pl-smi">Runnable</span> {
+   <span class="pl-c">/**</span>
+<span class="pl-c">    * 被线程执行，没有返回值也无法抛出异常</span>
+<span class="pl-c">    */</span>
+    <span class="pl-k">public</span> <span class="pl-k">abstract</span> <span class="pl-smi">void</span> <span class="pl-en">run</span>();
+}</pre></div>
+<p><code class="notranslate">Callable.java</code></p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c1">@</span><span class="pl-c1">FunctionalInterface</span>
+<span class="pl-k">public</span> <span class="pl-k">interface</span> <span class="pl-smi">Callable</span>&lt;<span class="pl-smi">V</span>&gt; {
+    <span class="pl-c">/**</span>
+<span class="pl-c">     * 计算结果，或在无法这样做时抛出异常。</span>
+<span class="pl-c">     * @return 计算得出的结果</span>
+<span class="pl-c">     * @throws 如果无法计算结果，则抛出异常</span>
+<span class="pl-c">     */</span>
+    <span class="pl-smi">V</span> <span class="pl-en">call</span>() <span class="pl-k">throws</span> <span class="pl-smi">Exception</span>;
+}</pre></div>
+<h3>4.3. 执行 execute()方法和 submit()方法的区别是什么呢？</h3>
+<ol>
+<li><strong><code class="notranslate">execute()</code>方法用于提交不需要返回值的任务，所以无法判断任务是否被线程池执行成功与否；</strong></li>
+<li><strong><code class="notranslate">submit()</code>方法用于提交需要返回值的任务。线程池会返回一个 <code class="notranslate">Future</code> 类型的对象，通过这个 <code class="notranslate">Future</code> 对象可以判断任务是否执行成功</strong>，并且可以通过 <code class="notranslate">Future</code> 的 <code class="notranslate">get()</code>方法来获取返回值，<code class="notranslate">get()</code>方法会阻塞当前线程直到任务完成，而使用 <code class="notranslate">get(long timeout，TimeUnit unit)</code>方法则会阻塞当前线程一段时间后立即返回，这时候有可能任务没有执行完。</li>
+</ol>
+<p>我们以 <strong><code class="notranslate">AbstractExecutorService</code> 接口</strong> 中的一个 <code class="notranslate">submit</code> 方法为例子来看看源代码：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-smi">Future</span>&lt;?&gt; <span class="pl-en">submit</span>(<span class="pl-smi">Runnable</span> <span class="pl-s1">task</span>) {
+    <span class="pl-k">if</span> (<span class="pl-s1">task</span> == <span class="pl-c1">null</span>) <span class="pl-k">throw</span> <span class="pl-k">new</span> <span class="pl-smi">NullPointerException</span>();
+    <span class="pl-smi">RunnableFuture</span>&lt;<span class="pl-smi">Void</span>&gt; <span class="pl-s1">ftask</span> = <span class="pl-en">newTaskFor</span>(<span class="pl-s1">task</span>, <span class="pl-c1">null</span>);
+    <span class="pl-en">execute</span>(<span class="pl-s1">ftask</span>);
+    <span class="pl-k">return</span> <span class="pl-s1">ftask</span>;
+}</pre></div>
+<p>上面方法调用的 <code class="notranslate">newTaskFor</code> 方法返回了一个 <code class="notranslate">FutureTask</code> 对象。</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">protected</span> &lt;<span class="pl-smi">T</span>&gt; <span class="pl-smi">RunnableFuture</span>&lt;<span class="pl-smi">T</span>&gt; <span class="pl-en">newTaskFor</span>(<span class="pl-smi">Runnable</span> <span class="pl-s1">runnable</span>, <span class="pl-smi">T</span> <span class="pl-s1">value</span>) {
+    <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-smi">FutureTask</span>&lt;<span class="pl-smi">T</span>&gt;(<span class="pl-s1">runnable</span>, <span class="pl-s1">value</span>);
+}</pre></div>
+<p>我们再来看看<code class="notranslate">execute()</code>方法：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">execute</span>(<span class="pl-smi">Runnable</span> <span class="pl-s1">command</span>) {
+  ...
+}</pre></div>
+<h3><strong>4.4. 如何创建线程池</strong></h3>
+<p>《阿里巴巴 Java 开发手册》中强制线程池不允许使用 Executors 去创建，而是通过 ThreadPoolExecutor 的方式，这样的处理方式让写的同学更加明确线程池的运行规则，规避资源耗尽的风险</p>
+<blockquote>
+<p>Executors 返回线程池对象的弊端如下：</p>
+<ul>
+<li><strong>FixedThreadPool 和 SingleThreadExecutor</strong> ： 允许请求的队列长度为 Integer.MAX_VALUE ，可能堆积大量的请求，从而导致 OOM。</li>
+<li><strong>CachedThreadPool 和 ScheduledThreadPool</strong> ： 允许创建的线程数量为 Integer.MAX_VALUE ，可能会创建大量线程，从而导致 OOM。</li>
+</ul>
+</blockquote>
+<p><strong>方式一：通过构造方法实现</strong></p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/f724bf3906393acbfa27ef0bbf75d0f80e408aca352417e130851b52951c45d2/68747470733a2f2f6d792d626c6f672d746f2d7573652e6f73732d636e2d6265696a696e672e616c6979756e63732e636f6d2f323031392d362f546872656164506f6f6c4578656375746f722545362539452538342545392538302541302545362539362542392545362542332539352e706e67"><img src="https://camo.githubusercontent.com/f724bf3906393acbfa27ef0bbf75d0f80e408aca352417e130851b52951c45d2/68747470733a2f2f6d792d626c6f672d746f2d7573652e6f73732d636e2d6265696a696e672e616c6979756e63732e636f6d2f323031392d362f546872656164506f6f6c4578656375746f722545362539452538342545392538302541302545362539362542392545362542332539352e706e67" alt="ThreadPoolExecutor构造方法" style="max-width: 100%;"></a></p>
+<p><strong>方式二：通过 Executor 框架的工具类 Executors 来实现</strong></p>
+<p>我们可以创建三种类型的 ThreadPoolExecutor：</p>
+<ul>
+<li><strong>FixedThreadPool</strong> ： 该方法返回一个固定线程数量的线程池。该线程池中的线程数量始终不变。当有一个新的任务提交时，线程池中若有空闲线程，则立即执行。若没有，则新的任务会被暂存在一个任务队列中，待有线程空闲时，便处理在任务队列中的任务。</li>
+<li><strong>SingleThreadExecutor：</strong> 方法返回一个只有一个线程的线程池。若多余一个任务被提交到该线程池，任务会被保存在一个任务队列中，待线程空闲，按先入先出的顺序执行队列中的任务。</li>
+<li><strong>CachedThreadPool：</strong> 该方法返回一个可根据实际情况调整线程数量的线程池。线程池的线程数量不确定，但若有空闲线程可以复用，则会优先使用可复用的线程。若所有线程均在工作，又有新的任务提交，则会创建新的线程处理任务。所有线程在当前任务执行完毕后，将返回线程池进行复用。</li>
+</ul>
+<p>对应 Executors 工具类中的方法如图所示：</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/764b0fb2d22df745240850ae2d874e3bbb798494d5d32d6e3ca7eee44186c3b8/68747470733a2f2f6d792d626c6f672d746f2d7573652e6f73732d636e2d6265696a696e672e616c6979756e63732e636f6d2f323031392d362f4578656375746f722545362541312538362545362539452542362545372539412538342545352542372541352545352538352542372545372542312542422e706e67"><img src="https://camo.githubusercontent.com/764b0fb2d22df745240850ae2d874e3bbb798494d5d32d6e3ca7eee44186c3b8/68747470733a2f2f6d792d626c6f672d746f2d7573652e6f73732d636e2d6265696a696e672e616c6979756e63732e636f6d2f323031392d362f4578656375746f722545362541312538362545362539452542362545372539412538342545352542372541352545352538352542372545372542312542422e706e67" alt="Executor框架的工具类" style="max-width: 100%;"></a></p>
+<h3><strong>4.5 ThreadPoolExecutor 类分析</strong></h3>
+<p><code class="notranslate">ThreadPoolExecutor</code> 类中提供的四个构造方法。我们来看最长的那个，其余三个都是在这个构造方法的基础上产生（其他几个构造方法说白点都是给定某些默认参数的构造方法比如默认制定拒绝策略是什么），这里就不贴代码讲了，比较简单。</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c">/**</span>
+<span class="pl-c"> * 用给定的初始参数创建一个新的ThreadPoolExecutor。</span>
+<span class="pl-c"> */</span>
+<span class="pl-k">public</span> <span class="pl-smi">ThreadPoolExecutor</span><span class="pl-en"></span>(<span class="pl-smi">int</span> <span class="pl-s1">corePoolSize</span>,
+                      <span class="pl-smi">int</span> <span class="pl-s1">maximumPoolSize</span>,
+                      <span class="pl-smi">long</span> <span class="pl-s1">keepAliveTime</span>,
+                      <span class="pl-smi">TimeUnit</span> <span class="pl-s1">unit</span>,
+                      <span class="pl-smi">BlockingQueue</span>&lt;<span class="pl-smi">Runnable</span>&gt; <span class="pl-s1">workQueue</span>,
+                      <span class="pl-smi">ThreadFactory</span> <span class="pl-s1">threadFactory</span>,
+                      <span class="pl-smi">RejectedExecutionHandler</span> <span class="pl-s1">handler</span>) {
+    <span class="pl-k">if</span> (<span class="pl-s1">corePoolSize</span> &lt; <span class="pl-c1">0</span> ||
+        <span class="pl-s1">maximumPoolSize</span> &lt;= <span class="pl-c1">0</span> ||
+        <span class="pl-s1">maximumPoolSize</span> &lt; <span class="pl-s1">corePoolSize</span> ||
+        <span class="pl-s1">keepAliveTime</span> &lt; <span class="pl-c1">0</span>)
+            <span class="pl-k">throw</span> <span class="pl-k">new</span> <span class="pl-smi">IllegalArgumentException</span>();
+    <span class="pl-k">if</span> (<span class="pl-s1">workQueue</span> == <span class="pl-c1">null</span> || <span class="pl-s1">threadFactory</span> == <span class="pl-c1">null</span> || <span class="pl-s1">handler</span> == <span class="pl-c1">null</span>)
+        <span class="pl-k">throw</span> <span class="pl-k">new</span> <span class="pl-smi">NullPointerException</span>();
+    <span class="pl-smi">this</span>.<span class="pl-s1">corePoolSize</span> = <span class="pl-s1">corePoolSize</span>;
+    <span class="pl-smi">this</span>.<span class="pl-s1">maximumPoolSize</span> = <span class="pl-s1">maximumPoolSize</span>;
+    <span class="pl-smi">this</span>.<span class="pl-s1">workQueue</span> = <span class="pl-s1">workQueue</span>;
+    <span class="pl-smi">this</span>.<span class="pl-s1">keepAliveTime</span> = <span class="pl-s1">unit</span>.<span class="pl-en">toNanos</span>(<span class="pl-s1">keepAliveTime</span>);
+    <span class="pl-smi">this</span>.<span class="pl-s1">threadFactory</span> = <span class="pl-s1">threadFactory</span>;
+    <span class="pl-smi">this</span>.<span class="pl-s1">handler</span> = <span class="pl-s1">handler</span>;
+}</pre></div>
+<p><strong>下面这些对创建 非常重要，在后面使用线程池的过程中你一定会用到！所以，务必拿着小本本记清楚。</strong></p>
+<h4><strong>4.5.1 <code class="notranslate">ThreadPoolExecutor</code>构造函数重要参数分析</strong></h4>
+<p><strong><code class="notranslate">ThreadPoolExecutor</code> 3 个最重要的参数：</strong></p>
+<ul>
+<li><strong><code class="notranslate">corePoolSize</code> :</strong> 核心线程数线程数定义了最小可以同时运行的线程数量。</li>
+<li><strong><code class="notranslate">maximumPoolSize</code> :</strong> 当队列中存放的任务达到队列容量的时候，当前可以同时运行的线程数量变为最大线程数。</li>
+<li><strong><code class="notranslate">workQueue</code>:</strong> 当新任务来的时候会先判断当前运行的线程数量是否达到核心线程数，如果达到的话，新任务就会被存放在队列中。</li>
+</ul>
+<p><code class="notranslate">ThreadPoolExecutor</code>其他常见参数:</p>
+<ol>
+<li><strong><code class="notranslate">keepAliveTime</code></strong>:当线程池中的线程数量大于 <code class="notranslate">corePoolSize</code> 的时候，如果这时没有新的任务提交，核心线程外的线程不会立即销毁，而是会等待，直到等待的时间超过了 <code class="notranslate">keepAliveTime</code>才会被回收销毁；</li>
+<li><strong><code class="notranslate">unit</code></strong> : <code class="notranslate">keepAliveTime</code> 参数的时间单位。</li>
+<li><strong><code class="notranslate">threadFactory</code></strong> :executor 创建新线程的时候会用到。</li>
+<li><strong><code class="notranslate">handler</code></strong> :饱和策略。关于饱和策略下面单独介绍一下。</li>
+</ol>
+<h4><strong>4.5.2 <code class="notranslate">ThreadPoolExecutor</code> 饱和策略</strong></h4>
+<p><strong><code class="notranslate">ThreadPoolExecutor</code> 饱和策略定义:</strong></p>
+<p>如果当前同时运行的线程数量达到最大线程数量并且队列也已经被放满了任务时，<code class="notranslate">ThreadPoolTaskExecutor</code> 定义一些策略:</p>
+<ul>
+<li><strong><code class="notranslate">ThreadPoolExecutor.AbortPolicy</code>：</strong> 抛出 <code class="notranslate">RejectedExecutionException</code>来拒绝新任务的处理。</li>
+<li><strong><code class="notranslate">ThreadPoolExecutor.CallerRunsPolicy</code>：</strong> 调用执行自己的线程运行任务，也就是直接在调用<code class="notranslate">execute</code>方法的线程中运行(<code class="notranslate">run</code>)被拒绝的任务，如果执行程序已关闭，则会丢弃该任务。因此这种策略会降低对于新任务提交速度，影响程序的整体性能。如果您的应用程序可以承受此延迟并且你要求任何一个任务请求都要被执行的话，你可以选择这个策略。</li>
+<li><strong><code class="notranslate">ThreadPoolExecutor.DiscardPolicy</code>：</strong> 不处理新任务，直接丢弃掉。</li>
+<li><strong><code class="notranslate">ThreadPoolExecutor.DiscardOldestPolicy</code>：</strong> 此策略将丢弃最早的未处理的任务请求。</li>
+</ul>
+<p>举个例子： Spring 通过 <code class="notranslate">ThreadPoolTaskExecutor</code> 或者我们直接通过 <code class="notranslate">ThreadPoolExecutor</code> 的构造函数创建线程池的时候，当我们不指定 <code class="notranslate">RejectedExecutionHandler</code> 饱和策略的话来配置线程池的时候默认使用的是 <code class="notranslate">ThreadPoolExecutor.AbortPolicy</code>。在默认情况下，<code class="notranslate">ThreadPoolExecutor</code> 将抛出 <code class="notranslate">RejectedExecutionException</code> 来拒绝新来的任务 ，这代表你将丢失对这个任务的处理。 对于可伸缩的应用程序，建议使用 <code class="notranslate">ThreadPoolExecutor.CallerRunsPolicy</code>。当最大池被填满时，此策略为我们提供可伸缩队列。（这个直接查看 <code class="notranslate">ThreadPoolExecutor</code> 的构造函数源码就可以看出，比较简单的原因，这里就不贴代码了）</p>
+<h3><strong>4.6 一个简单的线程池 Demo</strong></h3>
+<p>为了让大家更清楚上面的面试题中的一些概念，我写了一个简单的线程池 Demo。</p>
+<p>首先创建一个 <code class="notranslate">Runnable</code> 接口的实现类（当然也可以是 <code class="notranslate">Callable</code> 接口，我们上面也说了两者的区别。）</p>
+<p><code class="notranslate">MyRunnable.java</code></p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">import</span> <span class="pl-s1">java</span>.<span class="pl-s1">util</span>.<span class="pl-s1">Date</span>;
+<span class="pl-c">/**</span>
+<span class="pl-c"> * 这是一个简单的Runnable类，需要大约5秒钟来执行其任务。</span>
+<span class="pl-c"> * @author shuang.kou</span>
+<span class="pl-c"> */</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">MyRunnable</span> <span class="pl-k">implements</span> <span class="pl-smi">Runnable</span> {
+    <span class="pl-k">private</span> <span class="pl-smi">String</span> <span class="pl-s1">command</span>;
+    <span class="pl-k">public</span> <span class="pl-smi">MyRunnable</span>(<span class="pl-smi">String</span> <span class="pl-s1">s</span>) {
+        <span class="pl-smi">this</span>.<span class="pl-s1">command</span> = <span class="pl-s1">s</span>;
+    }
+    <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">run</span>() {
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-smi">Thread</span>.<span class="pl-en">currentThread</span>().<span class="pl-en">getName</span>() + <span class="pl-s">" Start. Time = "</span> + <span class="pl-k">new</span> <span class="pl-smi">Date</span>());
+        <span class="pl-en">processCommand</span>();
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-smi">Thread</span>.<span class="pl-en">currentThread</span>().<span class="pl-en">getName</span>() + <span class="pl-s">" End. Time = "</span> + <span class="pl-k">new</span> <span class="pl-smi">Date</span>());
+    }
+    <span class="pl-k">private</span> <span class="pl-smi">void</span> <span class="pl-en">processCommand</span>() {
+        <span class="pl-k">try</span> {
+            <span class="pl-smi">Thread</span>.<span class="pl-en">sleep</span>(<span class="pl-c1">5000</span>);
+        } <span class="pl-k">catch</span> (<span class="pl-smi">InterruptedException</span> <span class="pl-s1">e</span>) {
+            <span class="pl-s1">e</span>.<span class="pl-en">printStackTrace</span>();
+        }
+    }
+    <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+    <span class="pl-k">public</span> <span class="pl-smi">String</span> <span class="pl-en">toString</span>() {
+        <span class="pl-k">return</span> <span class="pl-smi">this</span>.<span class="pl-s1">command</span>;
+    }
+}</pre></div>
+<p>编写测试程序，我们这里以阿里巴巴推荐的使用 <code class="notranslate">ThreadPoolExecutor</code> 构造函数自定义参数的方式来创建线程池。</p>
+<p><code class="notranslate">ThreadPoolExecutorDemo.java</code></p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">import</span> <span class="pl-s1">java</span>.<span class="pl-s1">util</span>.<span class="pl-s1">concurrent</span>.<span class="pl-s1">ArrayBlockingQueue</span>;
+<span class="pl-k">import</span> <span class="pl-s1">java</span>.<span class="pl-s1">util</span>.<span class="pl-s1">concurrent</span>.<span class="pl-s1">ThreadPoolExecutor</span>;
+<span class="pl-k">import</span> <span class="pl-s1">java</span>.<span class="pl-s1">util</span>.<span class="pl-s1">concurrent</span>.<span class="pl-s1">TimeUnit</span>;
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">ThreadPoolExecutorDemo</span> {
+    <span class="pl-k">private</span> <span class="pl-k">static</span> <span class="pl-k">final</span> <span class="pl-smi">int</span> <span class="pl-c1">CORE_POOL_SIZE</span> = <span class="pl-c1">5</span>;
+    <span class="pl-k">private</span> <span class="pl-k">static</span> <span class="pl-k">final</span> <span class="pl-smi">int</span> <span class="pl-c1">MAX_POOL_SIZE</span> = <span class="pl-c1">10</span>;
+    <span class="pl-k">private</span> <span class="pl-k">static</span> <span class="pl-k">final</span> <span class="pl-smi">int</span> <span class="pl-c1">QUEUE_CAPACITY</span> = <span class="pl-c1">100</span>;
+    <span class="pl-k">private</span> <span class="pl-k">static</span> <span class="pl-k">final</span> <span class="pl-smi">Long</span> <span class="pl-c1">KEEP_ALIVE_TIME</span> = <span class="pl-c1">1L</span>;
+    <span class="pl-k">public</span> <span class="pl-k">static</span> <span class="pl-smi">void</span> <span class="pl-en">main</span>(<span class="pl-smi">String</span>[] <span class="pl-s1">args</span>) {
+        <span class="pl-c">//使用阿里巴巴推荐的创建线程池的方式</span>
+        <span class="pl-c">//通过ThreadPoolExecutor构造函数自定义参数创建</span>
+        <span class="pl-smi">ThreadPoolExecutor</span> <span class="pl-s1">executor</span> = <span class="pl-k">new</span> <span class="pl-smi">ThreadPoolExecutor</span>(
+                <span class="pl-c1">CORE_POOL_SIZE</span>,
+                <span class="pl-c1">MAX_POOL_SIZE</span>,
+                <span class="pl-c1">KEEP_ALIVE_TIME</span>,
+                <span class="pl-smi">TimeUnit</span>.<span class="pl-c1">SECONDS</span>,
+                <span class="pl-k">new</span> <span class="pl-smi">ArrayBlockingQueue</span>&lt;&gt;(<span class="pl-c1">QUEUE_CAPACITY</span>),
+                <span class="pl-k">new</span> <span class="pl-smi">ThreadPoolExecutor</span>.<span class="pl-smi">CallerRunsPolicy</span>());
+        <span class="pl-k">for</span> (<span class="pl-smi">int</span> <span class="pl-s1">i</span> = <span class="pl-c1">0</span>; <span class="pl-s1">i</span> &lt; <span class="pl-c1">10</span>; <span class="pl-s1">i</span>++) {
+            <span class="pl-c">//创建WorkerThread对象（WorkerThread类实现了Runnable 接口）</span>
+            <span class="pl-smi">Runnable</span> <span class="pl-s1">worker</span> = <span class="pl-k">new</span> <span class="pl-smi">MyRunnable</span>(<span class="pl-s">""</span> + <span class="pl-s1">i</span>);
+            <span class="pl-c">//执行Runnable</span>
+            <span class="pl-s1">executor</span>.<span class="pl-en">execute</span>(<span class="pl-s1">worker</span>);
+        }
+        <span class="pl-c">//终止线程池</span>
+        <span class="pl-s1">executor</span>.<span class="pl-en">shutdown</span>();
+        <span class="pl-k">while</span> (!<span class="pl-s1">executor</span>.<span class="pl-en">isTerminated</span>()) {
+        }
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"Finished all threads"</span>);
+    }
+}</pre></div>
+<p>可以看到我们上面的代码指定了：</p>
+<ol>
+<li><code class="notranslate">corePoolSize</code>: 核心线程数为 5。</li>
+<li><code class="notranslate">maximumPoolSize</code> ：最大线程数 10</li>
+<li><code class="notranslate">keepAliveTime</code> : 等待时间为 1L。</li>
+<li><code class="notranslate">unit</code>: 等待时间的单位为 TimeUnit.SECONDS。</li>
+<li><code class="notranslate">workQueue</code>：任务队列为 <code class="notranslate">ArrayBlockingQueue</code>，并且容量为 100;</li>
+<li><code class="notranslate">handler</code>:饱和策略为 <code class="notranslate">CallerRunsPolicy</code>。</li>
+</ol>
+<p><strong>Output：</strong></p>
+<pre class="notranslate"><code class="notranslate">pool-1-thread-3 Start. Time = Sun Apr 12 11:14:37 CST 2020
+pool-1-thread-5 Start. Time = Sun Apr 12 11:14:37 CST 2020
+pool-1-thread-2 Start. Time = Sun Apr 12 11:14:37 CST 2020
+pool-1-thread-1 Start. Time = Sun Apr 12 11:14:37 CST 2020
+pool-1-thread-4 Start. Time = Sun Apr 12 11:14:37 CST 2020
+pool-1-thread-3 End. Time = Sun Apr 12 11:14:42 CST 2020
+pool-1-thread-4 End. Time = Sun Apr 12 11:14:42 CST 2020
+pool-1-thread-1 End. Time = Sun Apr 12 11:14:42 CST 2020
+pool-1-thread-5 End. Time = Sun Apr 12 11:14:42 CST 2020
+pool-1-thread-1 Start. Time = Sun Apr 12 11:14:42 CST 2020
+pool-1-thread-2 End. Time = Sun Apr 12 11:14:42 CST 2020
+pool-1-thread-5 Start. Time = Sun Apr 12 11:14:42 CST 2020
+pool-1-thread-4 Start. Time = Sun Apr 12 11:14:42 CST 2020
+pool-1-thread-3 Start. Time = Sun Apr 12 11:14:42 CST 2020
+pool-1-thread-2 Start. Time = Sun Apr 12 11:14:42 CST 2020
+pool-1-thread-1 End. Time = Sun Apr 12 11:14:47 CST 2020
+pool-1-thread-4 End. Time = Sun Apr 12 11:14:47 CST 2020
+pool-1-thread-5 End. Time = Sun Apr 12 11:14:47 CST 2020
+pool-1-thread-3 End. Time = Sun Apr 12 11:14:47 CST 2020
+pool-1-thread-2 End. Time = Sun Apr 12 11:14:47 CST 2020
+</code></pre>
+<h3><strong>4.7 线程池原理分析</strong></h3>
+<p>承接 4.6 节，我们通过代码输出结果可以看出：<strong>线程池首先会先执行 5 个任务，然后这些任务有任务被执行完的话，就会去拿新的任务执行。</strong> 大家可以先通过上面讲解的内容，分析一下到底是咋回事？（自己独立思考一会）</p>
+<p>现在，我们就分析上面的输出内容来简单分析一下线程池原理。</p>
+<p><strong>为了搞懂线程池的原理，我们需要首先分析一下 <code class="notranslate">execute</code>方法。</strong> 在 4.6 节中的 Demo 中我们使用 <code class="notranslate">executor.execute(worker)</code>来提交一个任务到线程池中去，这个方法非常重要，下面我们来看看它的源码：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c">// 存放线程池的运行状态 (runState) 和线程池内有效线程的数量 (workerCount)</span>
+<span class="pl-k">private</span> <span class="pl-k">final</span> <span class="pl-smi">AtomicInteger</span> <span class="pl-s1">ctl</span> = <span class="pl-k">new</span> <span class="pl-smi">AtomicInteger</span>(<span class="pl-en">ctlOf</span>(<span class="pl-c1">RUNNING</span>, <span class="pl-c1">0</span>));
+<span class="pl-k">private</span> <span class="pl-k">static</span> <span class="pl-smi">int</span> <span class="pl-en">workerCountOf</span>(<span class="pl-smi">int</span> <span class="pl-s1">c</span>) {
+    <span class="pl-k">return</span> <span class="pl-s1">c</span> &amp; <span class="pl-c1">CAPACITY</span>;
+}
+<span class="pl-k">private</span> <span class="pl-k">final</span> <span class="pl-smi">BlockingQueue</span>&lt;<span class="pl-smi">Runnable</span>&gt; <span class="pl-s1">workQueue</span>;
+<span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">execute</span>(<span class="pl-smi">Runnable</span> <span class="pl-s1">command</span>) {
+    <span class="pl-c">// 如果任务为null，则抛出异常。</span>
+    <span class="pl-k">if</span> (<span class="pl-s1">command</span> == <span class="pl-c1">null</span>)
+        <span class="pl-k">throw</span> <span class="pl-k">new</span> <span class="pl-smi">NullPointerException</span>();
+    <span class="pl-c">// ctl 中保存的线程池当前的一些状态信息</span>
+    <span class="pl-smi">int</span> <span class="pl-s1">c</span> = <span class="pl-s1">ctl</span>.<span class="pl-en">get</span>();
+    <span class="pl-c">//  下面会涉及到 3 步 操作</span>
+    <span class="pl-c">// 1.首先判断当前线程池中执行的任务数量是否小于 corePoolSize</span>
+    <span class="pl-c">// 如果小于的话，通过addWorker(command, true)新建一个线程，并将任务(command)添加到该线程中；然后，启动该线程从而执行任务。</span>
+    <span class="pl-k">if</span> (<span class="pl-en">workerCountOf</span>(<span class="pl-s1">c</span>) &lt; <span class="pl-s1">corePoolSize</span>) {
+        <span class="pl-k">if</span> (<span class="pl-en">addWorker</span>(<span class="pl-s1">command</span>, <span class="pl-c1">true</span>))
+            <span class="pl-k">return</span>;
+        <span class="pl-s1">c</span> = <span class="pl-s1">ctl</span>.<span class="pl-en">get</span>();
+    }
+    <span class="pl-c">// 2.如果当前执行的任务数量大于等于 corePoolSize 的时候就会走到这里</span>
+    <span class="pl-c">// 通过 isRunning 方法判断线程池状态，线程池处于 RUNNING 状态才会被并且队列可以加入任务，该任务才会被加入进去</span>
+    <span class="pl-k">if</span> (<span class="pl-en">isRunning</span>(<span class="pl-s1">c</span>) &amp;&amp; <span class="pl-s1">workQueue</span>.<span class="pl-en">offer</span>(<span class="pl-s1">command</span>)) {
+        <span class="pl-smi">int</span> <span class="pl-s1">recheck</span> = <span class="pl-s1">ctl</span>.<span class="pl-en">get</span>();
+        <span class="pl-c">// 再次获取线程池状态，如果线程池状态不是 RUNNING 状态就需要从任务队列中移除任务，并尝试判断线程是否全部执行完毕。同时执行拒绝策略。</span>
+        <span class="pl-k">if</span> (!<span class="pl-en">isRunning</span>(<span class="pl-s1">recheck</span>) &amp;&amp; <span class="pl-en">remove</span>(<span class="pl-s1">command</span>))
+            <span class="pl-en">reject</span>(<span class="pl-s1">command</span>);
+            <span class="pl-c">// 如果当前线程池为空就新创建一个线程并执行。</span>
+        <span class="pl-k">else</span> <span class="pl-k">if</span> (<span class="pl-en">workerCountOf</span>(<span class="pl-s1">recheck</span>) == <span class="pl-c1">0</span>)
+            <span class="pl-en">addWorker</span>(<span class="pl-c1">null</span>, <span class="pl-c1">false</span>);
+    }
+    <span class="pl-c">//3. 通过addWorker(command, false)新建一个线程，并将任务(command)添加到该线程中；然后，启动该线程从而执行任务。</span>
+    <span class="pl-c">//如果addWorker(command, false)执行失败，则通过reject()执行相应的拒绝策略的内容。</span>
+    <span class="pl-k">else</span> <span class="pl-k">if</span> (!<span class="pl-en">addWorker</span>(<span class="pl-s1">command</span>, <span class="pl-c1">false</span>))
+        <span class="pl-en">reject</span>(<span class="pl-s1">command</span>);
+}</pre></div>
+<p>通过下图可以更好的对上面这 3 步做一个展示，下图是我为了省事直接从网上找到，原地址不明。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/b7b3d4ab754b8e69e1a7fde3ad210ddf579ee51f527737890774778cb7535fc8/68747470733a2f2f736e61696c636c696d622e67697465652e696f2f6a61766167756964652f646f63732f6a6176612f6d756c74692d7468726561642f696d616765732f6a6176612545372542412542462545372541382538422545362542312541302545352541442541362545342542392541302545362538302542422545372542422539332f2545352539422542452545382541372541332545372542412542462545372541382538422545362542312541302545352541452539452545372538452542302545352538452539462545372539302538362e706e67"><img src="https://camo.githubusercontent.com/b7b3d4ab754b8e69e1a7fde3ad210ddf579ee51f527737890774778cb7535fc8/68747470733a2f2f736e61696c636c696d622e67697465652e696f2f6a61766167756964652f646f63732f6a6176612f6d756c74692d7468726561642f696d616765732f6a6176612545372542412542462545372541382538422545362542312541302545352541442541362545342542392541302545362538302542422545372542422539332f2545352539422542452545382541372541332545372542412542462545372541382538422545362542312541302545352541452539452545372538452542302545352538452539462545372539302538362e706e67" alt="图解线程池实现原理" data-canonical-src="https://snailclimb.gitee.io/javaguide/docs/java/multi-thread/images/java%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/%E5%9B%BE%E8%A7%A3%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86.png" style="max-width: 100%;"></a></p>
+<p>现在，让我们在回到 4.6 节我们写的 Demo， 现在应该是不是很容易就可以搞懂它的原理了呢？</p>
+<p>没搞懂的话，也没关系，可以看看我的分析：</p>
+<blockquote>
+<p>我们在代码中模拟了 10 个任务，我们配置的核心线程数为 5 、等待队列容量为 100 ，所以每次只可能存在 5 个任务同时执行，剩下的 5 个任务会被放到等待队列中去。当前的5个任务中如果有任务被执行完了，线程池就会去拿新的任务执行。</p>
+</blockquote>
+<h2><strong>5. Atomic 原子类</strong></h2>
+<h3><strong>5.1. 介绍一下 Atomic 原子类</strong></h3>
+<p><code class="notranslate">Atomic</code> 翻译成中文是原子的意思。在化学上，我们知道原子是构成一般物质的最小单位，在化学反应中是不可分割的。在我们这里 Atomic 是指一个操作是不可中断的。即使是在多个线程一起执行的时候，一个操作一旦开始，就不会被其他线程干扰。</p>
+<p>所以，所谓原子类说简单点就是具有原子/原子操作特征的类。</p>
+<p>并发包 <code class="notranslate">java.util.concurrent</code> 的原子类都存放在<code class="notranslate">java.util.concurrent.atomic</code>下,如下图所示。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/4216264f4be1f619417bbe18da24985b7ffc5405991b5a2da88bc2ce0b499a8d/68747470733a2f2f6d792d626c6f672d746f2d7573652e6f73732d636e2d6265696a696e672e616c6979756e63732e636f6d2f323031392d362f4a55432545352538452539462545352541442539302545372542312542422545362541362538322545382541372538382e706e67"><img src="https://camo.githubusercontent.com/4216264f4be1f619417bbe18da24985b7ffc5405991b5a2da88bc2ce0b499a8d/68747470733a2f2f6d792d626c6f672d746f2d7573652e6f73732d636e2d6265696a696e672e616c6979756e63732e636f6d2f323031392d362f4a55432545352538452539462545352541442539302545372542312542422545362541362538322545382541372538382e706e67" alt="JUC原子类概览" style="max-width: 100%;"></a></p>
+<h3><strong>5.2. JUC 包中的原子类是哪 4 类?</strong></h3>
+<p><strong>基本类型</strong></p>
+<p>使用原子的方式更新基本类型</p>
+<ul>
+<li><code class="notranslate">AtomicInteger</code>：整形原子类</li>
+<li><code class="notranslate">AtomicLong</code>：长整型原子类</li>
+<li><code class="notranslate">AtomicBoolean</code>：布尔型原子类</li>
+</ul>
+<p><strong>数组类型</strong></p>
+<p>使用原子的方式更新数组里的某个元素</p>
+<ul>
+<li><code class="notranslate">AtomicIntegerArray</code>：整形数组原子类</li>
+<li><code class="notranslate">AtomicLongArray</code>：长整形数组原子类</li>
+<li><code class="notranslate">AtomicReferenceArray</code>：引用类型数组原子类</li>
+</ul>
+<p><strong>引用类型</strong></p>
+<ul>
+<li><code class="notranslate">AtomicReference</code>：引用类型原子类</li>
+<li><code class="notranslate">AtomicStampedReference</code>：原子更新带有版本号的引用类型。该类将整数值与引用关联起来，可用于解决原子的更新数据和数据的版本号，可以解决使用 CAS 进行原子更新时可能出现的 ABA 问题。</li>
+<li><code class="notranslate">AtomicMarkableReference</code> ：原子更新带有标记位的引用类型</li>
+</ul>
+<p><strong>对象的属性修改类型</strong></p>
+<ul>
+<li><code class="notranslate">AtomicIntegerFieldUpdater</code>：原子更新整形字段的更新器</li>
+<li><code class="notranslate">AtomicLongFieldUpdater</code>：原子更新长整形字段的更新器</li>
+<li><code class="notranslate">AtomicReferenceFieldUpdater</code>：原子更新引用类型字段的更新器</li>
+</ul>
+<h3><strong>5.3. 讲讲 AtomicInteger 的使用</strong></h3>
+<p><strong>AtomicInteger 类常用方法</strong></p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-k">final</span> <span class="pl-smi">int</span> <span class="pl-en">get</span>() <span class="pl-c">//获取当前的值</span>
+<span class="pl-k">public</span> <span class="pl-k">final</span> <span class="pl-smi">int</span> <span class="pl-en">getAndSet</span>(<span class="pl-smi">int</span> <span class="pl-s1">newValue</span>)<span class="pl-c">//获取当前的值，并设置新的值</span>
+<span class="pl-k">public</span> <span class="pl-k">final</span> <span class="pl-smi">int</span> <span class="pl-en">getAndIncrement</span>()<span class="pl-c">//获取当前的值，并自增</span>
+<span class="pl-k">public</span> <span class="pl-k">final</span> <span class="pl-smi">int</span> <span class="pl-en">getAndDecrement</span>() <span class="pl-c">//获取当前的值，并自减</span>
+<span class="pl-k">public</span> <span class="pl-k">final</span> <span class="pl-smi">int</span> <span class="pl-en">getAndAdd</span>(<span class="pl-smi">int</span> <span class="pl-s1">delta</span>) <span class="pl-c">//获取当前的值，并加上预期的值</span>
+<span class="pl-smi">boolean</span> <span class="pl-en">compareAndSet</span>(<span class="pl-smi">int</span> <span class="pl-s1">expect</span>, <span class="pl-smi">int</span> <span class="pl-s1">update</span>) <span class="pl-c">//如果输入的数值等于预期值，则以原子方式将该值设置为输入值（update）</span>
+<span class="pl-k">public</span> <span class="pl-k">final</span> <span class="pl-smi">void</span> <span class="pl-en">lazySet</span>(<span class="pl-smi">int</span> <span class="pl-s1">newValue</span>)<span class="pl-c">//最终设置为newValue,使用 lazySet 设置之后可能导致其他线程在之后的一小段时间内还是可以读到旧的值。</span></pre></div>
+<p><strong>AtomicInteger 类的使用示例</strong></p>
+<p>使用 AtomicInteger 之后，不用对 increment() 方法加锁也可以保证线程安全。</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">class</span> <span class="pl-smi">AtomicIntegerTest</span> {
+    <span class="pl-k">private</span> <span class="pl-smi">AtomicInteger</span> <span class="pl-s1">count</span> = <span class="pl-k">new</span> <span class="pl-smi">AtomicInteger</span>();
+    <span class="pl-c">//使用AtomicInteger之后，不需要对该方法加锁，也可以实现线程安全。</span>
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">increment</span>() {
+        <span class="pl-s1">count</span>.<span class="pl-en">incrementAndGet</span>();
+    }
+    <span class="pl-k">public</span> <span class="pl-smi">int</span> <span class="pl-en">getCount</span>() {
+        <span class="pl-k">return</span> <span class="pl-s1">count</span>.<span class="pl-en">get</span>();
+    }
+}</pre></div>
+<h3><strong>5.4. 能不能给我简单介绍一下 AtomicInteger 类的原理</strong></h3>
+<p>AtomicInteger 线程安全原理简单分析</p>
+<p>AtomicInteger 类的部分源码：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c">// setup to use Unsafe.compareAndSwapInt for updates（更新操作时提供“比较并替换”的作用）</span>
+<span class="pl-k">private</span> <span class="pl-k">static</span> <span class="pl-k">final</span> <span class="pl-smi">Unsafe</span> <span class="pl-s1">unsafe</span> = <span class="pl-smi">Unsafe</span>.<span class="pl-en">getUnsafe</span>();
+<span class="pl-k">private</span> <span class="pl-k">static</span> <span class="pl-k">final</span> <span class="pl-smi">long</span> <span class="pl-s1">valueOffset</span>;
+<span class="pl-k">static</span> {
+    <span class="pl-k">try</span> {
+        <span class="pl-s1">valueOffset</span> = <span class="pl-s1">unsafe</span>.<span class="pl-en">objectFieldOffset</span>
+            (<span class="pl-smi">AtomicInteger</span>.<span class="pl-k">class</span>.<span class="pl-en">getDeclaredField</span>(<span class="pl-s">"value"</span>));
+    } <span class="pl-k">catch</span> (<span class="pl-smi">Exception</span> <span class="pl-s1">ex</span>) { <span class="pl-k">throw</span> <span class="pl-k">new</span> <span class="pl-smi">Error</span>(<span class="pl-s1">ex</span>); }
+}
+<span class="pl-k">private</span> <span class="pl-k">volatile</span> <span class="pl-smi">int</span> <span class="pl-s1">value</span>;</pre></div>
+<p>AtomicInteger 类主要利用 CAS (compare and swap) + volatile 和 native 方法来保证原子操作，从而避免 synchronized 的高开销，执行效率大为提升。</p>
+<p>CAS 的原理是拿期望的值和原本的一个值作比较，如果相同则更新成新的值。UnSafe 类的 objectFieldOffset() 方法是一个本地方法，这个方法是用来拿到“原来的值”的内存地址，返回值是 valueOffset。另外 value 是一个 volatile 变量，在内存中可见，因此 JVM 可以保证任何时刻任何线程总能拿到该变量的最新值。</p>
+<p>关于 Atomic 原子类这部分更多内容可以查看我的这篇文章：并发编程面试必备：<a href="https://mp.weixin.qq.com/s?__biz=Mzg2OTA0Njk0OA==&amp;mid=2247484834&amp;idx=1&amp;sn=7d3835091af8125c13fc6db765f4c5bd&amp;source=41#wechat_redirect" rel="nofollow">JUC 中的 Atomic 原子类总结</a></p>
+<h2><strong>6. AQS</strong></h2>
+<h3><strong>6.1. AQS 介绍</strong></h3>
+<p>AQS 的全称为（<code class="notranslate">AbstractQueuedSynchronizer</code>），这个类在<code class="notranslate">java.util.concurrent.locks</code>包下面。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/a0295b9eee9b4b3047aa66b2cc972d4225062c9a618c121053ee4b66a5a1425a/68747470733a2f2f6d792d626c6f672d746f2d7573652e6f73732d636e2d6265696a696e672e616c6979756e63732e636f6d2f323031392d362f4151532545372542312542422e706e67"><img src="https://camo.githubusercontent.com/a0295b9eee9b4b3047aa66b2cc972d4225062c9a618c121053ee4b66a5a1425a/68747470733a2f2f6d792d626c6f672d746f2d7573652e6f73732d636e2d6265696a696e672e616c6979756e63732e636f6d2f323031392d362f4151532545372542312542422e706e67" alt="AQS类" style="max-width: 100%;"></a></p>
+<p>AQS 是一个用来构建锁和同步器的框架，使用 AQS 能简单且高效地构造出应用广泛的大量的同步器，比如我们提到的 <code class="notranslate">ReentrantLock</code>，<code class="notranslate">Semaphore</code>，其他的诸如 <code class="notranslate">ReentrantReadWriteLock</code>，<code class="notranslate">SynchronousQueue</code>，<code class="notranslate">FutureTask</code> 等等皆是基于 AQS 的。当然，我们自己也能利用 AQS 非常轻松容易地构造出符合我们自己需求的同步器。</p>
+<h3><strong>6.2. AQS 原理分析</strong></h3>
+<p>AQS 原理这部分参考了部分博客，在 5.2 节末尾放了链接。</p>
+<blockquote>
+<p>在面试中被问到并发知识的时候，大多都会被问到“请你说一下自己对于 AQS 原理的理解”。下面给大家一个示例供大家参加，面试不是背题，大家一定要加入自己的思想，即使加入不了自己的思想也要保证自己能够通俗的讲出来而不是背出来。<br>
+下面大部分内容其实在 AQS 类注释上已经给出了，不过是英语看着比较吃力一点，感兴趣的话可以看看源码。</p>
+</blockquote>
+<h4><strong>6.2.1. AQS 原理概览</strong></h4>
+<blockquote>
+<p>AQS中 维护了一个volatile int state（代表共享资源）和一个FIFO线程等待队列（多线程争用资源被阻塞时会进入此队列）。</p>
+</blockquote>
+<blockquote>
+<p>这里volatile能够保证多线程下的可见性，当state=1则代表当前对象锁已经被占有，其他线程来加锁时则会失败，加锁失败的线程会被放入一个FIFO的等待队列中，比列会被UNSAFE.park()操作挂起，等待其他获取锁的线程释放锁才能够被唤醒。</p>
+</blockquote>
+<blockquote>
+<p>另外state的操作都是通过CAS来保证其并发修改的安全性。</p>
+</blockquote>
+<p><strong>AQS 核心思想是，如果被请求的共享资源空闲，则将当前请求资源的线程设置为有效的工作线程，并且将共享资源设置为锁定状态。如果被请求的共享资源被占用，那么就需要一套线程阻塞等待以及被唤醒时锁分配的机制，这个机制 AQS 是用 CLH 队列锁实现的，即将暂时获取不到锁的线程加入到队列中。</strong></p>
+<blockquote>
+<p>CLH(Craig,Landin,and Hagersten)队列是一个虚拟的双向队列（虚拟的双向队列即不存在队列实例，仅存在结点之间的关联关系）。AQS 是将每条请求共享资源的线程封装成一个 CLH 锁队列的一个结点（Node）来实现锁的分配。<br>
+看个 AQS(AbstractQueuedSynchronizer)原理图：</p>
+</blockquote>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/ac2a92061ff7f1176d98be55181fe6615a7137bab4337540f96fc5c2056ba652/68747470733a2f2f6d792d626c6f672d746f2d7573652e6f73732d636e2d6265696a696e672e616c6979756e63732e636f6d2f323031392d362f4151532545352538452539462545372539302538362545352539422542452e706e67"><img src="https://camo.githubusercontent.com/ac2a92061ff7f1176d98be55181fe6615a7137bab4337540f96fc5c2056ba652/68747470733a2f2f6d792d626c6f672d746f2d7573652e6f73732d636e2d6265696a696e672e616c6979756e63732e636f6d2f323031392d362f4151532545352538452539462545372539302538362545352539422542452e706e67" alt="AQS原理图" style="max-width: 100%;"></a></p>
+<p>AQS 使用一个 int 成员变量来表示同步状态，通过内置的 FIFO 队列来完成获取资源线程的排队工作。AQS 使用 CAS 对该同步状态进行原子操作实现对其值的修改。</p>
+<blockquote>
+<p><strong>nonfairTryAcquire()方法中首先会获取state的值，如果不为0则说明当前对象的锁已经被其他线程所占有，接着判断占有锁的线程是否为当前线程，如果是则累加state值，这就是可重入锁的具体实现，累加state值，释放锁的时候也要依次递减state值。</strong></p>
+</blockquote>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">private</span> <span class="pl-k">volatile</span> <span class="pl-smi">int</span> <span class="pl-s1">state</span>;<span class="pl-c">//共享变量，使用volatile修饰保证线程可见性</span></pre></div>
+<p>状态信息通过 protected 类型的 getState，setState，compareAndSetState 进行操作</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c">//返回同步状态的当前值</span>
+<span class="pl-k">protected</span> <span class="pl-k">final</span> <span class="pl-smi">int</span> <span class="pl-en">getState</span>() {
+    <span class="pl-k">return</span> <span class="pl-s1">state</span>;
+}
+<span class="pl-c">//设置同步状态的值</span>
+<span class="pl-k">protected</span> <span class="pl-k">final</span> <span class="pl-smi">void</span> <span class="pl-en">setState</span>(<span class="pl-smi">int</span> <span class="pl-s1">newState</span>) {
+    <span class="pl-s1">state</span> = <span class="pl-s1">newState</span>;
+}
+<span class="pl-c">//原子地（CAS操作）将同步状态值设置为给定值update如果当前同步状态的值等于expect（期望值）</span>
+<span class="pl-k">protected</span> <span class="pl-k">final</span> <span class="pl-smi">boolean</span> <span class="pl-en">compareAndSetState</span>(<span class="pl-smi">int</span> <span class="pl-s1">expect</span>, <span class="pl-smi">int</span> <span class="pl-s1">update</span>) {
+    <span class="pl-k">return</span> <span class="pl-s1">unsafe</span>.<span class="pl-en">compareAndSwapInt</span>(<span class="pl-smi">this</span>, <span class="pl-s1">stateOffset</span>, <span class="pl-s1">expect</span>, <span class="pl-s1">update</span>);
+}</pre></div>
+<h4><strong>6.2.2. AQS 对资源的共享方式</strong></h4>
+<p><strong>AQS 定义两种资源共享方式</strong></p>
+<ol>
+<li><strong>Exclusive</strong>（独占）：只有一个线程能执行，如 <code class="notranslate">ReentrantLock</code>。又可分为公平锁和非公平锁：</li>
+</ol>
+<ul>
+<li>公平锁：按照线程在队列中的排队顺序，先到者先拿到锁</li>
+<li>非公平锁：当线程要获取锁时，无视队列顺序直接去抢锁，谁抢到就是谁的</li>
+</ul>
+<p><strong>总结：</strong> 公平锁和非公平锁只有两处不同：</p>
+<p>非公平锁在调用 lock 后，首先就会调用 CAS 进行一次抢锁，如果这个时候恰巧锁没有被占用，那么直接就获取到锁返回了。<br>
+非公平锁在 CAS 失败后，和公平锁一样都会进入到 tryAcquire 方法，在 tryAcquire 方法中，如果发现锁这个时候被释放了（state == 0），非公平锁会直接 CAS 抢锁，但是公平锁会判断等待队列是否有线程处于等待状态，如果有则不去抢锁，乖乖排到后面。<br>
+公平锁和非公平锁就这两点区别，如果这两次 CAS 都不成功，那么后面非公平锁和公平锁是一样的，都要进入到阻塞队列等待唤醒。</p>
+<p>相对来说，非公平锁会有更好的性能，因为它的吞吐量比较大。当然，非公平锁让获取锁的时间变得更加不确定，可能会导致在阻塞队列中的线程长期处于饥饿状态.</p>
+<ul>
+<li><strong>Share</strong>（共享）：多个线程可同时执行，如<code class="notranslate"> CountDownLatch</code>、<code class="notranslate">Semaphore</code>、 <code class="notranslate">CyclicBarrier</code>、<code class="notranslate">ReadWriteLock</code> 我们都会在后面讲到。</li>
+</ul>
+<p><code class="notranslate">ReentrantReadWriteLock</code> 可以看成是组合式，因为 <code class="notranslate">ReentrantReadWriteLock</code> 也就是读写锁允许多个线程同时对某一资源进行读。</p>
+<p>不同的自定义同步器争用共享资源的方式也不同。自定义同步器在实现时只需要实现共享资源 state 的获取与释放方式即可，至于具体线程等待队列的维护（如获取资源失败入队/唤醒出队等），AQS 已经在顶层实现好了。</p>
+<h4><strong>6.2.3. AQS 底层使用了模板方法模式</strong></h4>
+<p>同步器的设计是基于模板方法模式的，如果需要自定义同步器一般的方式是这样（模板方法模式很经典的一个应用）：</p>
+<ol>
+<li>使用者继承 <code class="notranslate">AbstractQueuedSynchronizer</code> 并重写指定的方法。（这些重写方法很简单，无非是对于共享资源 state 的获取和释放）</li>
+<li>将 AQS 组合在自定义同步组件的实现中，并调用其模板方法，而这些模板方法会调用使用者重写的方法。</li>
+</ol>
+<p>这和我们以往通过实现接口的方式有很大区别，这是模板方法模式很经典的一个运用。</p>
+<p><strong>AQS 使用了模板方法模式，自定义同步器时需要重写下面几个 AQS 提供的模板方法：</strong></p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-en">isHeldExclusively</span>()<span class="pl-c">//该线程是否正在独占资源。只有用到condition才需要去实现它。</span>
+<span class="pl-s1">tryAcquire</span>(<span class="pl-smi">int</span>)<span class="pl-c">//独占方式。尝试获取资源，成功则返回true，失败则返回false。</span>
+<span class="pl-s1">tryRelease</span>(<span class="pl-smi">int</span>)<span class="pl-c">//独占方式。尝试释放资源，成功则返回true，失败则返回false。</span>
+<span class="pl-s1">tryAcquireShared</span>(<span class="pl-smi">int</span>)<span class="pl-c">//共享方式。尝试获取资源。负数表示失败；0表示成功，但没有剩余可用资源；正数表示成功，且有剩余资源。</span>
+<span class="pl-s1">tryReleaseShared</span>(<span class="pl-smi">int</span>)<span class="pl-c">//共享方式。尝试释放资源，成功则返回true，失败则返回false。</span></pre></div>
+<p>默认情况下，每个方法都抛出 <code class="notranslate">UnsupportedOperationException</code>。 这些方法的实现必须是内部线程安全的，并且通常应该简短而不是阻塞。AQS 类中的其他方法都是 final ，所以无法被其他类使用，只有这几个方法可以被其他类使用。</p>
+<p>以 ReentrantLock 为例，state 初始化为 0，表示未锁定状态。A 线程 lock()时，会调用 tryAcquire()独占该锁并将 state+1。此后，其他线程再 tryAcquire()时就会失败，直到 A 线程 unlock()到 state=0（即释放锁）为止，其它线程才有机会获取该锁。当然，释放锁之前，A 线程自己是可以重复获取此锁的（state 会累加），这就是可重入的概念。但要注意，获取多少次就要释放多少次，这样才能保证 state 是能回到零态的。</p>
+<p>再以 <code class="notranslate">CountDownLatch</code> 以例，任务分为 N 个子线程去执行，state 也初始化为 N（注意 N 要与线程个数一致）。这 N 个子线程是并行执行的，每个子线程执行完后<code class="notranslate"> countDown()</code> 一次，state 会 CAS(Compare and Swap)减 1。等到所有子线程都执行完后(即 state=0)，会 unpark()主调用线程，然后主调用线程就会从 <code class="notranslate">await()</code> 函数返回，继续后余动作。</p>
+<p>一般来说，自定义同步器要么是独占方法，要么是共享方式，他们也只需实现<code class="notranslate">tryAcquire-tryRelease</code>、<code class="notranslate">tryAcquireShared-tryReleaseShared</code>中的一种即可。但 AQS 也支持自定义同步器同时实现独占和共享两种方式，如<code class="notranslate">ReentrantReadWriteLock</code>。</p>
+<p>推荐两篇 AQS 原理和相关源码分析的文章：</p>
+<ul>
+<li><a href="https://www.cnblogs.com/waterystone/p/4920797.html" rel="nofollow">https://www.cnblogs.com/waterystone/p/4920797.html</a></li>
+<li><a href="https://www.cnblogs.com/chengxiao/archive/2017/07/24/7141160.html" rel="nofollow">https://www.cnblogs.com/chengxiao/archive/2017/07/24/7141160.html</a></li>
+</ul>
+<h3>Semaphore(信号量)</h3>
+<p><code class="notranslate">synchronized</code> 和 <code class="notranslate">ReentrantLock</code> 都是一次只允许一个线程访问某个资源，<code class="notranslate">Semaphore</code>(信号量)可以指定多个线程同时访问某个资源。</p>
+<p>示例代码如下：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c">/**</span>
+<span class="pl-c"> *</span>
+<span class="pl-c"> * @author Snailclimb</span>
+<span class="pl-c"> * @date 2018年9月30日</span>
+<span class="pl-c"> * @Description: 需要一次性拿一个许可的情况</span>
+<span class="pl-c"> */</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">SemaphoreExample1</span> {
+  <span class="pl-c">// 请求的数量</span>
+  <span class="pl-k">private</span> <span class="pl-k">static</span> <span class="pl-k">final</span> <span class="pl-smi">int</span> <span class="pl-s1">threadCount</span> = <span class="pl-c1">550</span>;
+
+  <span class="pl-k">public</span> <span class="pl-k">static</span> <span class="pl-smi">void</span> <span class="pl-en">main</span>(<span class="pl-smi">String</span>[] <span class="pl-s1">args</span>) <span class="pl-k">throws</span> <span class="pl-smi">InterruptedException</span> {
+    <span class="pl-c">// 创建一个具有固定线程数量的线程池对象（如果这里线程池的线程数量给太少的话你会发现执行的很慢）</span>
+    <span class="pl-smi">ExecutorService</span> <span class="pl-s1">threadPool</span> = <span class="pl-smi">Executors</span>.<span class="pl-en">newFixedThreadPool</span>(<span class="pl-c1">300</span>);
+    <span class="pl-c">// 一次只能允许执行的线程数量。</span>
+    <span class="pl-k">final</span> <span class="pl-smi">Semaphore</span> <span class="pl-s1">semaphore</span> = <span class="pl-k">new</span> <span class="pl-smi">Semaphore</span>(<span class="pl-c1">20</span>);
+
+    <span class="pl-k">for</span> (<span class="pl-smi">int</span> <span class="pl-s1">i</span> = <span class="pl-c1">0</span>; <span class="pl-s1">i</span> &lt; <span class="pl-s1">threadCount</span>; <span class="pl-s1">i</span>++) {
+      <span class="pl-k">final</span> <span class="pl-smi">int</span> <span class="pl-s1">threadnum</span> = <span class="pl-s1">i</span>;
+      <span class="pl-s1">threadPool</span>.<span class="pl-en">execute</span>(() -&gt; {<span class="pl-c">// Lambda 表达式的运用</span>
+        <span class="pl-k">try</span> {
+          <span class="pl-s1">semaphore</span>.<span class="pl-en">acquire</span>();<span class="pl-c">// 获取一个许可，所以可运行线程数量为20/1=20</span>
+          <span class="pl-en">test</span>(<span class="pl-s1">threadnum</span>);
+          <span class="pl-s1">semaphore</span>.<span class="pl-en">release</span>();<span class="pl-c">// 释放一个许可</span>
+        } <span class="pl-k">catch</span> (<span class="pl-smi">InterruptedException</span> <span class="pl-s1">e</span>) {
+          <span class="pl-c">// TODO Auto-generated catch block</span>
+          <span class="pl-s1">e</span>.<span class="pl-en">printStackTrace</span>();
+        }
+
+      });
+    }
+    <span class="pl-s1">threadPool</span>.<span class="pl-en">shutdown</span>();
+    <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"finish"</span>);
+  }
+
+  <span class="pl-k">public</span> <span class="pl-k">static</span> <span class="pl-smi">void</span> <span class="pl-en">test</span>(<span class="pl-smi">int</span> <span class="pl-s1">threadnum</span>) <span class="pl-k">throws</span> <span class="pl-smi">InterruptedException</span> {
+    <span class="pl-smi">Thread</span>.<span class="pl-en">sleep</span>(<span class="pl-c1">1000</span>);<span class="pl-c">// 模拟请求的耗时操作</span>
+    <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"threadnum:"</span> + <span class="pl-s1">threadnum</span>);
+    <span class="pl-smi">Thread</span>.<span class="pl-en">sleep</span>(<span class="pl-c1">1000</span>);<span class="pl-c">// 模拟请求的耗时操作</span>
+  }
+}</pre></div>
+<p>执行 <code class="notranslate">acquire()</code> 方法阻塞，直到有一个许可证可以获得然后拿走一个许可证；每个 <code class="notranslate">release</code> 方法增加一个许可证，这可能会释放一个阻塞的 <code class="notranslate">acquire()</code> 方法。然而，其实并没有实际的许可证这个对象，<code class="notranslate">Semaphore</code> 只是维持了一个可获得许可证的数量。 <code class="notranslate">Semaphore</code> 经常用于限制获取某种资源的线程数量。</p>
+<p>当然一次也可以一次拿取和释放多个许可，不过一般没有必要这样做：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-s1">semaphore</span>.<span class="pl-en">acquire</span>(<span class="pl-c1">5</span>);<span class="pl-c">// 获取5个许可，所以可运行线程数量为20/5=4</span>
+<span class="pl-en">test</span>(<span class="pl-s1">threadnum</span>);
+<span class="pl-s1">semaphore</span>.<span class="pl-en">release</span>(<span class="pl-c1">5</span>);<span class="pl-c">// 释放5个许可</span></pre></div>
+<p>除了 <code class="notranslate">acquire()</code> 方法之外，另一个比较常用的与之对应的方法是 <code class="notranslate">tryAcquire()</code> 方法，该方法如果获取不到许可就立即返回 false。</p>
+<p><code class="notranslate">Semaphore</code> 有两种模式，公平模式和非公平模式。</p>
+<ul>
+<li><strong>公平模式：</strong> 调用 <code class="notranslate">acquire()</code> 方法的顺序就是获取许可证的顺序，遵循 FIFO；</li>
+<li><strong>非公平模式：</strong> 抢占式的。</li>
+</ul>
+<p><code class="notranslate">Semaphore</code> 对应的两个构造方法如下：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate">   <span class="pl-k">public</span> <span class="pl-smi">Semaphore</span><span class="pl-en"></span>(<span class="pl-smi">int</span> <span class="pl-s1">permits</span>) {
+        <span class="pl-s1">sync</span> = <span class="pl-k">new</span> <span class="pl-smi">NonfairSync</span>(<span class="pl-s1">permits</span>);
+    }
+
+    <span class="pl-k">public</span> <span class="pl-smi">Semaphore</span><span class="pl-en"></span>(<span class="pl-smi">int</span> <span class="pl-s1">permits</span>, <span class="pl-smi">boolean</span> <span class="pl-s1">fair</span>) {
+        <span class="pl-s1">sync</span> = <span class="pl-s1">fair</span> ? <span class="pl-k">new</span> <span class="pl-smi">FairSync</span>(<span class="pl-s1">permits</span>) : <span class="pl-k">new</span> <span class="pl-smi">NonfairSync</span>(<span class="pl-s1">permits</span>);
+    }</pre></div>
+<p><strong>这两个构造方法，都必须提供许可的数量，第二个构造方法可以指定是公平模式还是非公平模式，默认非公平模式。</strong></p>
+<p><a href="https://github.com/Snailclimb/JavaGuide/issues/645" data-hovercard-type="issue" data-hovercard-url="/Snailclimb/JavaGuide/issues/645/hovercard">issue645 补充内容</a> ：<code class="notranslate">Semaphore</code> 与 <code class="notranslate">CountDownLatch</code> 一样，也是共享锁的一种实现。它默认构造 AQS 的 state 为 <code class="notranslate">permits</code>。当执行任务的线程数量超出 <code class="notranslate">permits</code>，那么多余的线程将会被放入阻塞队列 Park,并自旋判断 state 是否大于 0。只有当 state 大于 0 的时候，阻塞的线程才能继续执行,此时先前执行任务的线程继续执行 <code class="notranslate">release()</code> 方法，<code class="notranslate">release()</code> 方法使得 state 的变量会加 1，那么自旋的线程便会判断成功。<br>
+如此，每次只有最多不超过 <code class="notranslate">permits</code> 数量的线程能自旋成功，便限制了执行任务线程的数量。</p>
+<h3>CountDownLatch （倒计时器）</h3>
+<p><code class="notranslate">CountDownLatch</code> 允许 <code class="notranslate">count</code> 个线程阻塞在一个地方，直至所有线程的任务都执行完毕。</p>
+<p><code class="notranslate">CountDownLatch</code> 是共享锁的一种实现,它默认构造 AQS 的 <code class="notranslate">state</code> 值为 <code class="notranslate">count</code>。当线程使用 <code class="notranslate">countDown()</code> 方法时,其实使用了<code class="notranslate">tryReleaseShared</code>方法以 CAS 的操作来减少 <code class="notranslate">state</code>,直至 <code class="notranslate">state</code> 为 0 。当调用 <code class="notranslate">await()</code> 方法的时候，如果 <code class="notranslate">state</code> 不为 0，那就证明任务还没有执行完毕，<code class="notranslate">await()</code> 方法就会一直阻塞，也就是说 <code class="notranslate">await()</code> 方法之后的语句不会被执行。然后，<code class="notranslate">CountDownLatch</code> 会自旋 CAS 判断 <code class="notranslate">state == 0</code>，如果 <code class="notranslate">state == 0</code> 的话，就会释放所有等待的线程，<code class="notranslate">await()</code> 方法之后的语句得到执行。</p>
+<h4>CountDownLatch 的两种典型用法</h4>
+<p><strong>1、某一线程在开始运行前等待 n 个线程执行完毕。</strong></p>
+<p>将 <code class="notranslate">CountDownLatch</code> 的计数器初始化为 n （<code class="notranslate">new CountDownLatch(n)</code>），每当一个任务线程执行完毕，就将计数器减 1 （<code class="notranslate">countdownlatch.countDown()</code>），当计数器的值变为 0 时，在 <code class="notranslate">CountDownLatch 上 await()</code> 的线程就会被唤醒。一个典型应用场景就是启动一个服务时，主线程需要等待多个组件加载完毕，之后再继续执行。</p>
+<p><strong>2、实现多个线程开始执行任务的最大并行性。</strong></p>
+<p>注意是并行性，不是并发，强调的是多个线程在某一时刻同时开始执行。类似于赛跑，将多个线程放到起点，等待发令枪响，然后同时开跑。做法是初始化一个共享的 <code class="notranslate">CountDownLatch</code> 对象，将其计数器初始化为 1 （<code class="notranslate">new CountDownLatch(1)</code>），多个线程在开始执行任务前首先 <code class="notranslate">coundownlatch.await()</code>，当主线程调用 <code class="notranslate">countDown()</code> 时，计数器变为 0，多个线程同时被唤醒。</p>
+<h4>CountDownLatch 的使用示例</h4>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c">/**</span>
+<span class="pl-c"> *</span>
+<span class="pl-c"> * @author SnailClimb</span>
+<span class="pl-c"> * @date 2018年10月1日</span>
+<span class="pl-c"> * @Description: CountDownLatch 使用方法示例</span>
+<span class="pl-c"> */</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">CountDownLatchExample1</span> {
+  <span class="pl-c">// 请求的数量</span>
+  <span class="pl-k">private</span> <span class="pl-k">static</span> <span class="pl-k">final</span> <span class="pl-smi">int</span> <span class="pl-s1">threadCount</span> = <span class="pl-c1">550</span>;
+
+  <span class="pl-k">public</span> <span class="pl-k">static</span> <span class="pl-smi">void</span> <span class="pl-en">main</span>(<span class="pl-smi">String</span>[] <span class="pl-s1">args</span>) <span class="pl-k">throws</span> <span class="pl-smi">InterruptedException</span> {
+    <span class="pl-c">// 创建一个具有固定线程数量的线程池对象（如果这里线程池的线程数量给太少的话你会发现执行的很慢）</span>
+    <span class="pl-smi">ExecutorService</span> <span class="pl-s1">threadPool</span> = <span class="pl-smi">Executors</span>.<span class="pl-en">newFixedThreadPool</span>(<span class="pl-c1">300</span>);
+    <span class="pl-k">final</span> <span class="pl-smi">CountDownLatch</span> <span class="pl-s1">countDownLatch</span> = <span class="pl-k">new</span> <span class="pl-smi">CountDownLatch</span>(<span class="pl-s1">threadCount</span>);
+    <span class="pl-k">for</span> (<span class="pl-smi">int</span> <span class="pl-s1">i</span> = <span class="pl-c1">0</span>; <span class="pl-s1">i</span> &lt; <span class="pl-s1">threadCount</span>; <span class="pl-s1">i</span>++) {
+      <span class="pl-k">final</span> <span class="pl-smi">int</span> <span class="pl-s1">threadnum</span> = <span class="pl-s1">i</span>;
+      <span class="pl-s1">threadPool</span>.<span class="pl-en">execute</span>(() -&gt; {<span class="pl-c">// Lambda 表达式的运用</span>
+        <span class="pl-k">try</span> {
+          <span class="pl-en">test</span>(<span class="pl-s1">threadnum</span>);
+        } <span class="pl-k">catch</span> (<span class="pl-smi">InterruptedException</span> <span class="pl-s1">e</span>) {
+          <span class="pl-c">// TODO Auto-generated catch block</span>
+          <span class="pl-s1">e</span>.<span class="pl-en">printStackTrace</span>();
+        } <span class="pl-k">finally</span> {
+          <span class="pl-s1">countDownLatch</span>.<span class="pl-en">countDown</span>();<span class="pl-c">// 表示一个请求已经被完成</span>
+        }
+
+      });
+    }
+    <span class="pl-s1">countDownLatch</span>.<span class="pl-en">await</span>();
+    <span class="pl-s1">threadPool</span>.<span class="pl-en">shutdown</span>();
+    <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"finish"</span>);
+  }
+
+  <span class="pl-k">public</span> <span class="pl-k">static</span> <span class="pl-smi">void</span> <span class="pl-en">test</span>(<span class="pl-smi">int</span> <span class="pl-s1">threadnum</span>) <span class="pl-k">throws</span> <span class="pl-smi">InterruptedException</span> {
+    <span class="pl-smi">Thread</span>.<span class="pl-en">sleep</span>(<span class="pl-c1">1000</span>);<span class="pl-c">// 模拟请求的耗时操作</span>
+    <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"threadnum:"</span> + <span class="pl-s1">threadnum</span>);
+    <span class="pl-smi">Thread</span>.<span class="pl-en">sleep</span>(<span class="pl-c1">1000</span>);<span class="pl-c">// 模拟请求的耗时操作</span>
+  }
+}</pre></div>
+<p>上面的代码中，我们定义了请求的数量为 550，当这 550 个请求被处理完成之后，才会执行<code class="notranslate">System.out.println("finish");</code>。</p>
+<p>与 <code class="notranslate">CountDownLatch</code> 的第一次交互是主线程等待其他线程。主线程必须在启动其他线程后立即调用 <code class="notranslate">CountDownLatch.await()</code> 方法。这样主线程的操作就会在这个方法上阻塞，直到其他线程完成各自的任务。</p>
+<p>其他 N 个线程必须引用闭锁对象，因为他们需要通知 <code class="notranslate">CountDownLatch</code> 对象，他们已经完成了各自的任务。这种通知机制是通过 <code class="notranslate">CountDownLatch.countDown()</code>方法来完成的；每调用一次这个方法，在构造函数中初始化的 count 值就减 1。所以当 N 个线程都调 用了这个方法，count 的值等于 0，然后主线程就能通过 <code class="notranslate">await()</code>方法，恢复执行自己的任务。</p>
+<p>再插一嘴：<code class="notranslate">CountDownLatch</code> 的 <code class="notranslate">await()</code> 方法使用不当很容易产生死锁，比如我们上面代码中的 for 循环改为：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">for</span> (<span class="pl-smi">int</span> <span class="pl-s1">i</span> = <span class="pl-c1">0</span>; <span class="pl-s1">i</span> &lt; <span class="pl-s1">threadCount</span>-<span class="pl-c1">1</span>; <span class="pl-s1">i</span>++) {
+.......
+}</pre></div>
+<p>这样就导致 <code class="notranslate">count</code> 的值没办法等于 0，然后就会导致一直等待。</p>
+<h4>CountDownLatch 的不足</h4>
+<p><code class="notranslate">CountDownLatch</code> 是一次性的，计数器的值只能在构造方法中初始化一次，之后没有任何机制再次对其设置值，当 <code class="notranslate">CountDownLatch</code> 使用完毕后，它不能再次被使用。</p>
+<h4>CountDownLatch 相常见面试题</h4>
+<ul>
+<li><code class="notranslate">CountDownLatch</code> 怎么用？应用场景是什么？</li>
+<li><code class="notranslate">CountDownLatch</code> 和 <code class="notranslate">CyclicBarrier</code> 的不同之处？</li>
+<li><code class="notranslate">CountDownLatch</code> 类中主要的方法？</li>
+</ul>
+<h3>CyclicBarrier(循环栅栏)</h3>
+<p><code class="notranslate">CyclicBarrier</code> 和 <code class="notranslate">CountDownLatch</code> 非常类似，它也可以实现线程间的技术等待，但是它的功能比 <code class="notranslate">CountDownLatch</code> 更加复杂和强大。主要应用场景和 <code class="notranslate">CountDownLatch</code> 类似。</p>
+<blockquote>
+<p><code class="notranslate">CountDownLatch</code> 的实现是基于 AQS 的，而 <code class="notranslate">CycliBarrier</code> 是基于 <code class="notranslate">ReentrantLock</code>(<code class="notranslate">ReentrantLock</code> 也属于 AQS 同步器)和 <code class="notranslate">Condition</code> 的。</p>
+</blockquote>
+<p><code class="notranslate">CyclicBarrier</code> 的字面意思是可循环使用（Cyclic）的屏障（Barrier）。它要做的事情是：让一组线程到达一个屏障（也可以叫同步点）时被阻塞，直到最后一个线程到达屏障时，屏障才会开门，所有被屏障拦截的线程才会继续干活。</p>
+<p><code class="notranslate">CyclicBarrier</code> 默认的构造方法是 <code class="notranslate">CyclicBarrier(int parties)</code>，其参数表示屏障拦截的线程数量，每个线程调用 <code class="notranslate">await()</code> 方法告诉 <code class="notranslate">CyclicBarrier</code> 我已经到达了屏障，然后当前线程被阻塞。</p>
+<p>再来看一下它的构造函数：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-smi">CyclicBarrier</span><span class="pl-en"></span>(<span class="pl-smi">int</span> <span class="pl-s1">parties</span>) {
+    <span class="pl-smi">this</span>(<span class="pl-s1">parties</span>, <span class="pl-s1">null</span>);
+}
+
+<span class="pl-k">public</span> <span class="pl-smi">CyclicBarrier</span><span class="pl-en"></span>(<span class="pl-smi">int</span> <span class="pl-s1">parties</span>, <span class="pl-smi">Runnable</span> <span class="pl-s1">barrierAction</span>) {
+    <span class="pl-k">if</span> (<span class="pl-s1">parties</span> &lt;= <span class="pl-c1">0</span>) <span class="pl-k">throw</span> <span class="pl-k">new</span> <span class="pl-smi">IllegalArgumentException</span>();
+    <span class="pl-smi">this</span>.<span class="pl-s1">parties</span> = <span class="pl-s1">parties</span>;
+    <span class="pl-smi">this</span>.<span class="pl-s1">count</span> = <span class="pl-s1">parties</span>;
+    <span class="pl-smi">this</span>.<span class="pl-s1">barrierCommand</span> = <span class="pl-s1">barrierAction</span>;
+}</pre></div>
+<p>其中，parties 就代表了有拦截的线程的数量，当拦截的线程数量达到这个值的时候就打开栅栏，让所有线程通过。</p>
+<h4>CyclicBarrier 的应用场景</h4>
+<p><code class="notranslate">CyclicBarrier</code> 可以用于多线程计算数据，最后合并计算结果的应用场景。比如我们用一个 Excel 保存了用户所有银行流水，每个 Sheet 保存一个帐户近一年的每笔银行流水，现在需要统计用户的日均银行流水，先用多线程处理每个 sheet 里的银行流水，都执行完之后，得到每个 sheet 的日均银行流水，最后，再用 barrierAction 用这些线程的计算结果，计算出整个 Excel 的日均银行流水。</p>
+<h4>CyclicBarrier 的使用示例</h4>
+<p>示例 1：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c">/**</span>
+<span class="pl-c"> *</span>
+<span class="pl-c"> * @author Snailclimb</span>
+<span class="pl-c"> * @date 2018年10月1日</span>
+<span class="pl-c"> * @Description: 测试 CyclicBarrier 类中带参数的 await() 方法</span>
+<span class="pl-c"> */</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">CyclicBarrierExample2</span> {
+  <span class="pl-c">// 请求的数量</span>
+  <span class="pl-k">private</span> <span class="pl-k">static</span> <span class="pl-k">final</span> <span class="pl-smi">int</span> <span class="pl-s1">threadCount</span> = <span class="pl-c1">550</span>;
+  <span class="pl-c">// 需要同步的线程数量</span>
+  <span class="pl-k">private</span> <span class="pl-k">static</span> <span class="pl-k">final</span> <span class="pl-smi">CyclicBarrier</span> <span class="pl-s1">cyclicBarrier</span> = <span class="pl-k">new</span> <span class="pl-smi">CyclicBarrier</span>(<span class="pl-c1">5</span>);
+
+  <span class="pl-k">public</span> <span class="pl-k">static</span> <span class="pl-smi">void</span> <span class="pl-en">main</span>(<span class="pl-smi">String</span>[] <span class="pl-s1">args</span>) <span class="pl-k">throws</span> <span class="pl-smi">InterruptedException</span> {
+    <span class="pl-c">// 创建线程池</span>
+    <span class="pl-smi">ExecutorService</span> <span class="pl-s1">threadPool</span> = <span class="pl-smi">Executors</span>.<span class="pl-en">newFixedThreadPool</span>(<span class="pl-c1">10</span>);
+
+    <span class="pl-k">for</span> (<span class="pl-smi">int</span> <span class="pl-s1">i</span> = <span class="pl-c1">0</span>; <span class="pl-s1">i</span> &lt; <span class="pl-s1">threadCount</span>; <span class="pl-s1">i</span>++) {
+      <span class="pl-k">final</span> <span class="pl-smi">int</span> <span class="pl-s1">threadNum</span> = <span class="pl-s1">i</span>;
+      <span class="pl-smi">Thread</span>.<span class="pl-en">sleep</span>(<span class="pl-c1">1000</span>);
+      <span class="pl-s1">threadPool</span>.<span class="pl-en">execute</span>(() -&gt; {
+        <span class="pl-k">try</span> {
+          <span class="pl-en">test</span>(<span class="pl-s1">threadNum</span>);
+        } <span class="pl-k">catch</span> (<span class="pl-smi">InterruptedException</span> <span class="pl-s1">e</span>) {
+          <span class="pl-c">// TODO Auto-generated catch block</span>
+          <span class="pl-s1">e</span>.<span class="pl-en">printStackTrace</span>();
+        } <span class="pl-k">catch</span> (<span class="pl-smi">BrokenBarrierException</span> <span class="pl-s1">e</span>) {
+          <span class="pl-c">// TODO Auto-generated catch block</span>
+          <span class="pl-s1">e</span>.<span class="pl-en">printStackTrace</span>();
+        }
+      });
+    }
+    <span class="pl-s1">threadPool</span>.<span class="pl-en">shutdown</span>();
+  }
+
+  <span class="pl-k">public</span> <span class="pl-k">static</span> <span class="pl-smi">void</span> <span class="pl-en">test</span>(<span class="pl-smi">int</span> <span class="pl-s1">threadnum</span>) <span class="pl-k">throws</span> <span class="pl-smi">InterruptedException</span>, <span class="pl-smi">BrokenBarrierException</span> {
+    <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"threadnum:"</span> + <span class="pl-s1">threadnum</span> + <span class="pl-s">"is ready"</span>);
+    <span class="pl-k">try</span> {
+      <span class="pl-c">/**等待60秒，保证子线程完全执行结束*/</span>
+      <span class="pl-s1">cyclicBarrier</span>.<span class="pl-en">await</span>(<span class="pl-c1">60</span>, <span class="pl-smi">TimeUnit</span>.<span class="pl-c1">SECONDS</span>);
+    } <span class="pl-k">catch</span> (<span class="pl-smi">Exception</span> <span class="pl-s1">e</span>) {
+      <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"-----CyclicBarrierException------"</span>);
+    }
+    <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"threadnum:"</span> + <span class="pl-s1">threadnum</span> + <span class="pl-s">"is finish"</span>);
+  }
+
+}</pre></div>
+<p>运行结果，如下：</p>
+<pre class="notranslate"><code class="notranslate">threadnum:0is ready
+threadnum:1is ready
+threadnum:2is ready
+threadnum:3is ready
+threadnum:4is ready
+threadnum:4is finish
+threadnum:0is finish
+threadnum:1is finish
+threadnum:2is finish
+threadnum:3is finish
+threadnum:5is ready
+threadnum:6is ready
+threadnum:7is ready
+threadnum:8is ready
+threadnum:9is ready
+threadnum:9is finish
+threadnum:5is finish
+threadnum:8is finish
+threadnum:7is finish
+threadnum:6is finish
+......
+</code></pre>
+<p>可以看到当线程数量也就是请求数量达到我们定义的 5 个的时候， <code class="notranslate">await()</code> 方法之后的方法才被执行。</p>
+<p>另外，<code class="notranslate">CyclicBarrier</code> 还提供一个更高级的构造函数 <code class="notranslate">CyclicBarrier(int parties, Runnable barrierAction)</code>，用于在线程到达屏障时，优先执行 <code class="notranslate">barrierAction</code>，方便处理更复杂的业务场景。示例代码如下：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c">/**</span>
+<span class="pl-c"> *</span>
+<span class="pl-c"> * @author SnailClimb</span>
+<span class="pl-c"> * @date 2018年10月1日</span>
+<span class="pl-c"> * @Description: 新建 CyclicBarrier 的时候指定一个 Runnable</span>
+<span class="pl-c"> */</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">CyclicBarrierExample3</span> {
+  <span class="pl-c">// 请求的数量</span>
+  <span class="pl-k">private</span> <span class="pl-k">static</span> <span class="pl-k">final</span> <span class="pl-smi">int</span> <span class="pl-s1">threadCount</span> = <span class="pl-c1">550</span>;
+  <span class="pl-c">// 需要同步的线程数量</span>
+  <span class="pl-k">private</span> <span class="pl-k">static</span> <span class="pl-k">final</span> <span class="pl-smi">CyclicBarrier</span> <span class="pl-s1">cyclicBarrier</span> = <span class="pl-k">new</span> <span class="pl-smi">CyclicBarrier</span>(<span class="pl-c1">5</span>, () -&gt; {
+    <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"------当线程数达到之后，优先执行------"</span>);
+  });
+
+  <span class="pl-k">public</span> <span class="pl-k">static</span> <span class="pl-smi">void</span> <span class="pl-en">main</span>(<span class="pl-smi">String</span>[] <span class="pl-s1">args</span>) <span class="pl-k">throws</span> <span class="pl-smi">InterruptedException</span> {
+    <span class="pl-c">// 创建线程池</span>
+    <span class="pl-smi">ExecutorService</span> <span class="pl-s1">threadPool</span> = <span class="pl-smi">Executors</span>.<span class="pl-en">newFixedThreadPool</span>(<span class="pl-c1">10</span>);
+
+    <span class="pl-k">for</span> (<span class="pl-smi">int</span> <span class="pl-s1">i</span> = <span class="pl-c1">0</span>; <span class="pl-s1">i</span> &lt; <span class="pl-s1">threadCount</span>; <span class="pl-s1">i</span>++) {
+      <span class="pl-k">final</span> <span class="pl-smi">int</span> <span class="pl-s1">threadNum</span> = <span class="pl-s1">i</span>;
+      <span class="pl-smi">Thread</span>.<span class="pl-en">sleep</span>(<span class="pl-c1">1000</span>);
+      <span class="pl-s1">threadPool</span>.<span class="pl-en">execute</span>(() -&gt; {
+        <span class="pl-k">try</span> {
+          <span class="pl-en">test</span>(<span class="pl-s1">threadNum</span>);
+        } <span class="pl-k">catch</span> (<span class="pl-smi">InterruptedException</span> <span class="pl-s1">e</span>) {
+          <span class="pl-c">// TODO Auto-generated catch block</span>
+          <span class="pl-s1">e</span>.<span class="pl-en">printStackTrace</span>();
+        } <span class="pl-k">catch</span> (<span class="pl-smi">BrokenBarrierException</span> <span class="pl-s1">e</span>) {
+          <span class="pl-c">// TODO Auto-generated catch block</span>
+          <span class="pl-s1">e</span>.<span class="pl-en">printStackTrace</span>();
+        }
+      });
+    }
+    <span class="pl-s1">threadPool</span>.<span class="pl-en">shutdown</span>();
+  }
+
+  <span class="pl-k">public</span> <span class="pl-k">static</span> <span class="pl-smi">void</span> <span class="pl-en">test</span>(<span class="pl-smi">int</span> <span class="pl-s1">threadnum</span>) <span class="pl-k">throws</span> <span class="pl-smi">InterruptedException</span>, <span class="pl-smi">BrokenBarrierException</span> {
+    <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"threadnum:"</span> + <span class="pl-s1">threadnum</span> + <span class="pl-s">"is ready"</span>);
+    <span class="pl-s1">cyclicBarrier</span>.<span class="pl-en">await</span>();
+    <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"threadnum:"</span> + <span class="pl-s1">threadnum</span> + <span class="pl-s">"is finish"</span>);
+  }
+
+}</pre></div>
+<p>运行结果，如下：</p>
+<pre class="notranslate"><code class="notranslate">threadnum:0is ready
+threadnum:1is ready
+threadnum:2is ready
+threadnum:3is ready
+threadnum:4is ready
+------当线程数达到之后，优先执行------
+threadnum:4is finish
+threadnum:0is finish
+threadnum:2is finish
+threadnum:1is finish
+threadnum:3is finish
+threadnum:5is ready
+threadnum:6is ready
+threadnum:7is ready
+threadnum:8is ready
+threadnum:9is ready
+------当线程数达到之后，优先执行------
+threadnum:9is finish
+threadnum:5is finish
+threadnum:6is finish
+threadnum:8is finish
+threadnum:7is finish
+......
+</code></pre>
+<h4>CyclicBarrier 源码分析</h4>
+<p>当调用 <code class="notranslate">CyclicBarrier</code> 对象调用 <code class="notranslate">await()</code> 方法时，实际上调用的是 <code class="notranslate">dowait(false, 0L)</code>方法。 <code class="notranslate">await()</code> 方法就像树立起一个栅栏的行为一样，将线程挡住了，当拦住的线程数量达到 <code class="notranslate">parties</code> 的值时，栅栏才会打开，线程才得以通过执行。</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-smi">int</span> <span class="pl-en">await</span>() <span class="pl-k">throws</span> <span class="pl-smi">InterruptedException</span>, <span class="pl-smi">BrokenBarrierException</span> {
+  <span class="pl-k">try</span> {
+    	<span class="pl-k">return</span> <span class="pl-en">dowait</span>(<span class="pl-c1">false</span>, <span class="pl-c1">0L</span>);
+  } <span class="pl-k">catch</span> (<span class="pl-smi">TimeoutException</span> <span class="pl-s1">toe</span>) {
+   	 <span class="pl-k">throw</span> <span class="pl-k">new</span> <span class="pl-smi">Error</span>(<span class="pl-s1">toe</span>); <span class="pl-c">// cannot happen</span>
+  }
+}</pre></div>
+<p><code class="notranslate">dowait(false, 0L)</code>：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate">    <span class="pl-c">// 当线程数量或者请求数量达到 count 时 await 之后的方法才会被执行。上面的示例中 count 的值就为 5。</span>
+    <span class="pl-k">private</span> <span class="pl-smi">int</span> <span class="pl-s1">count</span>;
+    <span class="pl-c">/**</span>
+<span class="pl-c">     * Main barrier code, covering the various policies.</span>
+<span class="pl-c">     */</span>
+    <span class="pl-k">private</span> <span class="pl-smi">int</span> <span class="pl-en">dowait</span>(<span class="pl-smi">boolean</span> <span class="pl-s1">timed</span>, <span class="pl-smi">long</span> <span class="pl-s1">nanos</span>)
+        <span class="pl-k">throws</span> <span class="pl-smi">InterruptedException</span>, <span class="pl-smi">BrokenBarrierException</span>,
+               <span class="pl-smi">TimeoutException</span> {
+        <span class="pl-k">final</span> <span class="pl-smi">ReentrantLock</span> <span class="pl-s1">lock</span> = <span class="pl-smi">this</span>.<span class="pl-s1">lock</span>;
+        <span class="pl-c">// 锁住</span>
+        <span class="pl-s1">lock</span>.<span class="pl-en">lock</span>();
+        <span class="pl-k">try</span> {
+            <span class="pl-k">final</span> <span class="pl-smi">Generation</span> <span class="pl-s1">g</span> = <span class="pl-s1">generation</span>;
+
+            <span class="pl-k">if</span> (<span class="pl-s1">g</span>.<span class="pl-s1">broken</span>)
+                <span class="pl-k">throw</span> <span class="pl-k">new</span> <span class="pl-smi">BrokenBarrierException</span>();
+
+            <span class="pl-c">// 如果线程中断了，抛出异常</span>
+            <span class="pl-k">if</span> (<span class="pl-smi">Thread</span>.<span class="pl-en">interrupted</span>()) {
+                <span class="pl-en">breakBarrier</span>();
+                <span class="pl-k">throw</span> <span class="pl-k">new</span> <span class="pl-smi">InterruptedException</span>();
+            }
+            <span class="pl-c">// cout减1</span>
+            <span class="pl-smi">int</span> <span class="pl-s1">index</span> = --<span class="pl-s1">count</span>;
+            <span class="pl-c">// 当 count 数量减为 0 之后说明最后一个线程已经到达栅栏了，也就是达到了可以执行await 方法之后的条件</span>
+            <span class="pl-k">if</span> (<span class="pl-s1">index</span> == <span class="pl-c1">0</span>) {  <span class="pl-c">// tripped</span>
+                <span class="pl-smi">boolean</span> <span class="pl-s1">ranAction</span> = <span class="pl-c1">false</span>;
+                <span class="pl-k">try</span> {
+                    <span class="pl-k">final</span> <span class="pl-smi">Runnable</span> <span class="pl-s1">command</span> = <span class="pl-s1">barrierCommand</span>;
+                    <span class="pl-k">if</span> (<span class="pl-s1">command</span> != <span class="pl-c1">null</span>)
+                        <span class="pl-s1">command</span>.<span class="pl-en">run</span>();
+                    <span class="pl-s1">ranAction</span> = <span class="pl-c1">true</span>;
+                    <span class="pl-c">// 将 count 重置为 parties 属性的初始化值</span>
+                    <span class="pl-c">// 唤醒之前等待的线程</span>
+                    <span class="pl-c">// 下一波执行开始</span>
+                    <span class="pl-en">nextGeneration</span>();
+                    <span class="pl-k">return</span> <span class="pl-c1">0</span>;
+                } <span class="pl-k">finally</span> {
+                    <span class="pl-k">if</span> (!<span class="pl-s1">ranAction</span>)
+                        <span class="pl-en">breakBarrier</span>();
+                }
+            }
+
+            <span class="pl-c">// loop until tripped, broken, interrupted, or timed out</span>
+            <span class="pl-k">for</span> (;;) {
+                <span class="pl-k">try</span> {
+                    <span class="pl-k">if</span> (!<span class="pl-s1">timed</span>)
+                        <span class="pl-s1">trip</span>.<span class="pl-en">await</span>();
+                    <span class="pl-k">else</span> <span class="pl-k">if</span> (<span class="pl-s1">nanos</span> &gt; <span class="pl-c1">0L</span>)
+                        <span class="pl-s1">nanos</span> = <span class="pl-s1">trip</span>.<span class="pl-en">awaitNanos</span>(<span class="pl-s1">nanos</span>);
+                } <span class="pl-k">catch</span> (<span class="pl-smi">InterruptedException</span> <span class="pl-s1">ie</span>) {
+                    <span class="pl-k">if</span> (<span class="pl-s1">g</span> == <span class="pl-s1">generation</span> &amp;&amp; ! <span class="pl-s1">g</span>.<span class="pl-s1">broken</span>) {
+                        <span class="pl-en">breakBarrier</span>();
+                        <span class="pl-k">throw</span> <span class="pl-s1">ie</span>;
+                    } <span class="pl-k">else</span> {
+                        <span class="pl-c">// We're about to finish waiting even if we had not</span>
+                        <span class="pl-c">// been interrupted, so this interrupt is deemed to</span>
+                        <span class="pl-c">// "belong" to subsequent execution.</span>
+                        <span class="pl-smi">Thread</span>.<span class="pl-en">currentThread</span>().<span class="pl-en">interrupt</span>();
+                    }
+                }
+
+                <span class="pl-k">if</span> (<span class="pl-s1">g</span>.<span class="pl-s1">broken</span>)
+                    <span class="pl-k">throw</span> <span class="pl-k">new</span> <span class="pl-smi">BrokenBarrierException</span>();
+
+                <span class="pl-k">if</span> (<span class="pl-s1">g</span> != <span class="pl-s1">generation</span>)
+                    <span class="pl-k">return</span> <span class="pl-s1">index</span>;
+
+                <span class="pl-k">if</span> (<span class="pl-s1">timed</span> &amp;&amp; <span class="pl-s1">nanos</span> &lt;= <span class="pl-c1">0L</span>) {
+                    <span class="pl-en">breakBarrier</span>();
+                    <span class="pl-k">throw</span> <span class="pl-k">new</span> <span class="pl-smi">TimeoutException</span>();
+                }
+            }
+        } <span class="pl-k">finally</span> {
+            <span class="pl-s1">lock</span>.<span class="pl-en">unlock</span>();
+        }
+    }</pre></div>
+<p>总结：<code class="notranslate">CyclicBarrier</code> 内部通过一个 count 变量作为计数器，count 的初始值为 parties 属性的初始化值，每当一个线程到了栅栏这里了，那么就将计数器减一。如果 count 值为 0 了，表示这是这一代最后一个线程到达栅栏，就尝试执行我们构造方法中输入的任务。</p>
+<h3>CyclicBarrier 和 CountDownLatch 的区别</h3>
+<p>下面这个是国外一个大佬的回答：</p>
+<p><code class="notranslate">CountDownLatch</code> 是计数器，只能使用一次，而 <code class="notranslate">CyclicBarrier</code> 的计数器提供 <code class="notranslate">reset</code> 功能，可以多次使用。但是我不那么认为它们之间的区别仅仅就是这么简单的一点。我们来从 jdk 作者设计的目的来看，javadoc 是这么描述它们的：</p>
+<blockquote>
+<p>CountDownLatch: A synchronization aid that allows one or more threads to wait until a set of operations being performed in other threads completes.(CountDownLatch: 一个或者多个线程，等待其他多个线程完成某件事情之后才能执行；)<br>
+CyclicBarrier : A synchronization aid that allows a set of threads to all wait for each other to reach a common barrier point.(CyclicBarrier : 多个线程互相等待，直到到达同一个同步点，再继续一起执行。)</p>
+</blockquote>
+<p>对于 <code class="notranslate">CountDownLatch</code> 来说，重点是“一个线程（多个线程）等待”，而其他的 N 个线程在完成“某件事情”之后，可以终止，也可以等待。而对于 <code class="notranslate">CyclicBarrier</code>，重点是多个线程，在任意一个线程没有完成，所有的线程都必须等待。</p>
+<p><code class="notranslate">CountDownLatch</code> 是计数器，线程完成一个记录一个，只不过计数不是递增而是递减，而 <code class="notranslate">CyclicBarrier</code> 更像是一个阀门，需要所有线程都到达，阀门才能打开，然后继续执行。</p>
+<h3>ReentrantLock 和 ReentrantReadWriteLock</h3>
+<p><code class="notranslate">ReentrantLock</code> 和 <code class="notranslate">synchronized</code> 的区别在上面已经讲过了这里就不多做讲解。另外，需要注意的是：读写锁 <code class="notranslate">ReentrantReadWriteLock</code> 可以保证多个线程可以同时读，所以在读操作远大于写操作的时候，读写锁就非常有用了。</p>
+<h3><strong>6.3. AQS 组件总结</strong></h3>
+<ul>
+<li><strong><code class="notranslate">Semaphore</code>(信号量)-允许多个线程同时访问：</strong> <code class="notranslate">synchronized</code> 和 <code class="notranslate">ReentrantLock</code> 都是一次只允许一个线程访问某个资源，<code class="notranslate">Semaphore</code>(信号量)可以指定多个线程同时访问某个资源。</li>
+<li><strong><code class="notranslate">CountDownLatch </code>（倒计时器）：</strong>  <code class="notranslate">CountDownLatch</code> 是一个同步工具类，用来协调多个线程之间的同步。这个工具通常用来控制线程等待，它可以让某一个线程等待直到倒计时结束，再开始执行。</li>
+<li><strong><code class="notranslate">CyclicBarrier</code>(循环栅栏)：</strong> <code class="notranslate">CyclicBarrier</code> 和 <code class="notranslate">CountDownLatch</code> 非常类似，它也可以实现线程间的技术等待，但是它的功能比 <code class="notranslate">CountDownLatch</code> 更加复杂和强大。主要应用场景和 <code class="notranslate">CountDownLatch</code> 类似。<code class="notranslate">CyclicBarrier</code> 的字面意思是可循环使用（<code class="notranslate">Cyclic</code>）的屏障（<code class="notranslate">Barrier</code>）。它要做的事情是，让一组线程到达一个屏障（也可以叫同步点）时被阻塞，直到最后一个线程到达屏障时，屏障才会开门，所有被屏障拦截的线程才会继续干活。<code class="notranslate">CyclicBarrier</code> 默认的构造方法是 <code class="notranslate">CyclicBarrier(int parties)</code>，其参数表示屏障拦截的线程数量，每个线程调用 <code class="notranslate">await()</code> 方法告诉 <code class="notranslate">CyclicBarrier</code> 我已经到达了屏障，然后当前线程被阻塞。</li>
+</ul>
+<h3>6.4. 用过 CountDownLatch 么？什么场景下用的？</h3>
+<p><code class="notranslate">CountDownLatch</code> 的作用就是 允许 count 个线程阻塞在一个地方，直至所有线程的任务都执行完毕。之前在项目中，有一个使用多线程读取多个文件处理的场景，我用到了 <code class="notranslate">CountDownLatch</code> 。具体场景是下面这样的：</p>
+<p>我们要读取处理 6 个文件，这 6 个任务都是没有执行顺序依赖的任务，但是我们需要返回给用户的时候将这几个文件的处理的结果进行统计整理。</p>
+<p>为此我们定义了一个线程池和 count 为 6 的<code class="notranslate">CountDownLatch</code>对象 。使用线程池处理读取任务，每一个线程处理完之后就将 count-1，调用<code class="notranslate">CountDownLatch</code>对象的 <code class="notranslate">await()</code>方法，直到所有文件读取完之后，才会接着执行后面的逻辑。</p>
+<p>伪代码是下面这样的：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">CountDownLatchExample1</span> {
+    <span class="pl-c">// 处理文件的数量</span>
+    <span class="pl-k">private</span> <span class="pl-k">static</span> <span class="pl-k">final</span> <span class="pl-smi">int</span> <span class="pl-s1">threadCount</span> = <span class="pl-c1">6</span>;
+    <span class="pl-k">public</span> <span class="pl-k">static</span> <span class="pl-smi">void</span> <span class="pl-en">main</span>(<span class="pl-smi">String</span>[] <span class="pl-s1">args</span>) <span class="pl-k">throws</span> <span class="pl-smi">InterruptedException</span> {
+        <span class="pl-c">// 创建一个具有固定线程数量的线程池对象（推荐使用构造方法创建）</span>
+        <span class="pl-smi">ExecutorService</span> <span class="pl-s1">threadPool</span> = <span class="pl-smi">Executors</span>.<span class="pl-en">newFixedThreadPool</span>(<span class="pl-c1">10</span>);
+        <span class="pl-k">final</span> <span class="pl-smi">CountDownLatch</span> <span class="pl-s1">countDownLatch</span> = <span class="pl-k">new</span> <span class="pl-smi">CountDownLatch</span>(<span class="pl-s1">threadCount</span>);
+        <span class="pl-k">for</span> (<span class="pl-smi">int</span> <span class="pl-s1">i</span> = <span class="pl-c1">0</span>; <span class="pl-s1">i</span> &lt; <span class="pl-s1">threadCount</span>; <span class="pl-s1">i</span>++) {
+            <span class="pl-k">final</span> <span class="pl-smi">int</span> <span class="pl-s1">threadnum</span> = <span class="pl-s1">i</span>;
+            <span class="pl-s1">threadPool</span>.<span class="pl-en">execute</span>(() -&gt; {
+                <span class="pl-k">try</span> {
+                    <span class="pl-c">//处理文件的业务操作</span>
+                    <span class="pl-c">//......</span>
+                } <span class="pl-k">catch</span> (<span class="pl-smi">InterruptedException</span> <span class="pl-s1">e</span>) {
+                    <span class="pl-s1">e</span>.<span class="pl-en">printStackTrace</span>();
+                } <span class="pl-k">finally</span> {
+                    <span class="pl-c">//表示一个文件已经被完成</span>
+                    <span class="pl-s1">countDownLatch</span>.<span class="pl-en">countDown</span>();
+                }
+            });
+        }
+        <span class="pl-s1">countDownLatch</span>.<span class="pl-en">await</span>();
+        <span class="pl-s1">threadPool</span>.<span class="pl-en">shutdown</span>();
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"finish"</span>);
+    }
+}</pre></div>
+<p><strong>有没有可以改进的地方呢？</strong></p>
+<p>可以使用 <code class="notranslate">CompletableFuture</code> 类来改进！Java8 的 <code class="notranslate">CompletableFuture</code> 提供了很多对多线程友好的方法，使用它可以很方便地为我们编写多线程程序，什么异步、串行、并行或者等待所有线程执行完任务什么的都非常方便。</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-smi">CompletableFuture</span>&lt;<span class="pl-smi">Void</span>&gt; <span class="pl-s1">task1</span> =
+    <span class="pl-smi">CompletableFuture</span>.<span class="pl-en">supplyAsync</span>(()-&gt;{
+        <span class="pl-c">//自定义业务操作</span>
+    });
+......
+<span class="pl-smi">CompletableFuture</span>&lt;<span class="pl-smi">Void</span>&gt; <span class="pl-s1">task6</span> =
+    <span class="pl-smi">CompletableFuture</span>.<span class="pl-en">supplyAsync</span>(()-&gt;{
+    <span class="pl-c">//自定义业务操作</span>
+    });
+......
+<span class="pl-smi">CompletableFuture</span>&lt;<span class="pl-smi">Void</span>&gt; <span class="pl-s1">headerFuture</span>=<span class="pl-smi">CompletableFuture</span>.<span class="pl-en">allOf</span>(<span class="pl-s1">task1</span>,.....,<span class="pl-s1">task6</span>);
+<span class="pl-k">try</span> {
+    <span class="pl-s1">headerFuture</span>.<span class="pl-en">join</span>();
+} <span class="pl-k">catch</span> (<span class="pl-smi">Exception</span> <span class="pl-s1">ex</span>) {
+    <span class="pl-c">//......</span>
+}
+<span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"all done. "</span>);</pre></div>
+<p>上面的代码还可以接续优化，当任务过多的时候，把每一个 task 都列出来不太现实，可以考虑通过循环来添加任务。</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c">//文件夹位置</span>
+<span class="pl-smi">List</span>&lt;<span class="pl-smi">String</span>&gt; <span class="pl-s1">filePaths</span> = <span class="pl-smi">Arrays</span>.<span class="pl-en">asList</span>(...)
+<span class="pl-c">// 异步处理所有文件</span>
+<span class="pl-s1">List</span>&lt;<span class="pl-s1">CompletableFuture</span>&lt;<span class="pl-s1">String</span>&gt;&gt; <span class="pl-s1">fileFutures</span> = <span class="pl-s1">filePaths</span>.<span class="pl-en">stream</span>()
+    .<span class="pl-en">map</span>(<span class="pl-s1">filePath</span> -&gt; <span class="pl-en">doSomeThing</span>(<span class="pl-s1">filePath</span>))
+    .<span class="pl-en">collect</span>(<span class="pl-smi">Collectors</span>.<span class="pl-en">toList</span>());
+<span class="pl-c">// 将他们合并起来</span>
+<span class="pl-smi">CompletableFuture</span>&lt;<span class="pl-smi">Void</span>&gt; <span class="pl-s1">allFutures</span> = <span class="pl-smi">CompletableFuture</span>.<span class="pl-en">allOf</span>(
+    <span class="pl-s1">fileFutures</span>.<span class="pl-en">toArray</span>(<span class="pl-k">new</span> <span class="pl-smi">CompletableFuture</span>[<span class="pl-s1">fileFutures</span>.<span class="pl-en">size</span>()])
+);</pre></div>
+<h2><strong>7 Reference</strong></h2>
+<ul>
+<li>《深入理解 Java 虚拟机》</li>
+<li>《实战 Java 高并发程序设计》</li>
+<li>《Java 并发编程的艺术》</li>
+<li><a href="https://www.cnblogs.com/waterystone/p/4920797.html" rel="nofollow">https://www.cnblogs.com/waterystone/p/4920797.html</a></li>
+<li><a href="https://www.cnblogs.com/chengxiao/archive/2017/07/24/7141160.html" rel="nofollow">https://www.cnblogs.com/chengxiao/archive/2017/07/24/7141160.html</a></li>
+<li><a href="https://www.journaldev.com/1076/java-threadlocal-example" rel="nofollow">https://www.journaldev.com/1076/java-threadlocal-example</a></li>
+</ul></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+
+</div>
+    <div id="footer"><div id="footer1">Copyright © <span id="copyrightYear"></span> <a href="https://shuaiwang888.github.io/appStore-Blog.github.io">Blog Title</a></div>
+<div id="footer2">
+    <span id="runday"></span><span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>
+</div>
+
+<script>
+var now=new Date();
+document.getElementById("copyrightYear").innerHTML=now.getFullYear();
+
+if(""!=""){
+    var startSite=new Date("");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";
+}
+</script></div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z', 'copy': 'M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z', 'check': 'M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","shuaiwang888/appStore-Blog.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const createClipboardHTML = (codeContent, additionalClasses = '') => `
+        <pre class="notranslate"><code class="notranslate">${codeContent}</code></pre>
+        <div class="clipboard-container position-absolute right-0 top-0 ${additionalClasses}">
+            <clipboard-copy class="ClipboardButton btn m-2 p-0" role="button" style="display: inherit;">
+                <svg height="16" width="16" class="octicon octicon-copy m-2"><path d="${IconList["copy"]}"></path></svg>
+                <svg height="16" width="16" class="octicon octicon-check color-fg-success m-2 d-none"><path d="${IconList["check"]}"></path></svg>
+            </clipboard-copy>
+            <div class="copy-feedback">Copied!</div>
+        </div>
+    `;
+
+    const handleCodeElements = (selector = '') => {
+        document.querySelectorAll(selector).forEach(codeElement => {
+            const codeContent = codeElement.innerHTML;
+            const newStructure = document.createElement('div');
+            newStructure.className = 'snippet-clipboard-content position-relative overflow-auto';
+            newStructure.innerHTML = createClipboardHTML(codeContent);
+
+            const parentElement = codeElement.parentElement;
+            if (selector.includes('highlight')) {
+                parentElement.insertBefore(newStructure, codeElement.nextSibling);
+                parentElement.removeChild(codeElement);
+            } else {
+                parentElement.parentElement.replaceChild(newStructure, parentElement);
+            }
+        });
+    };
+
+    handleCodeElements('pre.notranslate > code.notranslate');
+    handleCodeElements('div.highlight > pre.notranslate');
+
+    let currentFeedback = null;
+    document.querySelectorAll('clipboard-copy').forEach(copyButton => {
+        copyButton.addEventListener('click', () => {
+            const codeContent = copyButton.closest('.snippet-clipboard-content').innerText;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = codeContent;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            const copyIcon = copyButton.querySelector('.octicon-copy');
+            const checkIcon = copyButton.querySelector('.octicon-check');
+            const copyFeedback = copyButton.nextElementSibling;
+
+            if (currentFeedback && currentFeedback !== copyFeedback) {currentFeedback.style.display = 'none';}
+            currentFeedback = copyFeedback;
+
+            copyIcon.classList.add('d-none');
+            checkIcon.classList.remove('d-none');
+            copyFeedback.style.display = 'block';
+            copyButton.style.borderColor = 'var(--color-success-fg)';
+
+            setTimeout(() => {
+                copyIcon.classList.remove('d-none');
+                checkIcon.classList.add('d-none');
+                copyFeedback.style.display = 'none';
+                copyButton.style.borderColor = '';
+            }, 2000);
+        });
+    });
+});
+
+</script>
+
+
+</html>
