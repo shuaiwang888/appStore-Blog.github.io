@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark" data-light-theme="light" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
+    
+    <link rel="icon" href="https://github.githubassets.com/favicons/favicon.svg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="## **前言**
+
+### 参考文档：[原来MySQL面试还会问这些...](https://mp.weixin.qq.com/s/Lx4TNPLQzYaknR7D3gmOmQ)
+
+`MySQL日志` 主要包括错误日志、查询日志、慢查询日志、事务日志、二进制日志几大类。">
+<meta property="og:title" content="MySQL的三大日志">
+<meta property="og:description" content="## **前言**
+
+### 参考文档：[原来MySQL面试还会问这些...](https://mp.weixin.qq.com/s/Lx4TNPLQzYaknR7D3gmOmQ)
+
+`MySQL日志` 主要包括错误日志、查询日志、慢查询日志、事务日志、二进制日志几大类。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://shuaiwang888.github.io/appStore-Blog.github.io/post/MySQL-de-san-da-ri-zhi.html">
+<meta property="og:image" content="https://github.githubassets.com/favicons/favicon.svg">
+<title>MySQL的三大日志</title>
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+.copy-feedback {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    color: var(--color-fg-on-emphasis);
+    background-color: var(--color-fg-muted);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
+</style>
+
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">MySQL的三大日志</h1>
+<div class="title-right">
+    <a href="https://shuaiwang888.github.io/appStore-Blog.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/shuaiwang888/appStore-Blog.github.io/issues/10" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><h2><strong>前言</strong></h2>
+<h3>参考文档：<a href="https://mp.weixin.qq.com/s/Lx4TNPLQzYaknR7D3gmOmQ" rel="nofollow">原来MySQL面试还会问这些...</a></h3>
+<p><code class="notranslate">MySQL日志</code> 主要包括错误日志、查询日志、慢查询日志、事务日志、二进制日志几大类。其中，比较重要的还要属 <strong>事务日志 <code class="notranslate">redo log</code>（重做日志）和 二进制日志 <code class="notranslate">binlog</code>（归档日志）和 <code class="notranslate">undo log</code>（回滚日志）</strong>。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/aa59ec9b5781ccf2f0256f8ef2a9c80b8084752736bf24e083e2866879c17187/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30332f30312e706e67"><img src="https://camo.githubusercontent.com/aa59ec9b5781ccf2f0256f8ef2a9c80b8084752736bf24e083e2866879c17187/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30332f30312e706e67" alt="" data-canonical-src="https://cdn.jsdelivr.net/gh/18702524676/CND5/image/mysql/03/01.png" style="max-width: 100%;"></a></p>
+<h2><strong>一、redo log：保证数据持久性、完整性</strong></h2>
+<p><code class="notranslate">redo log</code>（重做日志）是<code class="notranslate">InnoDB</code>存储引擎独有的，<strong>它让<code class="notranslate">MySQL</code>拥有了崩溃恢复能力</strong>。</p>
+<p>比如 <code class="notranslate">MySQL</code> 实例挂了或宕机了，重启时，<code class="notranslate">InnoDB</code>存储引擎会使用<code class="notranslate">redo log</code>恢复数据，保证数据的持久性与完整性。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/44c5d712ae0d25895cfdfc19c14853e295496030ad9cead46abd0ab1d19190d4/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30332f30322e706e67"><img src="https://camo.githubusercontent.com/44c5d712ae0d25895cfdfc19c14853e295496030ad9cead46abd0ab1d19190d4/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30332f30322e706e67" alt="" data-canonical-src="https://cdn.jsdelivr.net/gh/18702524676/CND5/image/mysql/03/02.png" style="max-width: 100%;"></a></p>
+<p><code class="notranslate">MySQL</code> 中数据是以页为单位，你查询一条记录，会从硬盘把一页的数据加载出来，加载出来的数据叫数据页，会放入到 <code class="notranslate">Buffer Pool</code> 中。</p>
+<p>后续的查询都是先从 <code class="notranslate">Buffer Pool</code> 中找，没有命中再去硬盘加载，减少硬盘 <code class="notranslate">IO</code> 开销，提升性能。</p>
+<p>更新表数据的时候，也是如此，发现 <code class="notranslate">Buffer Pool</code> 里存在要更新的数据，就直接在 <code class="notranslate">Buffer Pool</code> 里更新。</p>
+<p>然后会把“在某个数据页上做了什么修改”记录到重做日志缓存（<code class="notranslate">redo log buffer</code>）里，接着刷盘到 <code class="notranslate">redo log</code> 文件里。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/a3796cf625783607f0612c5d692828e7566414932f33058dd7e2550790d89ef5/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30332f30332e706e67"><img src="https://camo.githubusercontent.com/a3796cf625783607f0612c5d692828e7566414932f33058dd7e2550790d89ef5/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30332f30332e706e67" alt="" data-canonical-src="https://cdn.jsdelivr.net/gh/18702524676/CND5/image/mysql/03/03.png" style="max-width: 100%;"></a></p>
+<p>理想情况，事务一提交就会进行刷盘操作，但实际上，刷盘的时机是根据策略来进行的。</p>
+<blockquote>
+<p>小贴士：每条 redo 记录由“表空间号+数据页号+偏移量+修改数据长度+具体修改的数据”组成</p>
+</blockquote>
+<h3><strong>刷盘时机</strong></h3>
+<p><code class="notranslate">InnoDB</code> 存储引擎为 <code class="notranslate">redo log</code> 的刷盘策略提供了 <code class="notranslate">innodb_flush_log_at_trx_commit</code> 参数，它支持三种策略：</p>
+<ul>
+<li><strong>0</strong> ：设置为 0 的时候，表示每次事务提交时不进行刷盘操作</li>
+<li><strong>1 ：设置为 1 的时候，表示每次事务提交时都将进行刷盘操作（默认值）</strong></li>
+<li><strong>2</strong> ：设置为 2 的时候，表示每次事务提交时都只把 redo log buffer 内容写入 page cache</li>
+</ul>
+<p><code class="notranslate">innodb_flush_log_at_trx_commit</code> 参数默认为 1 ，也就是说当事务提交时会调用 <code class="notranslate">fsync</code> 对 redo log 进行刷盘</p>
+<p>另外，<code class="notranslate">InnoDB</code> 存储引擎有一个后台线程，每隔<code class="notranslate">1</code> 秒，就会把 <code class="notranslate">redo log buffer</code> 中的内容写到文件系统缓存（<code class="notranslate">page cache</code>），然后调用 <code class="notranslate">fsync</code> 刷盘。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/c78b9630fc56189141c08e1bc80350c11cdf1f3521d788f83a7f53237cbade4d/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30332f30342e706e67"><img src="https://camo.githubusercontent.com/c78b9630fc56189141c08e1bc80350c11cdf1f3521d788f83a7f53237cbade4d/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30332f30342e706e67" alt="" data-canonical-src="https://cdn.jsdelivr.net/gh/18702524676/CND5/image/mysql/03/04.png" style="max-width: 100%;"></a></p>
+<p>也就是说，一个没有提交事务的 <code class="notranslate">redo log</code> 记录，也可能会刷盘。</p>
+<p><strong>为什么呢？</strong></p>
+<p>因为在事务执行过程 <code class="notranslate">redo log</code> 记录是会写入<code class="notranslate">redo log buffer</code> 中，这些 <code class="notranslate">redo log</code> 记录会被后台线程刷盘。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/d263d701f40b7b6c2f87bd3cf3e3f4dcbf142b4a4648c62eabb826b7bf50d32f/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30332f30352e706e67"><img src="https://camo.githubusercontent.com/d263d701f40b7b6c2f87bd3cf3e3f4dcbf142b4a4648c62eabb826b7bf50d32f/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30332f30352e706e67" alt="" data-canonical-src="https://cdn.jsdelivr.net/gh/18702524676/CND5/image/mysql/03/05.png" style="max-width: 100%;"></a></p>
+<p><strong>除了后台线程每秒<code class="notranslate">1</code>次的轮询操作，还有一种情况，当 <code class="notranslate">redo log buffer</code> 占用的空间即将达到 <code class="notranslate">innodb_log_buffer_size</code> 一半的时候，后台线程会主动刷盘。</strong></p>
+<p>下面是不同刷盘策略的流程图。</p>
+<blockquote>
+<h4><strong>innodb_flush_log_at_trx_commit=0</strong></h4>
+</blockquote>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/f5bc5cc3805c0d29e9fa46f6ad8a7f22694f976f804ba3154582ca45e2a0c24b/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30332f30362e706e67"><img src="https://camo.githubusercontent.com/f5bc5cc3805c0d29e9fa46f6ad8a7f22694f976f804ba3154582ca45e2a0c24b/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30332f30362e706e67" alt="" data-canonical-src="https://cdn.jsdelivr.net/gh/18702524676/CND5/image/mysql/03/06.png" style="max-width: 100%;"></a></p>
+<blockquote>
+<p>为<code class="notranslate">0</code>时，如果<code class="notranslate">MySQL</code>挂了或宕机可能会有<code class="notranslate">1</code>秒数据的丢失。</p>
+</blockquote>
+<blockquote>
+<h4><strong>innodb_flush_log_at_trx_commit=1</strong></h4>
+</blockquote>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/cc43c5506a406e68a9d587f2f4073e94da1a500dd9e3d0603b9f156332f4f701/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30332f30372e706e67"><img src="https://camo.githubusercontent.com/cc43c5506a406e68a9d587f2f4073e94da1a500dd9e3d0603b9f156332f4f701/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30332f30372e706e67" alt="" data-canonical-src="https://cdn.jsdelivr.net/gh/18702524676/CND5/image/mysql/03/07.png" style="max-width: 100%;"></a></p>
+<blockquote>
+<p>为<code class="notranslate">1</code>时， 只要事务提交成功，<code class="notranslate">redo log</code>记录就一定在硬盘里，不会有任何数据丢失。</p>
+</blockquote>
+<p>如果事务执行期间<code class="notranslate">MySQL</code>挂了或宕机，这部分日志丢了，但是事务并没有提交，所以日志丢了也不会有损失。</p>
+<blockquote>
+<h4><strong>innodb_flush_log_at_trx_commit=2</strong></h4>
+</blockquote>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/b1692e9a10087c9dcfeef5634e258338d0518b207cdb5c81cdbcf0d3dc766a47/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30332f30392e706e67"><img src="https://camo.githubusercontent.com/b1692e9a10087c9dcfeef5634e258338d0518b207cdb5c81cdbcf0d3dc766a47/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30332f30392e706e67" alt="" data-canonical-src="https://cdn.jsdelivr.net/gh/18702524676/CND5/image/mysql/03/09.png" style="max-width: 100%;"></a></p>
+<blockquote>
+<p>为<code class="notranslate">2</code>时， 只要事务提交成功，<code class="notranslate">redo log buffer</code>中的内容只写入文件系统缓存（<code class="notranslate">page cache</code>）。</p>
+</blockquote>
+<p>如果仅仅只是<code class="notranslate">MySQL</code>挂了不会有任何数据丢失，但是宕机可能会有<code class="notranslate">1</code>秒数据的丢失。</p>
+<h3><strong>日志文件组</strong></h3>
+<p>硬盘上存储的 <code class="notranslate">redo log</code> 日志文件不只一个，而是以一个<strong>日志文件组</strong>的形式出现的，每个的<code class="notranslate">redo</code>日志文件大小都是一样的。比如可以配置为一组<code class="notranslate">4</code>个文件，每个文件的大小是 <code class="notranslate">1GB</code>，整个 <code class="notranslate">redo log</code> 日志文件组可以记录<code class="notranslate">4G</code>的内容。</p>
+<p>它采用的是 <code class="notranslate">环形数组形式</code>，从头开始写，写到末尾又回到头循环写，如下图所示。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/8d459c97b65c006aed874afb8aa0a03f661976186957508dacd2a8f44ef030c4/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30332f31302e706e67"><img src="https://camo.githubusercontent.com/8d459c97b65c006aed874afb8aa0a03f661976186957508dacd2a8f44ef030c4/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30332f31302e706e67" alt="" data-canonical-src="https://cdn.jsdelivr.net/gh/18702524676/CND5/image/mysql/03/10.png" style="max-width: 100%;"></a></p>
+<p>在个<strong>日志文件组</strong>中还有两个重要的属性，分别是 <code class="notranslate">write pos、checkpoint</code></p>
+<ul>
+<li><strong>write pos</strong> 是当前记录的位置，一边写一边后移</li>
+<li><strong>checkpoint</strong> 是当前要擦除的位置，也是往后推移</li>
+</ul>
+<blockquote>
+<p>每次刷盘 <code class="notranslate">redo log</code> 记录到<strong>日志文件组</strong>中，<code class="notranslate">write pos</code> 位置就会后移更新。</p>
+</blockquote>
+<blockquote>
+<p>每次 <code class="notranslate">MySQL</code> 加载<strong>日志文件组</strong>恢复数据时，会清空加载过的 <code class="notranslate">redo log</code> 记录，并把 <code class="notranslate">checkpoint</code> 后移更新。</p>
+</blockquote>
+<p><code class="notranslate">write pos</code> 和 <code class="notranslate">checkpoint</code> 之间的还空着的部分可以用来写入新的 <code class="notranslate">redo log</code> 记录。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/77495e6d70d62a0b7c25dbb1af1f1b5145deb1197f40f47fd595167f1f5ebb2b/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30332f31312e706e67"><img src="https://camo.githubusercontent.com/77495e6d70d62a0b7c25dbb1af1f1b5145deb1197f40f47fd595167f1f5ebb2b/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30332f31312e706e67" alt="" data-canonical-src="https://cdn.jsdelivr.net/gh/18702524676/CND5/image/mysql/03/11.png" style="max-width: 100%;"></a></p>
+<blockquote>
+<p>如果 <code class="notranslate">write pos</code> 追上 <code class="notranslate">checkpoint</code> ，表示<strong>日志文件组</strong>满了，这时候不能再写入新的 <code class="notranslate">redo log</code> 记录，<code class="notranslate">MySQL</code> 得停下来，清空一些记录，把 <code class="notranslate">checkpoint</code> 推进一下。</p>
+</blockquote>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/7b13548fe32cb52d04f19d88b508be0cb3e4bc4ef55e5286c3af728fb93ea828/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30332f31322e706e67"><img src="https://camo.githubusercontent.com/7b13548fe32cb52d04f19d88b508be0cb3e4bc4ef55e5286c3af728fb93ea828/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30332f31322e706e67" alt="" data-canonical-src="https://cdn.jsdelivr.net/gh/18702524676/CND5/image/mysql/03/12.png" style="max-width: 100%;"></a></p>
+<h3><strong>redo log 小结</strong></h3>
+<p>相信大家都知道 <code class="notranslate">redo log</code> 的作用和它的刷盘时机、存储形式。</p>
+<p>现在我们来思考一个问题： <strong>只要每次把修改后的数据页直接刷盘不就好了，还有 <code class="notranslate">redo log</code> 什么事？</strong></p>
+<p>它们不都是刷盘么？差别在哪里？</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c1">1</span> <span class="pl-s1">Byte</span> = <span class="pl-c1">8</span><span class="pl-s1">bit</span>
+<span class="pl-c1">1</span> <span class="pl-c1">KB</span> = <span class="pl-c1">1024</span> <span class="pl-s1">Byte</span>
+<span class="pl-c1">1</span> <span class="pl-c1">MB</span> = <span class="pl-c1">1024</span> <span class="pl-c1">KB</span>
+<span class="pl-c1">1</span> <span class="pl-c1">GB</span> = <span class="pl-c1">1024</span> <span class="pl-c1">MB</span>
+<span class="pl-c1">1</span> <span class="pl-c1">TB</span> = <span class="pl-c1">1024</span> <span class="pl-c1">GB</span></pre></div>
+<ul>
+<li>
+<p>实际上，数据页大小是<code class="notranslate">16KB</code>，刷盘比较耗时，可能就修改了数据页里的几 <code class="notranslate">Byte</code> 数据，有必要把完整的数据页刷盘吗？</p>
+</li>
+<li>
+<p>而且数据页刷盘是随机写，因为一个数据页对应的位置可能在硬盘文件的随机位置，所以性能是很差。</p>
+</li>
+<li>
+<p>如果是写 <code class="notranslate">redo log</code>，一行记录可能就占几十 <code class="notranslate">Byte</code>，只包含表空间号、数据页号、磁盘文件偏移<br>
+量、更新值，再加上是顺序写，所以刷盘速度很快。</p>
+</li>
+<li>
+<p><strong>所以用 <code class="notranslate">redo log</code> 形式记录修改内容，性能会远远超过刷数据页的方式，这也让数据库的并发能力更强。</strong></p>
+</li>
+</ul>
+<h2><strong>二、binlog：保证数据一致性</strong></h2>
+<p><code class="notranslate">redo log</code> 它是物理日志，记录内容是“在某个数据页上做了什么修改”，<strong>属于 <code class="notranslate">InnoDB</code> 存储引擎</strong>。</p>
+<p>而 <code class="notranslate">binlog</code> 是逻辑日志，记录内容是语句的原始逻辑，类似于“给 ID=2 这一行的 c 字段加 1”，<strong>属于<code class="notranslate">MySQL Server</code> 层</strong>。</p>
+<p>不管用什么存储引擎，只要发生了表数据更新，都会产生 <code class="notranslate">binlog</code> 日志。那 <code class="notranslate">binlog</code> 到底是用来干嘛的？</p>
+<p>可以说<code class="notranslate">MySQL</code>数据库的<strong>数据备份、主备、主主、主从</strong>都离不开<code class="notranslate">binlog</code>，需要依靠<code class="notranslate">binlog</code>来同步数据，保证数据一致性。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/42f3ab7fd10134bea6bfaaf37a7619eaeb3d85f7571c98ed94e9168b50d4ed24/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30342f30312e706e67"><img src="https://camo.githubusercontent.com/42f3ab7fd10134bea6bfaaf37a7619eaeb3d85f7571c98ed94e9168b50d4ed24/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30342f30312e706e67" alt="" data-canonical-src="https://cdn.jsdelivr.net/gh/18702524676/CND5/image/mysql/04/01.png" style="max-width: 100%;"></a></p>
+<p><code class="notranslate">binlog</code>会记录所有涉及更新数据的逻辑操作，并且是顺序写。</p>
+<h3><strong>记录格式</strong></h3>
+<p><code class="notranslate">binlog</code> 日志有三种格式，可以通过<code class="notranslate">binlog_format</code>参数指定。</p>
+<ul>
+<li><strong>statement</strong></li>
+<li><strong>row</strong></li>
+<li><strong>mixed</strong></li>
+</ul>
+<blockquote>
+<p>指定<code class="notranslate">statement</code>，记录的内容是<code class="notranslate">SQL</code>语句原文，比如执行一条<code class="notranslate">update T set update_time=now() where id=1</code>，记录的内容如下。</p>
+</blockquote>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/f54efbdb505f564acb587024ff5db0ad14090cfa2dce028de06ff2b7696c6205/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30342f30322e706e67"><img src="https://camo.githubusercontent.com/f54efbdb505f564acb587024ff5db0ad14090cfa2dce028de06ff2b7696c6205/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30342f30322e706e67" alt="" data-canonical-src="https://cdn.jsdelivr.net/gh/18702524676/CND5/image/mysql/04/02.png" style="max-width: 100%;"></a></p>
+<p>同步数据时，会执行记录的<code class="notranslate">SQL</code>语句，但是有个问题，<code class="notranslate">update_time=now()</code>这里会获取当前系统时间，直接执行会导致与原库的数据不一致。</p>
+<blockquote>
+<p>为了解决这种问题，我们需要指定为<code class="notranslate">row</code>，记录的内容不再是简单的<code class="notranslate">SQL</code>语句了，还包含操作的具体数据，记录内容如下。</p>
+</blockquote>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/838a89ab5bd8de0dbea843810a8dce2aede7bcfa82193d5b19b93aa1490b3d07/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30342f30332e706e67"><img src="https://camo.githubusercontent.com/838a89ab5bd8de0dbea843810a8dce2aede7bcfa82193d5b19b93aa1490b3d07/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30342f30332e706e67" alt="" data-canonical-src="https://cdn.jsdelivr.net/gh/18702524676/CND5/image/mysql/04/03.png" style="max-width: 100%;"></a></p>
+<p><code class="notranslate">row</code>格式记录的内容看不到详细信息，要通过<code class="notranslate">mysqlbinlog</code>工具解析出来。</p>
+<p><code class="notranslate">update_time=now()</code>变成了具体的时间<code class="notranslate">update_time=1627112756247</code>，条件后面的<a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/1/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/1">@1</a>、<a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/2/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/2">@2</a>、<a class="user-mention notranslate" data-hovercard-type="organization" data-hovercard-url="/orgs/3/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/3">@3</a> 都是该行数据第 1 个~3 个字段的原始值（<strong>假设这张表只有 3 个字段</strong>）。</p>
+<p>这样就能保证同步数据的一致性，通常情况下都是指定为<code class="notranslate">row</code>，这样可以为数据库的恢复与同步带来更好的可靠性。</p>
+<p>但是这种格式，需要更大的容量来记录，比较占用空间，恢复与同步时会更消耗<code class="notranslate">IO</code>资源，影响执行速度。</p>
+<blockquote>
+<p>所以就有了一种折中的方案，指定为<code class="notranslate">mixed</code>，记录的内容是前两者的混合。</p>
+</blockquote>
+<p><strong><code class="notranslate">MySQL</code>会判断这条<code class="notranslate">SQL</code>语句是否可能引起数据不一致，如果是，就用<code class="notranslate">row</code>格式，否则就用<code class="notranslate">statement</code>格式。</strong></p>
+<h3><strong>写入机制</strong></h3>
+<p><strong><code class="notranslate">binlog</code>的写入时机也非常简单，事务执行过程中，先把日志写到<code class="notranslate">binlog cache</code>，事务提交的时候，再把<code class="notranslate">binlog cache</code>写到<code class="notranslate">binlog</code>文件中。</strong></p>
+<p>因为一个事务的<code class="notranslate">binlog</code>不能被拆开，无论这个事务多大，也要确保一次性写入，所以系统会给每个线程分配一个块内存作为<code class="notranslate">binlog cache</code>。我们可以通过<code class="notranslate">binlog_cache_size</code>参数控制单个线程 binlog cache 大小，如果存储内容超过了这个参数，就要暂存到磁盘（<code class="notranslate">Swap</code>）。</p>
+<p><code class="notranslate">binlog</code>日志刷盘流程如下</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/05ba9d37b5328d4a2781e1fc7b6a9faa73d2b042452d8492297306425c25de9c/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30342f30342e706e67"><img src="https://camo.githubusercontent.com/05ba9d37b5328d4a2781e1fc7b6a9faa73d2b042452d8492297306425c25de9c/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30342f30342e706e67" alt="" data-canonical-src="https://cdn.jsdelivr.net/gh/18702524676/CND5/image/mysql/04/04.png" style="max-width: 100%;"></a></p>
+<ul>
+<li><strong>上图的 write，是指把日志写入到文件系统的 page cache，并没有把数据持久化到磁盘，所以速度比较快</strong></li>
+<li><strong>上图的 fsync，才是将数据持久化到磁盘的操作</strong></li>
+</ul>
+<p><code class="notranslate">write</code>和<code class="notranslate">fsync</code>的时机，可以由参数<code class="notranslate">sync_binlog</code>控制，默认是<code class="notranslate">0</code>。</p>
+<p>为<code class="notranslate">0</code>的时候，表示每次提交事务都只<code class="notranslate">write</code>，由系统自行判断什么时候执行<code class="notranslate">fsync</code>。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/e2b6fc2c577f71cccd3e75cea708be71a4549655462a21906bcf0994c1c0b4e3/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30342f30352e706e67"><img src="https://camo.githubusercontent.com/e2b6fc2c577f71cccd3e75cea708be71a4549655462a21906bcf0994c1c0b4e3/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30342f30352e706e67" alt="" data-canonical-src="https://cdn.jsdelivr.net/gh/18702524676/CND5/image/mysql/04/05.png" style="max-width: 100%;"></a></p>
+<p>虽然性能得到提升，但是机器宕机，<code class="notranslate">page cache</code>里面的 binglog 会丢失。</p>
+<blockquote>
+<p>为了安全起见，可以设置为<code class="notranslate">1</code>，表示每次提交事务都会执行<code class="notranslate">fsync</code>，就如同<strong>binlog 日志刷盘流程</strong>一样。</p>
+</blockquote>
+<p>最后还有一种折中方式，可以设置为<code class="notranslate">N(N&gt;1)</code>，表示每次提交事务都<code class="notranslate">write</code>，但累积<code class="notranslate">N</code>个事务后才<code class="notranslate">fsync</code>。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/4bc9358505a7e4d0d8b7f0559c48224b311c63fedca7e2931a25571445d1567b/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30342f30362e706e67"><img src="https://camo.githubusercontent.com/4bc9358505a7e4d0d8b7f0559c48224b311c63fedca7e2931a25571445d1567b/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30342f30362e706e67" alt="" data-canonical-src="https://cdn.jsdelivr.net/gh/18702524676/CND5/image/mysql/04/06.png" style="max-width: 100%;"></a></p>
+<p>在出现<code class="notranslate">IO</code>瓶颈的场景里，将<code class="notranslate">sync_binlog</code>设置成一个比较大的值，可以提升性能。</p>
+<p>同样的，如果机器宕机，会丢失最近<code class="notranslate">N</code>个事务的<code class="notranslate">binlog</code>日志。</p>
+<h2><strong>两阶段提交</strong></h2>
+<ul>
+<li>
+<p><code class="notranslate">redo log</code>（重做日志）让<code class="notranslate">InnoDB</code>存储引擎拥有了崩溃恢复能力，保证数据持久性、完整性。</p>
+</li>
+<li>
+<p><code class="notranslate">binlog</code>（归档日志）保证了<code class="notranslate">MySQL</code>集群架构的数据一致性。</p>
+</li>
+<li>
+<p>虽然它们都属于持久化的保证，但是侧重点不同。</p>
+</li>
+<li>
+<p>在执行更新语句过程，会记录<code class="notranslate">redo log</code>与<code class="notranslate">binlog</code>两块日志，以基本的事务为单位，<code class="notranslate">redo log</code>在事务执行过程中可以不断写入，而<code class="notranslate">binlog</code>只有在提交事务时才写入，所以<code class="notranslate">redo log</code>与<code class="notranslate">binlog</code>的写入时机不一样。</p>
+</li>
+</ul>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/318260a2dcabf4c1345c9c1d0b2d4973d09a676ba3bd72cb450f48a80149a5d4/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30352f30312e706e67"><img src="https://camo.githubusercontent.com/318260a2dcabf4c1345c9c1d0b2d4973d09a676ba3bd72cb450f48a80149a5d4/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30352f30312e706e67" alt="" data-canonical-src="https://cdn.jsdelivr.net/gh/18702524676/CND5/image/mysql/05/01.png" style="max-width: 100%;"></a></p>
+<p>回到正题，<code class="notranslate">redo log</code>与<code class="notranslate">binlog</code>两份日志之间的逻辑不一致，会出现什么问题？</p>
+<p>我们以<code class="notranslate">update</code>语句为例，假设<code class="notranslate">id=2</code>的记录，字段<code class="notranslate">c</code>值是<code class="notranslate">0</code>，把字段<code class="notranslate">c</code>值更新成<code class="notranslate">1</code>，<code class="notranslate">SQL</code>语句为<code class="notranslate">update T set c=1 where id=2</code>。</p>
+<p>假设执行过程中写完<code class="notranslate">redo log</code>日志后，<code class="notranslate">binlog</code>日志写期间发生了异常，会出现什么情况呢？</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/cb6d664a190e4025391318790e79091439b0be1eb90b333fac25c2e98dce876c/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30352f30322e706e67"><img src="https://camo.githubusercontent.com/cb6d664a190e4025391318790e79091439b0be1eb90b333fac25c2e98dce876c/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30352f30322e706e67" alt="" data-canonical-src="https://cdn.jsdelivr.net/gh/18702524676/CND5/image/mysql/05/02.png" style="max-width: 100%;"></a></p>
+<p>由于<code class="notranslate">binlog</code>没写完就异常，这时候<code class="notranslate">binlog</code>里面没有对应的修改记录。因此，之后用<code class="notranslate">binlog</code>日志恢复数据时，就会少这一次更新，恢复出来的这一行<code class="notranslate">c</code>值是<code class="notranslate">0</code>，而原库因为<code class="notranslate">redo log</code>日志恢复，这一行<code class="notranslate">c</code>值是<code class="notranslate">1</code>，最终数据不一致。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/2c0c90e7d3bb593e4370524679342e31089b1b26fdfb2c6b768db2f5d74da1e4/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30352f30332e706e67"><img src="https://camo.githubusercontent.com/2c0c90e7d3bb593e4370524679342e31089b1b26fdfb2c6b768db2f5d74da1e4/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30352f30332e706e67" alt="" data-canonical-src="https://cdn.jsdelivr.net/gh/18702524676/CND5/image/mysql/05/03.png" style="max-width: 100%;"></a></p>
+<blockquote>
+<p>为了解决两份日志之间的逻辑一致问题，<code class="notranslate">InnoDB</code>存储引擎使用<strong>两阶段提交</strong>方案。</p>
+</blockquote>
+<p>原理很简单，将<code class="notranslate">redo log</code>的写入拆成了两个步骤<code class="notranslate">prepare</code>和<code class="notranslate">commit</code>，这就是<strong>两阶段提交</strong>。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/1e1794b2ee7bd822304411d9e0c6dbf9465776278ca71e83bb87219bb0b54b56/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30352f30342e706e67"><img src="https://camo.githubusercontent.com/1e1794b2ee7bd822304411d9e0c6dbf9465776278ca71e83bb87219bb0b54b56/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30352f30342e706e67" alt="" data-canonical-src="https://cdn.jsdelivr.net/gh/18702524676/CND5/image/mysql/05/04.png" style="max-width: 100%;"></a></p>
+<p>使用<strong>两阶段提交</strong>后，写入<code class="notranslate">binlog</code>时发生异常也不会有影响，因为<code class="notranslate">MySQL</code>根据<code class="notranslate">redo log</code>日志恢复数据时，发现<code class="notranslate">redo log</code>还处于<code class="notranslate">prepare</code>阶段，并且没有对应<code class="notranslate">binlog</code>日志，就会回滚该事务。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/48da2075ae0826eccff9b3453a570f8e93c02705ace676bb6094a7d6ba674ad0/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30352f30352e706e67"><img src="https://camo.githubusercontent.com/48da2075ae0826eccff9b3453a570f8e93c02705ace676bb6094a7d6ba674ad0/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30352f30352e706e67" alt="" data-canonical-src="https://cdn.jsdelivr.net/gh/18702524676/CND5/image/mysql/05/05.png" style="max-width: 100%;"></a></p>
+<p>再看一个场景，<code class="notranslate">redo log</code>设置<code class="notranslate">commit</code>阶段发生异常，那会不会回滚事务呢？</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/414b5fedc6ecf28dc307664f0a349e5e3d6b6620c4cb713ae973f08c5b63608e/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30352f30362e706e67"><img src="https://camo.githubusercontent.com/414b5fedc6ecf28dc307664f0a349e5e3d6b6620c4cb713ae973f08c5b63608e/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f31383730323532343637362f434e44352f696d6167652f6d7973716c2f30352f30362e706e67" alt="" data-canonical-src="https://cdn.jsdelivr.net/gh/18702524676/CND5/image/mysql/05/06.png" style="max-width: 100%;"></a></p>
+<p>并不会回滚事务，它会执行上图框住的逻辑，虽然<code class="notranslate">redo log</code>是处于<code class="notranslate">prepare</code>阶段，但是能通过事务<code class="notranslate">id</code>找到对应的<code class="notranslate">binlog</code>日志，所以<code class="notranslate">MySQL</code>认为是完整的，就会提交事务恢复数据。</p>
+<h2><strong>三、undo log：保证数据原子性</strong></h2>
+<blockquote>
+<p>这部分内容为 JavaGuide 的补充：</p>
+</blockquote>
+<p>我们知道如果想要保证事务的原子性，就需要在异常发生时，对已经执行的操作进行<strong>回滚</strong>，在 MySQL 中，恢复机制是通过 <strong>回滚日志（undo log）</strong> 实现的，所有事务进行的修改都会先记录到这个回滚日志中，然后再执行相关的操作。如果执行过程中遇到异常的话，我们直接利用 <strong>回滚日志</strong> 中的信息将数据回滚到修改之前的样子即可！并且，回滚日志会先于数据持久化到磁盘上。这样就保证了即使遇到数据库突然宕机等情况，当用户再次启动数据库的时候，数据库还能够通过查询回滚日志来回滚将之前未完成的事务。</p>
+<p>另外，<code class="notranslate">MVCC</code> 的实现依赖于：<strong>隐藏字段、Read View、undo log</strong>。在内部实现中，<code class="notranslate">InnoDB</code> 通过数据行的 <code class="notranslate">DB_TRX_ID</code> 和 <code class="notranslate">Read View</code> 来判断数据的可见性，如不可见，则通过数据行的 <code class="notranslate">DB_ROLL_PTR</code> 找到 <code class="notranslate">undo log</code> 中的历史版本。每个事务读到的数据版本可能是不一样的，在同一个事务中，用户只能看到该事务创建 <code class="notranslate">Read View</code> 之前已经提交的修改和该事务本身做的修改</p>
+<h2><strong>总结</strong></h2>
+<blockquote>
+<p>这部分内容补充：</p>
+</blockquote>
+<p>MySQL InnoDB 引擎使用 <strong>redo log(重做日志)</strong> 保证事务的<strong>持久性</strong>；使用 <strong>bin log(归档日志)</strong> 保证数据一致性，<code class="notranslate">MySQL</code>数据库的<strong>数据备份、主备、主主、主从</strong>都离不开<code class="notranslate">binlog</code>，需要依靠<code class="notranslate">binlog</code>来同步数据；使用 <strong>undo log(回滚日志)</strong> 来保证事务的<strong>原子性</strong>。</p>
+<h2><strong>MySQL 好文推荐</strong></h2>
+<ul>
+<li><a href="https://mp.weixin.qq.com/s/R-1km7r0z3oWfwYQV8iiqA" rel="nofollow">CURD 这么多年，你有了解过 MySQL 的架构设计吗？</a></li>
+<li><a href="https://mp.weixin.qq.com/s/7Kab4IQsNcU_bZdbv_MuOg" rel="nofollow">浅谈 MySQL InnoDB 的内存组件</a></li>
+</ul></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+
+</div>
+    <div id="footer"><div id="footer1">Copyright © <span id="copyrightYear"></span> <a href="https://shuaiwang888.github.io/appStore-Blog.github.io">Blog Title</a></div>
+<div id="footer2">
+    <span id="runday"></span><span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>
+</div>
+
+<script>
+var now=new Date();
+document.getElementById("copyrightYear").innerHTML=now.getFullYear();
+
+if(""!=""){
+    var startSite=new Date("");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";
+}
+</script></div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z', 'copy': 'M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z', 'check': 'M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","shuaiwang888/appStore-Blog.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const createClipboardHTML = (codeContent, additionalClasses = '') => `
+        <pre class="notranslate"><code class="notranslate">${codeContent}</code></pre>
+        <div class="clipboard-container position-absolute right-0 top-0 ${additionalClasses}">
+            <clipboard-copy class="ClipboardButton btn m-2 p-0" role="button" style="display: inherit;">
+                <svg height="16" width="16" class="octicon octicon-copy m-2"><path d="${IconList["copy"]}"></path></svg>
+                <svg height="16" width="16" class="octicon octicon-check color-fg-success m-2 d-none"><path d="${IconList["check"]}"></path></svg>
+            </clipboard-copy>
+            <div class="copy-feedback">Copied!</div>
+        </div>
+    `;
+
+    const handleCodeElements = (selector = '') => {
+        document.querySelectorAll(selector).forEach(codeElement => {
+            const codeContent = codeElement.innerHTML;
+            const newStructure = document.createElement('div');
+            newStructure.className = 'snippet-clipboard-content position-relative overflow-auto';
+            newStructure.innerHTML = createClipboardHTML(codeContent);
+
+            const parentElement = codeElement.parentElement;
+            if (selector.includes('highlight')) {
+                parentElement.insertBefore(newStructure, codeElement.nextSibling);
+                parentElement.removeChild(codeElement);
+            } else {
+                parentElement.parentElement.replaceChild(newStructure, parentElement);
+            }
+        });
+    };
+
+    handleCodeElements('pre.notranslate > code.notranslate');
+    handleCodeElements('div.highlight > pre.notranslate');
+
+    let currentFeedback = null;
+    document.querySelectorAll('clipboard-copy').forEach(copyButton => {
+        copyButton.addEventListener('click', () => {
+            const codeContent = copyButton.closest('.snippet-clipboard-content').innerText;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = codeContent;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            const copyIcon = copyButton.querySelector('.octicon-copy');
+            const checkIcon = copyButton.querySelector('.octicon-check');
+            const copyFeedback = copyButton.nextElementSibling;
+
+            if (currentFeedback && currentFeedback !== copyFeedback) {currentFeedback.style.display = 'none';}
+            currentFeedback = copyFeedback;
+
+            copyIcon.classList.add('d-none');
+            checkIcon.classList.remove('d-none');
+            copyFeedback.style.display = 'block';
+            copyButton.style.borderColor = 'var(--color-success-fg)';
+
+            setTimeout(() => {
+                copyIcon.classList.remove('d-none');
+                checkIcon.classList.add('d-none');
+                copyFeedback.style.display = 'none';
+                copyButton.style.borderColor = '';
+            }, 2000);
+        });
+    });
+});
+
+</script>
+
+
+</html>
