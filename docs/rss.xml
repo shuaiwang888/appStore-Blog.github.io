@@ -1,5 +1,36 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>Blog Title</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link><description>Blog description</description><copyright>Blog Title</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://github.githubassets.com/favicons/favicon.svg</url><title>avatar</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link></image><lastBuildDate>Sat, 06 Sep 2025 09:28:52 +0000</lastBuildDate><managingEditor>Blog Title</managingEditor><ttl>60</ttl><webMaster>Blog Title</webMaster><item><title>Redis的5种数据结构及其底层实现原理</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/Redis-de-5-zhong-shu-ju-jie-gou-ji-qi-di-ceng-shi-xian-yuan-li.html</link><description>### [参考资料：图解 Redis 数据结构](https://mp.weixin.qq.com/s/qptE172slg_6Tl1yuzdbfw)
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>Blog Title</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link><description>Blog description</description><copyright>Blog Title</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://github.githubassets.com/favicons/favicon.svg</url><title>avatar</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link></image><lastBuildDate>Sat, 06 Sep 2025 09:29:18 +0000</lastBuildDate><managingEditor>Blog Title</managingEditor><ttl>60</ttl><webMaster>Blog Title</webMaster><item><title>UDP 和 TCP 的问题理解！</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/UDP%20-he-%20TCP%20-de-wen-ti-li-jie-%EF%BC%81.html</link><description>## 目录
+
+1、UDP 和 TCP 的特点与区别
+
+2、UDP 、TCP 首部格式
+
+3、TCP 的三次握手和四次挥手
+
+4、TCP 的三次握手（为什么三次？）
+
+5、TCP 的四次挥手（为什么四次？）
+
+6、TCP 长连接和短连接的区别
+
+7、TCP粘包、拆包及解决办法
+
+8、TCP 可靠传输
+
+9、TCP 滑动窗口
+
+10、TCP 流量控制
+
+11、TCP 拥塞控制
+
+12、提供网络利用率
+
+
+## 前言
+
+
+
+网络层只把分组发送到目的主机，但是真正通信的并不是主机而是主机中的进程。</description><guid isPermaLink="true">https://shuaiwang888.github.io/appStore-Blog.github.io/post/UDP%20-he-%20TCP%20-de-wen-ti-li-jie-%EF%BC%81.html</guid><pubDate>Sat, 06 Sep 2025 09:28:52 +0000</pubDate></item><item><title>Redis的5种数据结构及其底层实现原理</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/Redis-de-5-zhong-shu-ju-jie-gou-ji-qi-di-ceng-shi-xian-yuan-li.html</link><description>### [参考资料：图解 Redis 数据结构](https://mp.weixin.qq.com/s/qptE172slg_6Tl1yuzdbfw)
 
 ## 一、Redis的两层数据结构简介
 
