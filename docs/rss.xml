@@ -1,5 +1,17 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>Blog Title</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link><description>Blog description</description><copyright>Blog Title</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://github.githubassets.com/favicons/favicon.svg</url><title>avatar</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link></image><lastBuildDate>Sat, 06 Sep 2025 09:08:50 +0000</lastBuildDate><managingEditor>Blog Title</managingEditor><ttl>60</ttl><webMaster>Blog Title</webMaster><item><title>Zookeeper分布式协调服务</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/Zookeeper-fen-bu-shi-xie-diao-fu-wu.html</link><description>## 一、分布式的基本概念
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>Blog Title</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link><description>Blog description</description><copyright>Blog Title</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://github.githubassets.com/favicons/favicon.svg</url><title>avatar</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link></image><lastBuildDate>Sat, 06 Sep 2025 09:10:46 +0000</lastBuildDate><managingEditor>Blog Title</managingEditor><ttl>60</ttl><webMaster>Blog Title</webMaster><item><title>Redis常见问题总结</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/Redis-chang-jian-wen-ti-zong-jie.html</link><description>
+### 参考文献：
+[Redis](https://github.com/CyC2018/CS-Notes/blob/master/notes/Redis.md)
+[整理好了，Redis面试题(重要)](https://mp.weixin.qq.com/s/LkIcGS9kFTXNLFlxASPYUA)
+[Redis常见面试题](https://mp.weixin.qq.com/s/R1TJMo2IbPUUMox9OAAafQ)
+[Redis为什么变慢了？一文讲透如何排查Redis性能问题](https://mp.weixin.qq.com/s/rw42cFbJXwPtsGiqkFErfw)
+[Redis不是一直号称单线程效率也很高吗，为什么又采用多线程了？](https://mp.weixin.qq.com/s/mscKInWNAuhCbg183Um9_g)
+[缓存一致性问题怎么解决？](https://mp.weixin.qq.com/s/dYvM8_6SQnYRB6KjPsprbw)
+
+## 一、简单介绍一下 Redis 呗!
+如何回答：1.key-value结构存储的非关系型数据库；2.优点：内存存储、丰富数据结构、单线程IO、支持持久化；3.场景：分布式缓存、分布式锁、分布式队列、排行榜、查找附近的人等等；
+
+简单来说 **Redis 就是一个使用 C 语言开发的数据库**，不过与传统数据库不同的是 **Redis 的数据是存在内存中的** ，也就是它是内存数据库，所以读写速度非常快，因此 Redis 被广泛应用于缓存方向。</description><guid isPermaLink="true">https://shuaiwang888.github.io/appStore-Blog.github.io/post/Redis-chang-jian-wen-ti-zong-jie.html</guid><pubDate>Sat, 06 Sep 2025 09:10:13 +0000</pubDate></item><item><title>Zookeeper分布式协调服务</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/Zookeeper-fen-bu-shi-xie-diao-fu-wu.html</link><description>## 一、分布式的基本概念
 
 ### 1.1 系统高可用
 所谓的系统高可用，主要是指两个方面：
