@@ -1,5 +1,112 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>Blog Title</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link><description>Blog description</description><copyright>Blog Title</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://github.githubassets.com/favicons/favicon.svg</url><title>avatar</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link></image><lastBuildDate>Sat, 06 Sep 2025 09:17:52 +0000</lastBuildDate><managingEditor>Blog Title</managingEditor><ttl>60</ttl><webMaster>Blog Title</webMaster><item><title>kafka生产者源码分析3-Producer核心流程分析（重要）</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/kafka-sheng-chan-zhe-yuan-ma-fen-xi-3-Producer-he-xin-liu-cheng-fen-xi-%EF%BC%88-zhong-yao-%EF%BC%89.html</link><description>&gt; **文章摘要：本文主要分析Producer核心流程**
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>Blog Title</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link><description>Blog description</description><copyright>Blog Title</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://github.githubassets.com/favicons/favicon.svg</url><title>avatar</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link></image><lastBuildDate>Sat, 06 Sep 2025 09:18:41 +0000</lastBuildDate><managingEditor>Blog Title</managingEditor><ttl>60</ttl><webMaster>Blog Title</webMaster><item><title>他人商场秒杀项目总结</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/ta-ren-shang-chang-miao-sha-xiang-mu-zong-jie.html</link><description>## 项目相关博客汇总
+1、[【商城秒杀项目】-- 概况](https://blog.csdn.net/weixin_42687829/article/details/104412810)
+
+2、[【商城秒杀项目】-- 对返回json结果的封装、通用缓存Key的设计与封装](https://blog.csdn.net/weixin_42687829/article/details/104428085)
+
+3、[【商城秒杀项目】-- 登录时使用两次MD5加密](https://blog.csdn.net/weixin_42687829/article/details/104432048)
+
+4、[【商城秒杀项目】-- 使用JSR303进行参数校验、全局异常处理](https://blog.csdn.net/weixin_42687829/article/details/104442722)
+
+5、[【商城秒杀项目】-- 分布式Session的实现、使用Aop校验Token令牌](https://blog.csdn.net/weixin_42687829/article/details/104445741)
+
+6、[【商城秒杀项目】-- 流量削峰应该怎么做](https://blog.csdn.net/weixin_42687829/article/details/104455580)
+
+7、[【商城秒杀项目】-- 页面缓存、URL缓存、对象缓存](https://blog.csdn.net/weixin_42687829/article/details/104478037)
+
+8、[【商城秒杀项目】-- 页面伪静态化](https://blog.csdn.net/weixin_42687829/article/details/104482236)
+
+9、[【商城秒杀项目】-- 秒杀的业务逻辑、接口的优化](https://blog.csdn.net/weixin_42687829/article/details/104493180)
+
+10、[【商城秒杀项目】-- 使用rabbitmq异步下单](https://blog.csdn.net/weixin_42687829/article/details/104497733)
+
+11、[【商城秒杀项目】-- 秒杀接口地址隐藏](https://blog.csdn.net/weixin_42687829/article/details/104512299)
+
+12、[【商城秒杀项目】-- 使用数学图形验证码来进行限流](https://blog.csdn.net/weixin_42687829/article/details/104515151)
+
+13、[【商城秒杀项目】-- 接口限流防刷](https://blog.csdn.net/weixin_42687829/article/details/104516751)
+
+14、[关于springboot项目使用@Transactional注解事务不回滚的问题](https://blog.csdn.net/weixin_42687829/article/details/104414967)
+
+## 一、项目的亮点
+- 使用分布式Seesion，实现让多台服务器同时可以响应
+- 使用redis做缓存提高访问速度和并发量，减少数据库压力，利用内存标记减少redis的访问
+- 使用页面静态化，加快用户访问速度，提高QPS（每秒查询率），缓存页面至浏览器，前后端分离降低服务器的压力
+- 使用消息队列完成异步下单，提升用户体验，削峰和限流
+- 安全性优化：双重md5密码校验，秒杀接口地址的隐藏，接口限流防刷，数学公式验证码
+
+
+## 二、主要知识点
+
+### 2.1 分布式Seesion
+
+&gt; **通常秒杀服务实际的应用可能不止部署在一个服务器上，而是分布式的部署在多台服务器，这时候假如用户登录是在第一个服务器，第一个请求到了第一台服务器，这时是没问题的，但是第二个请求到了第二个服务器，那么用户的session信息就丢失了，于是需要使用分布式session来进行处理?**
+
+**解决：session同步，无论访问哪一台服务器，session都可以取得到，利用redis缓存的方法，另外使用一个redis服务器专门用于存放用户的session信息，这样就不会出现用户session丢失的情况（每次需要session，从缓存中取即可）**
+
+### 2.2 使用redis缓解数据库压力
+
+**本项目大量的使用了缓存技术，包括用户信息缓存（分布式session），商品信息的缓存，商品库存缓存，订单的缓存，页面缓存，对象缓存等来减少了对数据库服务器的访问?**
+
+### 2.3 通用缓存key封装
+
+&gt; **大量的缓存引用也出现了一个问题，如何识别不同模块中的缓存（即key值重复，如何辨别是不同模块的key）**
+
+**解决：利用一个抽象类，定义BaseKey（前缀），在里面定义缓存key的前缀以及缓存的过期时间从而实现将缓存的key进行封装；让不同模块继承它，这样每次存入一个模块的缓存的时候，就加上这个缓存特定的前缀，以及统一制定不同的过期时间**
+
+### 2.4 页面静态化（前后端分离）
+
+**页面静态化的主要目的是为了加快页面的加载速度，将商品的详情和订单详情页面做成静态HTML（纯的HTML），数据的加载只需要通过ajax来请求服务器，并且做了静态化HTML页面可以缓存在客户端的浏览器;**
+
+### 2.5 消息队列完成异步下单
+
+**使用消息队列完成异步下单，可以提升用户体验、削峰和限流**
+
+## 三、使用思路
+
+1. 系统初始化的时候，把商品库存数量加载到Redis里面去
+2. 后端收到秒杀请求，先Redis预减库存，如果库存已经到达临界值的时候，就不需要继续请求下去，直接返回秒杀失败，即后面的大量请求无需给系统带来压力
+3. 判断这个秒杀订单形成没有，判断是否已经秒杀到了，避免一个账户秒杀多个商品，判断是否重复秒杀
+4. 库存充足，且无重复秒杀，将秒杀请求封装后放入消息队列，同时给前端返回一个code (0)，即代表返回排队中（返回的并不是失败或者成功，此时还不能判断）
+5. 前端接收到数据后，显示排队中，并根据商品id轮询请求服务器查询秒杀的结果（考虑200ms轮询一次）
+6. 后端RabbitMQ监听秒杀MIAOSHA_QUEUE这个名字的通道，如果有消息过来，就获取到传入的信息，执行真正的秒杀之前，要判断数据库的库存，判断是否重复秒杀，然后执行秒杀事务（秒杀事务是一个原子操作：库存减1，下订单，写入秒杀订单）
+7. 此时，前端根据商品id轮询请求接口result，查看是否生成了商品订单，如果请求返回-1就代表秒杀失败，返回0就代表排队中，返回&gt;0就代表秒杀成功
+8. 安全性优化：双重md5密码校验、秒杀接口地址的隐藏、接口限流防刷、数学公式验证码
+
+## 四、优雅的代码编写
+
+**对接口的输出结果做了一个Result封装、对错误的代码做了一个CodeMsg封装、对访问缓存做了一个key的封装**
+
+## 五、项目难点及问题解决
+
+### 5.1 使用了大量缓存，那么就存在缓存击穿和缓存雪崩以及缓存一致性等问题？
+
+&gt; 缓存穿透指的是对某个一定不存在的数据进行请求，该请求将会穿透缓存到达数据库
+
+**解决方案：对这些不存在的数据缓存一个空数据，对这类请求进行过滤**
+
+缓存雪崩指的是由于数据没有被加载到缓存中，或者缓存数据在同一时间大面积失效（过期），又或者缓存服务器宕机，导致大量的请求都到达数据库
+解决方案：为了防止缓存在同一时间大面积过期导致的缓存雪崩，可以通过观察用户行为，合理设置缓存过期时间来实现；为了防止缓存服务器宕机出现的缓存雪崩，可以使用分布式缓存，分布式缓存中每一个节点只缓存部分的数据，当某个节点宕机时可以保证其它节点的缓存仍然可用；也可以进行缓存预热，避免在系统刚启动不久由于还未将大量数据进行缓存而导致缓存雪崩
+
+例如：首先针对不同的缓存设置不同的过期时间，比如session缓存，在userKey这个前缀中，设置是30分钟过期，并且每次用户响应的时候更新缓存时间，这样每次取session，都会延长30分钟，相对来说，就减少了缓存过期的几率
+
+**缓存一致性要求数据更新的同时缓存数据也能够实时更新?**
+
+解决方案：在数据更新的同时立即去更新缓存，首先尝试从缓存读取，读到数据则直接返回；如果读不到，就读数据库，并将数据会写到缓存，并返回；在读缓存之前先判断缓存是否是最新的，如果不是最新的先进行更新，需要更新数据时，先更新数据库，然后把缓存里对应的数据失效掉（删掉）
+
+### 5.2 大量的使用缓存，对于缓存服务器也有很大的压力，如何减少redis的访问?
+
+在redis预减库存的时候，内存中维护一个localOverMap作为内存标记，当没有库存的时候，将其设置为true；每次秒杀业务访问redis之前，先查一下map标记，如果为true说明没有库存，就直接返回秒杀失败，无需再去请求redis服务器
+
+### 5.3 在高并发请求的业务场景，大量请求来不及处理，甚至出现请求堆积的情况?
+
+使用消息队列来异步处理请求，每次请求过来先不去处理请求，而是放入消息队列，然后在后台设置一个监听器，分别监听不同业务的消息队列，有消息来的时候才进行秒杀业务逻辑，这样防止多个请求同时操作的时候，出现数据库连接过多的异常
+
+### 5.4 怎么保证一个用户不能重复下单?
+
+在秒杀订单表中建立一个唯一索引（由用户Id与商品Id组成），使得同一条记录只能入库一次，防止一个用户同时发出多个请求秒杀到多个商品
+
+唯一索引是在数据库表结构中对字段添加唯一索引后数据库进行存储操作时数据库会判断库中是否已经存在此数据，不存在此数据时才能进行插入操作。</description><guid isPermaLink="true">https://shuaiwang888.github.io/appStore-Blog.github.io/post/ta-ren-shang-chang-miao-sha-xiang-mu-zong-jie.html</guid><pubDate>Sat, 06 Sep 2025 09:18:12 +0000</pubDate></item><item><title>kafka生产者源码分析3-Producer核心流程分析（重要）</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/kafka-sheng-chan-zhe-yuan-ma-fen-xi-3-Producer-he-xin-liu-cheng-fen-xi-%EF%BC%88-zhong-yao-%EF%BC%89.html</link><description>&gt; **文章摘要：本文主要分析Producer核心流程**
 
 本文分析使用kafka-0.10.2.0的源码，书接上文[kafka生产者源码分析2-Producer初始化](http://121.199.72.143:8090/archives/kafka-sheng-chan-zhe-yuan-ma-fen-xi-2-producer-chu-shi-hua)，本篇重点分析Producer核心流程。</description><guid isPermaLink="true">https://shuaiwang888.github.io/appStore-Blog.github.io/post/kafka-sheng-chan-zhe-yuan-ma-fen-xi-3-Producer-he-xin-liu-cheng-fen-xi-%EF%BC%88-zhong-yao-%EF%BC%89.html</guid><pubDate>Sat, 06 Sep 2025 09:17:25 +0000</pubDate></item><item><title>springboot配置线程池及其使用(特别是使用场景)</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/springboot-pei-zhi-xian-cheng-chi-ji-qi-shi-yong-%28-te-bie-shi-shi-yong-chang-jing-%29.html</link><description>## 前言
 最近在做订单模块，用户购买产品之后，需要经过Kafak中间件发送后消费，下单成功之后需要给用户发送提醒短信。</description><guid isPermaLink="true">https://shuaiwang888.github.io/appStore-Blog.github.io/post/springboot-pei-zhi-xian-cheng-chi-ji-qi-shi-yong-%28-te-bie-shi-shi-yong-chang-jing-%29.html</guid><pubDate>Sat, 06 Sep 2025 09:16:41 +0000</pubDate></item><item><title>MySql逻辑结构简介</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/MySql-luo-ji-jie-gou-jian-jie.html</link><description>**今天安装了数据库，系统学习mysql数据库的底层结构！**
