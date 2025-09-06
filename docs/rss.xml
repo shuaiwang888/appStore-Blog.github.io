@@ -1,5 +1,53 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>Blog Title</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link><description>Blog description</description><copyright>Blog Title</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://github.githubassets.com/favicons/favicon.svg</url><title>avatar</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link></image><lastBuildDate>Sat, 06 Sep 2025 09:14:30 +0000</lastBuildDate><managingEditor>Blog Title</managingEditor><ttl>60</ttl><webMaster>Blog Title</webMaster><item><title>详解ThreadLocal关键字</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/xiang-jie-ThreadLocal-guan-jian-zi.html</link><description>&gt; 本文来自一枝花算不算浪漫投稿， 原文地址：[https://juejin.im/post/5eacc1c75188256d976df748](https://juejin.im/post/5eacc1c75188256d976df748)。</description><guid isPermaLink="true">https://shuaiwang888.github.io/appStore-Blog.github.io/post/xiang-jie-ThreadLocal-guan-jian-zi.html</guid><pubDate>Sat, 06 Sep 2025 09:14:00 +0000</pubDate></item><item><title>HashMap(JDK1.8)源码+底层数据结构分析</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/HashMap%28JDK1.8%29-yuan-ma-%2B-di-ceng-shu-ju-jie-gou-fen-xi.html</link><description>参考与：https://mp.weixin.qq.com/s/0Gf2DzuzgEx0i3mHVvhKNQ
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>Blog Title</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link><description>Blog description</description><copyright>Blog Title</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://github.githubassets.com/favicons/favicon.svg</url><title>avatar</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link></image><lastBuildDate>Sat, 06 Sep 2025 09:15:02 +0000</lastBuildDate><managingEditor>Blog Title</managingEditor><ttl>60</ttl><webMaster>Blog Title</webMaster><item><title>JVM垃圾回收</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/JVM-la-ji-hui-shou.html</link><description>&lt;!-- @import '[TOC]' {cmd='toc' depthFrom=1 depthTo=6 orderedList=false} --&gt;
+
+&lt;!-- code_chunk_output --&gt;
+
+- [JVM 垃圾回收](#jvm-垃圾回收)
+  - [写在前面](#写在前面)
+    - [本节常见面试题](#本节常见面试题)
+    - [本文导火索](#本文导火索)
+  - [1 揭开 JVM 内存分配与回收的神秘面纱](#1-揭开-jvm-内存分配与回收的神秘面纱)
+    - [1.1 对象优先在 eden 区分配](#11-对象优先在-eden-区分配)
+    - [1.2 大对象直接进入老年代](#12-大对象直接进入老年代)
+    - [1.3 长期存活的对象将进入老年代](#13-长期存活的对象将进入老年代)
+    - [1.4 动态对象年龄判定](#14-动态对象年龄判定)
+    - [1.5 主要进行 gc 的区域](#15-主要进行-gc-的区域)
+  - [2 对象已经死亡？](#2-对象已经死亡)
+    - [2.1 引用计数法](#21-引用计数法)
+    - [2.2 可达性分析算法](#22-可达性分析算法)
+    - [2.3 再谈引用](#23-再谈引用)
+    - [2.4 不可达的对象并非“非死不可”](#24-不可达的对象并非非死不可)
+    - [2.5 如何判断一个常量是废弃常量？](#25-如何判断一个常量是废弃常量)
+    - [2.6 如何判断一个类是无用的类](#26-如何判断一个类是无用的类)
+  - [3 垃圾收集算法](#3-垃圾收集算法)
+    - [3.1 标记-清除算法](#31-标记-清除算法)
+    - [3.2 标记-复制算法](#32-标记-复制算法)
+    - [3.3 标记-整理算法](#33-标记-整理算法)
+    - [3.4 分代收集算法](#34-分代收集算法)
+  - [4 垃圾收集器](#4-垃圾收集器)
+    - [4.1 Serial 收集器](#41-serial-收集器)
+    - [4.2 ParNew 收集器](#42-parnew-收集器)
+    - [4.3 Parallel Scavenge 收集器](#43-parallel-scavenge-收集器)
+    - [4.4.Serial Old 收集器](#44serial-old-收集器)
+    - [4.5 Parallel Old 收集器](#45-parallel-old-收集器)
+    - [4.6 CMS 收集器](#46-cms-收集器)
+    - [4.7 G1 收集器](#47-g1-收集器)
+    - [4.8 ZGC 收集器](#48-zgc-收集器)
+  - [参考](#参考)
+
+&lt;!-- /code_chunk_output --&gt;
+
+
+# JVM 垃圾回收
+
+## 写在前面
+
+### 本节常见面试题
+
+问题答案在文中都有提到
+
+- 如何判断对象是否死亡（两种方法）。</description><guid isPermaLink="true">https://shuaiwang888.github.io/appStore-Blog.github.io/post/JVM-la-ji-hui-shou.html</guid><pubDate>Sat, 06 Sep 2025 09:14:32 +0000</pubDate></item><item><title>详解ThreadLocal关键字</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/xiang-jie-ThreadLocal-guan-jian-zi.html</link><description>&gt; 本文来自一枝花算不算浪漫投稿， 原文地址：[https://juejin.im/post/5eacc1c75188256d976df748](https://juejin.im/post/5eacc1c75188256d976df748)。</description><guid isPermaLink="true">https://shuaiwang888.github.io/appStore-Blog.github.io/post/xiang-jie-ThreadLocal-guan-jian-zi.html</guid><pubDate>Sat, 06 Sep 2025 09:14:00 +0000</pubDate></item><item><title>HashMap(JDK1.8)源码+底层数据结构分析</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/HashMap%28JDK1.8%29-yuan-ma-%2B-di-ceng-shu-ju-jie-gou-fen-xi.html</link><description>参考与：https://mp.weixin.qq.com/s/0Gf2DzuzgEx0i3mHVvhKNQ
 
 &gt; ### 问：hashMap中hash冲突后，新的Entry节点在插入链表的时候，是怎么插入的么？
 

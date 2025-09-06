@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark" data-light-theme="light" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
+    
+    <link rel="icon" href="https://github.githubassets.com/favicons/favicon.svg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="<!-- @import '[TOC]' {cmd='toc' depthFrom=1 depthTo=6 orderedList=false} -->
+
+<!-- code_chunk_output -->
+
+- [JVM 垃圾回收](#jvm-垃圾回收)
+  - [写在前面](#写在前面)
+    - [本节常见面试题](#本节常见面试题)
+    - [本文导火索](#本文导火索)
+  - [1 揭开 JVM 内存分配与回收的神秘面纱](#1-揭开-jvm-内存分配与回收的神秘面纱)
+    - [1.1 对象优先在 eden 区分配](#11-对象优先在-eden-区分配)
+    - [1.2 大对象直接进入老年代](#12-大对象直接进入老年代)
+    - [1.3 长期存活的对象将进入老年代](#13-长期存活的对象将进入老年代)
+    - [1.4 动态对象年龄判定](#14-动态对象年龄判定)
+    - [1.5 主要进行 gc 的区域](#15-主要进行-gc-的区域)
+  - [2 对象已经死亡？](#2-对象已经死亡)
+    - [2.1 引用计数法](#21-引用计数法)
+    - [2.2 可达性分析算法](#22-可达性分析算法)
+    - [2.3 再谈引用](#23-再谈引用)
+    - [2.4 不可达的对象并非“非死不可”](#24-不可达的对象并非非死不可)
+    - [2.5 如何判断一个常量是废弃常量？](#25-如何判断一个常量是废弃常量)
+    - [2.6 如何判断一个类是无用的类](#26-如何判断一个类是无用的类)
+  - [3 垃圾收集算法](#3-垃圾收集算法)
+    - [3.1 标记-清除算法](#31-标记-清除算法)
+    - [3.2 标记-复制算法](#32-标记-复制算法)
+    - [3.3 标记-整理算法](#33-标记-整理算法)
+    - [3.4 分代收集算法](#34-分代收集算法)
+  - [4 垃圾收集器](#4-垃圾收集器)
+    - [4.1 Serial 收集器](#41-serial-收集器)
+    - [4.2 ParNew 收集器](#42-parnew-收集器)
+    - [4.3 Parallel Scavenge 收集器](#43-parallel-scavenge-收集器)
+    - [4.4.Serial Old 收集器](#44serial-old-收集器)
+    - [4.5 Parallel Old 收集器](#45-parallel-old-收集器)
+    - [4.6 CMS 收集器](#46-cms-收集器)
+    - [4.7 G1 收集器](#47-g1-收集器)
+    - [4.8 ZGC 收集器](#48-zgc-收集器)
+  - [参考](#参考)
+
+<!-- /code_chunk_output -->
+
+
+# JVM 垃圾回收
+
+## 写在前面
+
+### 本节常见面试题
+
+问题答案在文中都有提到
+
+- 如何判断对象是否死亡（两种方法）。">
+<meta property="og:title" content="JVM垃圾回收">
+<meta property="og:description" content="<!-- @import '[TOC]' {cmd='toc' depthFrom=1 depthTo=6 orderedList=false} -->
+
+<!-- code_chunk_output -->
+
+- [JVM 垃圾回收](#jvm-垃圾回收)
+  - [写在前面](#写在前面)
+    - [本节常见面试题](#本节常见面试题)
+    - [本文导火索](#本文导火索)
+  - [1 揭开 JVM 内存分配与回收的神秘面纱](#1-揭开-jvm-内存分配与回收的神秘面纱)
+    - [1.1 对象优先在 eden 区分配](#11-对象优先在-eden-区分配)
+    - [1.2 大对象直接进入老年代](#12-大对象直接进入老年代)
+    - [1.3 长期存活的对象将进入老年代](#13-长期存活的对象将进入老年代)
+    - [1.4 动态对象年龄判定](#14-动态对象年龄判定)
+    - [1.5 主要进行 gc 的区域](#15-主要进行-gc-的区域)
+  - [2 对象已经死亡？](#2-对象已经死亡)
+    - [2.1 引用计数法](#21-引用计数法)
+    - [2.2 可达性分析算法](#22-可达性分析算法)
+    - [2.3 再谈引用](#23-再谈引用)
+    - [2.4 不可达的对象并非“非死不可”](#24-不可达的对象并非非死不可)
+    - [2.5 如何判断一个常量是废弃常量？](#25-如何判断一个常量是废弃常量)
+    - [2.6 如何判断一个类是无用的类](#26-如何判断一个类是无用的类)
+  - [3 垃圾收集算法](#3-垃圾收集算法)
+    - [3.1 标记-清除算法](#31-标记-清除算法)
+    - [3.2 标记-复制算法](#32-标记-复制算法)
+    - [3.3 标记-整理算法](#33-标记-整理算法)
+    - [3.4 分代收集算法](#34-分代收集算法)
+  - [4 垃圾收集器](#4-垃圾收集器)
+    - [4.1 Serial 收集器](#41-serial-收集器)
+    - [4.2 ParNew 收集器](#42-parnew-收集器)
+    - [4.3 Parallel Scavenge 收集器](#43-parallel-scavenge-收集器)
+    - [4.4.Serial Old 收集器](#44serial-old-收集器)
+    - [4.5 Parallel Old 收集器](#45-parallel-old-收集器)
+    - [4.6 CMS 收集器](#46-cms-收集器)
+    - [4.7 G1 收集器](#47-g1-收集器)
+    - [4.8 ZGC 收集器](#48-zgc-收集器)
+  - [参考](#参考)
+
+<!-- /code_chunk_output -->
+
+
+# JVM 垃圾回收
+
+## 写在前面
+
+### 本节常见面试题
+
+问题答案在文中都有提到
+
+- 如何判断对象是否死亡（两种方法）。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://shuaiwang888.github.io/appStore-Blog.github.io/post/JVM-la-ji-hui-shou.html">
+<meta property="og:image" content="https://github.githubassets.com/favicons/favicon.svg">
+<title>JVM垃圾回收</title>
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+.copy-feedback {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    color: var(--color-fg-on-emphasis);
+    background-color: var(--color-fg-muted);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
+</style>
+
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">JVM垃圾回收</h1>
+<div class="title-right">
+    <a href="https://shuaiwang888.github.io/appStore-Blog.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/shuaiwang888/appStore-Blog.github.io/issues/34" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody">
+
+<ul>
+<li><a href="#jvm-%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6">JVM 垃圾回收</a>
+<ul>
+<li><a href="#%E5%86%99%E5%9C%A8%E5%89%8D%E9%9D%A2">写在前面</a>
+<ul>
+<li><a href="#%E6%9C%AC%E8%8A%82%E5%B8%B8%E8%A7%81%E9%9D%A2%E8%AF%95%E9%A2%98">本节常见面试题</a></li>
+<li><a href="#%E6%9C%AC%E6%96%87%E5%AF%BC%E7%81%AB%E7%B4%A2">本文导火索</a></li>
+</ul>
+</li>
+<li><a href="#1-%E6%8F%AD%E5%BC%80-jvm-%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E4%B8%8E%E5%9B%9E%E6%94%B6%E7%9A%84%E7%A5%9E%E7%A7%98%E9%9D%A2%E7%BA%B1">1 揭开 JVM 内存分配与回收的神秘面纱</a>
+<ul>
+<li><a href="#11-%E5%AF%B9%E8%B1%A1%E4%BC%98%E5%85%88%E5%9C%A8-eden-%E5%8C%BA%E5%88%86%E9%85%8D">1.1 对象优先在 eden 区分配</a></li>
+<li><a href="#12-%E5%A4%A7%E5%AF%B9%E8%B1%A1%E7%9B%B4%E6%8E%A5%E8%BF%9B%E5%85%A5%E8%80%81%E5%B9%B4%E4%BB%A3">1.2 大对象直接进入老年代</a></li>
+<li><a href="#13-%E9%95%BF%E6%9C%9F%E5%AD%98%E6%B4%BB%E7%9A%84%E5%AF%B9%E8%B1%A1%E5%B0%86%E8%BF%9B%E5%85%A5%E8%80%81%E5%B9%B4%E4%BB%A3">1.3 长期存活的对象将进入老年代</a></li>
+<li><a href="#14-%E5%8A%A8%E6%80%81%E5%AF%B9%E8%B1%A1%E5%B9%B4%E9%BE%84%E5%88%A4%E5%AE%9A">1.4 动态对象年龄判定</a></li>
+<li><a href="#15-%E4%B8%BB%E8%A6%81%E8%BF%9B%E8%A1%8C-gc-%E7%9A%84%E5%8C%BA%E5%9F%9F">1.5 主要进行 gc 的区域</a></li>
+</ul>
+</li>
+<li><a href="#2-%E5%AF%B9%E8%B1%A1%E5%B7%B2%E7%BB%8F%E6%AD%BB%E4%BA%A1">2 对象已经死亡？</a>
+<ul>
+<li><a href="#21-%E5%BC%95%E7%94%A8%E8%AE%A1%E6%95%B0%E6%B3%95">2.1 引用计数法</a></li>
+<li><a href="#22-%E5%8F%AF%E8%BE%BE%E6%80%A7%E5%88%86%E6%9E%90%E7%AE%97%E6%B3%95">2.2 可达性分析算法</a></li>
+<li><a href="#23-%E5%86%8D%E8%B0%88%E5%BC%95%E7%94%A8">2.3 再谈引用</a></li>
+<li><a href="#24-%E4%B8%8D%E5%8F%AF%E8%BE%BE%E7%9A%84%E5%AF%B9%E8%B1%A1%E5%B9%B6%E9%9D%9E%E9%9D%9E%E6%AD%BB%E4%B8%8D%E5%8F%AF">2.4 不可达的对象并非“非死不可”</a></li>
+<li><a href="#25-%E5%A6%82%E4%BD%95%E5%88%A4%E6%96%AD%E4%B8%80%E4%B8%AA%E5%B8%B8%E9%87%8F%E6%98%AF%E5%BA%9F%E5%BC%83%E5%B8%B8%E9%87%8F">2.5 如何判断一个常量是废弃常量？</a></li>
+<li><a href="#26-%E5%A6%82%E4%BD%95%E5%88%A4%E6%96%AD%E4%B8%80%E4%B8%AA%E7%B1%BB%E6%98%AF%E6%97%A0%E7%94%A8%E7%9A%84%E7%B1%BB">2.6 如何判断一个类是无用的类</a></li>
+</ul>
+</li>
+<li><a href="#3-%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E7%AE%97%E6%B3%95">3 垃圾收集算法</a>
+<ul>
+<li><a href="#31-%E6%A0%87%E8%AE%B0-%E6%B8%85%E9%99%A4%E7%AE%97%E6%B3%95">3.1 标记-清除算法</a></li>
+<li><a href="#32-%E6%A0%87%E8%AE%B0-%E5%A4%8D%E5%88%B6%E7%AE%97%E6%B3%95">3.2 标记-复制算法</a></li>
+<li><a href="#33-%E6%A0%87%E8%AE%B0-%E6%95%B4%E7%90%86%E7%AE%97%E6%B3%95">3.3 标记-整理算法</a></li>
+<li><a href="#34-%E5%88%86%E4%BB%A3%E6%94%B6%E9%9B%86%E7%AE%97%E6%B3%95">3.4 分代收集算法</a></li>
+</ul>
+</li>
+<li><a href="#4-%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8">4 垃圾收集器</a>
+<ul>
+<li><a href="#41-serial-%E6%94%B6%E9%9B%86%E5%99%A8">4.1 Serial 收集器</a></li>
+<li><a href="#42-parnew-%E6%94%B6%E9%9B%86%E5%99%A8">4.2 ParNew 收集器</a></li>
+<li><a href="#43-parallel-scavenge-%E6%94%B6%E9%9B%86%E5%99%A8">4.3 Parallel Scavenge 收集器</a></li>
+<li><a href="#44serial-old-%E6%94%B6%E9%9B%86%E5%99%A8">4.4.Serial Old 收集器</a></li>
+<li><a href="#45-parallel-old-%E6%94%B6%E9%9B%86%E5%99%A8">4.5 Parallel Old 收集器</a></li>
+<li><a href="#46-cms-%E6%94%B6%E9%9B%86%E5%99%A8">4.6 CMS 收集器</a></li>
+<li><a href="#47-g1-%E6%94%B6%E9%9B%86%E5%99%A8">4.7 G1 收集器</a></li>
+<li><a href="#48-zgc-%E6%94%B6%E9%9B%86%E5%99%A8">4.8 ZGC 收集器</a></li>
+</ul>
+</li>
+<li><a href="#%E5%8F%82%E8%80%83">参考</a></li>
+</ul>
+</li>
+</ul>
+
+<h1>JVM 垃圾回收</h1>
+<h2>写在前面</h2>
+<h3>本节常见面试题</h3>
+<p>问题答案在文中都有提到</p>
+<ul>
+<li>如何判断对象是否死亡（两种方法）。</li>
+<li>简单的介绍一下强引用、软引用、弱引用、虚引用（虚引用与软引用和弱引用的区别、使用软引用能带来的好处）。</li>
+<li>如何判断一个常量是废弃常量</li>
+<li>如何判断一个类是无用的类</li>
+<li>垃圾收集有哪些算法，各自的特点？</li>
+<li>HotSpot 为什么要分为新生代和老年代？</li>
+<li>常见的垃圾回收器有哪些？</li>
+<li>介绍一下 CMS,G1 收集器。</li>
+<li>Minor Gc 和 Full GC 有什么不同呢？</li>
+</ul>
+<h3>本文导火索</h3>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/29176325-f8ec6233ddb345aa9a67e62cbfd1172b.png"><img src="/upload/2021/10/29176325-f8ec6233ddb345aa9a67e62cbfd1172b.png" alt="29176325.png" style="max-width: 100%;"></a></p>
+<p>当需要排查各种内存溢出问题、当垃圾收集成为系统达到更高并发的瓶颈时，我们就需要对这些“自动化”的技术实施必要的监控和调节。</p>
+<h2>1 揭开 JVM 内存分配与回收的神秘面纱</h2>
+<p>Java 的自动内存管理主要是针对对象内存的回收和对象内存的分配。同时，Java 自动内存管理最核心的功能是 <strong>堆</strong> 内存中对象的分配与回收。</p>
+<p>Java 堆是垃圾收集器管理的主要区域，因此也被称作<strong>GC 堆（Garbage Collected Heap）</strong>.从垃圾回收的角度，由于现在收集器基本都采用分代垃圾收集算法，所以 Java 堆还可以细分为：新生代和老年代：再细致一点有：Eden 空间、From Survivor、To Survivor 空间等。<strong>进一步划分的目的是更好地回收内存，或者更快地分配内存。</strong></p>
+<p><strong>堆空间的基本结构：</strong></p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/01d330d8-2710-4fad-a91c-7bbbfaaefc0e-19a35ded354e42f18a3044a5a47f594c.png"><img src="/upload/2021/10/01d330d8-2710-4fad-a91c-7bbbfaaefc0e-19a35ded354e42f18a3044a5a47f594c.png" alt="01d330d827104fada91c7bbbfaaefc0e.png" style="max-width: 100%;"></a></p>
+<p>上图所示的 Eden 区、From Survivor0("From") 区、To Survivor1("To") 区都属于新生代，Old Memory 区属于老年代。</p>
+<p>大部分情况，对象都会首先在 Eden 区域分配，在一次新生代垃圾回收后，如果对象还存活，则会进入 s0 或者 s1，并且对象的年龄还会加 1(Eden 区-&gt;Survivor 区后对象的初始年龄变为 1)，当它的年龄增加到一定程度（默认为大于 15 岁），就会被晋升到老年代中。对象晋升到老年代的年龄阈值，可以通过参数 <code class="notranslate">-XX:MaxTenuringThreshold</code> 来设置默认值，这个值会在虚拟机运行过程中进行调整，可以通过<code class="notranslate">-XX:+PrintTenuringDistribution</code>来打印出当次GC后的Threshold。</p>
+<blockquote>
+<p><strong>🐛 修正（参见：<a href="https://github.com/Snailclimb/JavaGuide/issues/552" data-hovercard-type="issue" data-hovercard-url="/Snailclimb/JavaGuide/issues/552/hovercard">issue552</a>）</strong>：“Hotspot 遍历所有对象时，按照年龄从小到大对其所占用的大小进行累积，当累积的某个年龄大小超过了 survivor 区的一半时，取这个年龄和 MaxTenuringThreshold 中更小的一个值，作为新的晋升年龄阈值”。</p>
+<p><strong>动态年龄计算的代码如下</strong></p>
+<div class="highlight highlight-source-c++"><pre class="notranslate">uint <span class="pl-en">ageTable::compute_tenuring_threshold</span>(<span class="pl-c1">size_t</span> survivor_capacity) {
+    <span class="pl-c"><span class="pl-c">//</span>survivor_capacity是survivor空间的大小</span>
+    <span class="pl-c1">size_t</span> desired_survivor_size = (<span class="pl-c1">size_t</span>)((((<span class="pl-k">double</span>)survivor_capacity)*TargetSurvivorRatio)/<span class="pl-c1">100</span>);
+    <span class="pl-c1">size_t</span> total = <span class="pl-c1">0</span>;
+    uint age = <span class="pl-c1">1</span>;
+    <span class="pl-k">while</span> (age &lt; table_size) {
+        <span class="pl-c"><span class="pl-c">//</span>sizes数组是每个年龄段对象大小</span>
+        total += sizes[age];
+        <span class="pl-k">if</span> (total &gt; desired_survivor_size) {
+            <span class="pl-k">break</span>;
+        }
+        age++;
+    }
+    uint result = age &lt; MaxTenuringThreshold ? age : MaxTenuringThreshold;
+    ...
+}
+</pre></div>
+</blockquote>
+<p>经过这次 GC 后，Eden 区和"From"区已经被清空。这个时候，"From"和"To"会交换他们的角色，也就是新的"To"就是上次 GC 前的“From”，新的"From"就是上次 GC 前的"To"。不管怎样，都会保证名为 To 的 Survivor 区域是空的。Minor GC 会一直重复这样的过程，在这个过程中，有可能当次Minor GC后，Survivor 的"From"区域空间不够用，有一些还达不到进入老年代条件的实例放不下，则放不下的部分会提前进入老年代。</p>
+<p>接下来我们提供一个调试脚本来测试这个过程。</p>
+<p><strong>调试代码参数如下</strong></p>
+<pre class="notranslate"><code class="notranslate">-verbose:gc
+-Xmx200M
+-Xms200M
+-Xmn50M
+-XX:+PrintGCDetails
+-XX:TargetSurvivorRatio=60
+-XX:+PrintTenuringDistribution
+-XX:+PrintGCDetails
+-XX:+PrintGCDateStamps
+-XX:MaxTenuringThreshold=3
+-XX:+UseConcMarkSweepGC
+-XX:+UseParNewGC
+</code></pre>
+<p><strong>示例代码如下：</strong></p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c">/*</span>
+<span class="pl-c">* 本实例用于java GC以后，新生代survivor区域的变化，以及晋升到老年代的时间和方式的测试代码。需要自行分步注释不需要的代码进行反复测试对比</span>
+<span class="pl-c">*</span>
+<span class="pl-c">* 由于java的main函数以及其他基础服务也会占用一些eden空间，所以要提前空跑一次main函数，来看看这部分占用。</span>
+<span class="pl-c">*</span>
+<span class="pl-c">* 自定义的代码中，我们使用堆内分配数组和栈内分配数组的方式来分别模拟不可被GC的和可被GC的资源。</span>
+<span class="pl-c">*</span>
+<span class="pl-c">*</span>
+<span class="pl-c">* */</span>
+
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">JavaGcTest</span> {
+
+    <span class="pl-k">public</span> <span class="pl-k">static</span> <span class="pl-smi">void</span> <span class="pl-en">main</span>(<span class="pl-smi">String</span>[] <span class="pl-s1">args</span>) <span class="pl-k">throws</span> <span class="pl-smi">InterruptedException</span> {
+        <span class="pl-c">//空跑一次main函数来查看java服务本身占用的空间大小，我这里是占用了3M。所以40-3=37，下面分配三个1M的数组和一个34M的垃圾数组。</span>
+
+
+        <span class="pl-c">// 为了达到TargetSurvivorRatio（期望占用的Survivor区域的大小）这个比例指定的值, 即5M*60%=3M(Desired survivor size)，</span>
+        <span class="pl-c">// 这里用1M的数组的分配来达到Desired survivor size</span>
+        <span class="pl-c">//说明: 5M为S区的From或To的大小，60%为TargetSurvivorRatio参数指定,可以更改参数获取不同的效果。</span>
+        <span class="pl-smi">byte</span>[] <span class="pl-s1">byte1m_1</span> = <span class="pl-k">new</span> <span class="pl-smi">byte</span>[<span class="pl-c1">1</span> * <span class="pl-c1">1024</span> * <span class="pl-c1">1024</span>];
+        <span class="pl-smi">byte</span>[] <span class="pl-s1">byte1m_2</span> = <span class="pl-k">new</span> <span class="pl-smi">byte</span>[<span class="pl-c1">1</span> * <span class="pl-c1">1024</span> * <span class="pl-c1">1024</span>];
+        <span class="pl-smi">byte</span>[] <span class="pl-s1">byte1m_3</span> = <span class="pl-k">new</span> <span class="pl-smi">byte</span>[<span class="pl-c1">1</span> * <span class="pl-c1">1024</span> * <span class="pl-c1">1024</span>];
+
+        <span class="pl-c">//使用函数方式来申请空间，函数运行完毕以后，就会变成垃圾等待回收。此时应保证eden的区域占用达到100%。可以通过调整传入值来达到效果。</span>
+        <span class="pl-en">makeGarbage</span>(<span class="pl-c1">34</span>);
+
+        <span class="pl-c">//再次申请一个数组，因为eden已经满了，所以这里会触发Minor GC</span>
+        <span class="pl-smi">byte</span>[] <span class="pl-s1">byteArr</span> = <span class="pl-k">new</span> <span class="pl-smi">byte</span>[<span class="pl-c1">10</span>*<span class="pl-c1">1024</span>*<span class="pl-c1">1024</span>];
+        <span class="pl-c">// 这次Minor Gc时, 三个1M的数组因为尚有引用，所以进入From区域（因为是第一次GC）age为1</span>
+        <span class="pl-c">// 且由于From区已经占用达到了60%(-XX:TargetSurvivorRatio=60), 所以会重新计算对象晋升的age。</span>
+        <span class="pl-c">// 计算方法见上文，计算出age：min(age, MaxTenuringThreshold) = 1，输出中会有Desired survivor size 3145728 bytes, new threshold 1 (max 3)字样</span>
+        <span class="pl-c">//新的数组byteArr进入eden区域。</span>
+
+
+        <span class="pl-c">//再次触发垃圾回收，证明三个1M的数组会因为其第二次回收后age为2，大于上一次计算出的new threshold 1，所以进入老年代。</span>
+        <span class="pl-c">//而byteArr因为超过survivor的单个区域，直接进入了老年代。</span>
+        <span class="pl-en">makeGarbage</span>(<span class="pl-c1">34</span>);
+    }
+    <span class="pl-k">private</span> <span class="pl-k">static</span> <span class="pl-smi">void</span> <span class="pl-en">makeGarbage</span>(<span class="pl-smi">int</span> <span class="pl-s1">size</span>){
+        <span class="pl-smi">byte</span>[] <span class="pl-s1">byteArrTemp</span> = <span class="pl-k">new</span> <span class="pl-smi">byte</span>[<span class="pl-s1">size</span> * <span class="pl-c1">1024</span> * <span class="pl-c1">1024</span>];
+    }
+}</pre></div>
+<p>注意:如下输出结果中老年代的信息为 <code class="notranslate">concurrent mark-sweep generation</code> 和以前版本略有不同。另外，还列出了某次GC后是否重新生成了threshold，以及各个年龄占用空间的大小。</p>
+<div class="highlight highlight-source-shell"><pre class="notranslate">2021-07-01T10:41:32.257+0800: [GC (Allocation Failure) 2021-07-01T10:41:32.257+0800: [ParNew
+Desired survivor size 3145728 bytes, new threshold 1 (max 3)
+- age   1:    3739264 bytes,    3739264 total
+<span class="pl-c1">:</span> 40345K-<span class="pl-k">&gt;</span>3674K(46080K), 0.0014584 secs] 40345K-<span class="pl-k">&gt;</span>3674K(199680K), 0.0015063 secs] [Times: user<span class="pl-k">=</span>0.00 sys<span class="pl-k">=</span>0.00, real<span class="pl-k">=</span>0.00 secs] 
+2021-07-01T10:41:32.259+0800: [GC (Allocation Failure) 2021-07-01T10:41:32.259+0800: [ParNew
+Desired survivor size 3145728 bytes, new threshold 3 (max 3)
+<span class="pl-c1">:</span> 13914K-<span class="pl-k">&gt;</span>0K(46080K), 0.0046596 secs] 13914K-<span class="pl-k">&gt;</span>13895K(199680K), 0.0046873 secs] [Times: user<span class="pl-k">=</span>0.00 sys<span class="pl-k">=</span>0.00, real<span class="pl-k">=</span>0.00 secs] 
+Heap
+ par new generation   total 46080K, used 35225K [0x05000000, 0x08200000, 0x08200000)
+  eden space 40960K,  86% used [0x05000000, 0x072667f0, 0x07800000)
+  from space 5120K,   0% used [0x07800000, 0x07800000, 0x07d00000)
+  to   space 5120K,   0% used [0x07d00000, 0x07d00000, 0x08200000)
+ concurrent mark-sweep generation total 153600K, used 13895K [0x08200000, 0x11800000, 0x11800000)
+ Metaspace       used 153K, capacity 2280K, committed 2368K, reserved 4480K
+</pre></div>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/%E5%A0%86%E5%86%85%E5%AD%98-88bf7d2ac57e4e6b9e7d1789662ddfd0.png"><img src="/upload/2021/10/%E5%A0%86%E5%86%85%E5%AD%98-88bf7d2ac57e4e6b9e7d1789662ddfd0.png" alt="堆内存.png" style="max-width: 100%;"></a></p>
+<h3>1.1 对象优先在 eden 区分配</h3>
+<p>目前主流的垃圾收集器都会采用分代回收算法，因此需要将堆内存分为新生代和老年代，这样我们就可以根据各个年代的特点选择合适的垃圾收集算法。</p>
+<p>大多数情况下，对象在新生代中 eden 区分配。当 eden 区没有足够空间进行分配时，虚拟机将发起一次 Minor GC.下面我们来进行实际测试以下。</p>
+<p><strong>测试：</strong></p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">GCTest</span> {
+
+	<span class="pl-k">public</span> <span class="pl-k">static</span> <span class="pl-smi">void</span> <span class="pl-en">main</span>(<span class="pl-smi">String</span>[] <span class="pl-s1">args</span>) {
+		<span class="pl-smi">byte</span>[] <span class="pl-s1">allocation1</span>, <span class="pl-s1">allocation2</span>;
+		<span class="pl-s1">allocation1</span> = <span class="pl-k">new</span> <span class="pl-smi">byte</span>[<span class="pl-c1">30900</span>*<span class="pl-c1">1024</span>];
+		<span class="pl-c">//allocation2 = new byte[900*1024];</span>
+	}
+}</pre></div>
+<p>通过以下方式运行：</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/25178350-ad71ee45cae745eb98290ec0ab181edc.png"><img src="/upload/2021/10/25178350-ad71ee45cae745eb98290ec0ab181edc.png" alt="25178350.png" style="max-width: 100%;"></a></p>
+<p>添加的参数：<code class="notranslate">-XX:+PrintGCDetails</code>：</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/10317146-a79ac045cc8a42f78feb473a3ffea93f.png"><img src="/upload/2021/10/10317146-a79ac045cc8a42f78feb473a3ffea93f.png" alt="10317146.png" style="max-width: 100%;"></a></p>
+<p>运行结果 (红色字体描述有误，应该是对应于 JDK1.7 的永久代)：</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/28954286-8ef447485b0d48a5b3bf3a222f84a207.jpg"><img src="/upload/2021/10/28954286-8ef447485b0d48a5b3bf3a222f84a207.jpg" alt="28954286.jpg" style="max-width: 100%;"></a></p>
+<p>从上图我们可以看出 eden 区内存几乎已经被分配完全（即使程序什么也不做，新生代也会使用 2000 多 k 内存）。假如我们再为 allocation2 分配内存会出现什么情况呢？</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-s1">allocation2</span> = <span class="pl-k">new</span> <span class="pl-smi">byte</span>[<span class="pl-c1">900</span>*<span class="pl-c1">1024</span>];</pre></div>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/28128785-19c3dad62b8148e3bf4c00d7b58ca3bd.jpg"><img src="/upload/2021/10/28128785-19c3dad62b8148e3bf4c00d7b58ca3bd.jpg" alt="28128785.jpg" style="max-width: 100%;"></a></p>
+<p><strong>简单解释一下为什么会出现这种情况：</strong> 因为给 allocation2 分配内存的时候 eden 区内存几乎已经被分配完了，我们刚刚讲了当 Eden 区没有足够空间进行分配时，虚拟机将发起一次 Minor GC.GC 期间虚拟机又发现 allocation1 无法存入 Survivor 空间，所以只好通过 <strong>分配担保机制</strong> 把新生代的对象提前转移到老年代中去，老年代上的空间足够存放 allocation1，所以不会出现 Full GC。执行 Minor GC 后，后面分配的对象如果能够存在 eden 区的话，还是会在 eden 区分配内存。可以执行如下代码验证：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">GCTest</span> {
+
+	<span class="pl-k">public</span> <span class="pl-k">static</span> <span class="pl-smi">void</span> <span class="pl-en">main</span>(<span class="pl-smi">String</span>[] <span class="pl-s1">args</span>) {
+		<span class="pl-smi">byte</span>[] <span class="pl-s1">allocation1</span>, <span class="pl-s1">allocation2</span>,<span class="pl-s1">allocation3</span>,<span class="pl-s1">allocation4</span>,<span class="pl-s1">allocation5</span>;
+		<span class="pl-s1">allocation1</span> = <span class="pl-k">new</span> <span class="pl-smi">byte</span>[<span class="pl-c1">32000</span>*<span class="pl-c1">1024</span>];
+		<span class="pl-s1">allocation2</span> = <span class="pl-k">new</span> <span class="pl-smi">byte</span>[<span class="pl-c1">1000</span>*<span class="pl-c1">1024</span>];
+		<span class="pl-s1">allocation3</span> = <span class="pl-k">new</span> <span class="pl-smi">byte</span>[<span class="pl-c1">1000</span>*<span class="pl-c1">1024</span>];
+		<span class="pl-s1">allocation4</span> = <span class="pl-k">new</span> <span class="pl-smi">byte</span>[<span class="pl-c1">1000</span>*<span class="pl-c1">1024</span>];
+		<span class="pl-s1">allocation5</span> = <span class="pl-k">new</span> <span class="pl-smi">byte</span>[<span class="pl-c1">1000</span>*<span class="pl-c1">1024</span>];
+	}
+}</pre></div>
+<h3>1.2 大对象直接进入老年代</h3>
+<p>大对象就是需要大量连续内存空间的对象（比如：字符串、数组）。</p>
+<p><strong>为什么要这样呢？</strong></p>
+<p>为了避免为大对象分配内存时由于分配担保机制带来的复制而降低效率。</p>
+<h3>1.3 长期存活的对象将进入老年代</h3>
+<p>既然虚拟机采用了分代收集的思想来管理内存，那么内存回收时就必须能识别哪些对象应放在新生代，哪些对象应放在老年代中。为了做到这一点，虚拟机给每个对象一个对象年龄（Age）计数器。</p>
+<p>如果对象在 Eden 出生并经过第一次 Minor GC 后仍然能够存活，并且能被 Survivor 容纳的话，将被移动到 Survivor 空间中，并将对象年龄设为 1.对象在 Survivor 中每熬过一次 MinorGC,年龄就增加 1 岁，当它的年龄增加到一定程度（默认为 15 岁），就会被晋升到老年代中。对象晋升到老年代的年龄阈值，可以通过参数 <code class="notranslate">-XX:MaxTenuringThreshold</code> 来设置。</p>
+<h3>1.4 动态对象年龄判定</h3>
+<p>大部分情况，对象都会首先在 Eden 区域分配，在一次新生代垃圾回收后，如果对象还存活，则会进入 s0 或者 s1，并且对象的年龄还会加 1(Eden 区-&gt;Survivor 区后对象的初始年龄变为 1)，当它的年龄增加到一定程度（默认为 15 岁），就会被晋升到老年代中。对象晋升到老年代的年龄阈值，可以通过参数 <code class="notranslate">-XX:MaxTenuringThreshold</code> 来设置。</p>
+<blockquote>
+<p>修正（<a href="https://github.com/Snailclimb/JavaGuide/issues/552" data-hovercard-type="issue" data-hovercard-url="/Snailclimb/JavaGuide/issues/552/hovercard">issue552</a>）：“Hotspot 遍历所有对象时，按照年龄从小到大对其所占用的大小进行累积，当累积的某个年龄大小超过了 survivor 区的 50% 时（默认值是 50%，可以通过 <code class="notranslate">-XX:TargetSurvivorRatio=percent</code> 来设置，参见 <a href="https://github.com/Snailclimb/JavaGuide/issues/1199" data-hovercard-type="issue" data-hovercard-url="/Snailclimb/JavaGuide/issues/1199/hovercard">issue1199</a> ），取这个年龄和 MaxTenuringThreshold 中更小的一个值，作为新的晋升年龄阈值”。</p>
+<p>jdk8官方文档引用 ：<a href="https://docs.oracle.com/javase/8/docs/technotes/tools/unix/java.html" rel="nofollow">https://docs.oracle.com/javase/8/docs/technotes/tools/unix/java.html</a> 。</p>
+</blockquote>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/image-20210523201742303-76f95c30f37f45bf88382743a38eb43b.png"><img src="/upload/2021/10/image-20210523201742303-76f95c30f37f45bf88382743a38eb43b.png" alt="image20210523201742303.png" style="max-width: 100%;"></a></p>
+<blockquote>
+<p><strong>动态年龄计算的代码如下：</strong></p>
+<div class="highlight highlight-source-c++"><pre class="notranslate">uint <span class="pl-en">ageTable::compute_tenuring_threshold</span>(<span class="pl-c1">size_t</span> survivor_capacity) {
+ <span class="pl-c"><span class="pl-c">//</span>survivor_capacity是survivor空间的大小</span>
+ <span class="pl-c1">size_t</span> desired_survivor_size = (<span class="pl-c1">size_t</span>)((((<span class="pl-k">double</span>)survivor_capacity)*TargetSurvivorRatio)/<span class="pl-c1">100</span>);
+ <span class="pl-c1">size_t</span> total = <span class="pl-c1">0</span>;
+ uint age = <span class="pl-c1">1</span>;
+ <span class="pl-k">while</span> (age &lt; table_size) {
+     <span class="pl-c"><span class="pl-c">//</span>sizes数组是每个年龄段对象大小</span>
+     total += sizes[age];
+     <span class="pl-k">if</span> (total &gt; desired_survivor_size) {
+         <span class="pl-k">break</span>;
+     }
+     age++;
+ }
+ uint result = age &lt; MaxTenuringThreshold ? age : MaxTenuringThreshold;
+ ...
+}
+</pre></div>
+<p>额外补充说明(<a href="https://github.com/Snailclimb/JavaGuide/issues/672" data-hovercard-type="issue" data-hovercard-url="/Snailclimb/JavaGuide/issues/672/hovercard">issue672</a>)：<strong>关于默认的晋升年龄是 15，这个说法的来源大部分都是《深入理解 Java 虚拟机》这本书。</strong><br>
+如果你去 Oracle 的官网阅读<a href="https://docs.oracle.com/javase/8/docs/technotes/tools/unix/java.html" rel="nofollow">相关的虚拟机参数</a>，你会发现<code class="notranslate">-XX:MaxTenuringThreshold=threshold</code>这里有个说明</p>
+<p><strong>Sets the maximum tenuring threshold for use in adaptive GC sizing. The largest value is 15. The default value is 15 for the parallel (throughput) collector, and 6 for the CMS collector.默认晋升年龄并不都是 15，这个是要区分垃圾收集器的，CMS 就是 6.</strong></p>
+</blockquote>
+<h3>1.5 主要进行 gc 的区域</h3>
+<p>周志明先生在《深入理解 Java 虚拟机》第二版中 P92 如是写道：</p>
+<blockquote>
+<p><del><em>“老年代 GC（Major GC/Full GC），指发生在老年代的 GC……”</em></del></p>
+</blockquote>
+<p>上面的说法已经在《深入理解 Java 虚拟机》第三版中被改正过来了。感谢 R 大的回答：</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/b48228c2-ac00-4668-a78f-6f221f8563b5-e322dcae0fee4a20a8305b39db6c8eed.png"><img src="/upload/2021/10/b48228c2-ac00-4668-a78f-6f221f8563b5-e322dcae0fee4a20a8305b39db6c8eed.png" alt="b48228c2ac004668a78f6f221f8563b5.png" style="max-width: 100%;"></a></p>
+<p><strong>总结：</strong></p>
+<p>针对 HotSpot VM 的实现，它里面的 GC 其实准确分类只有两大种：</p>
+<p>部分收集 (Partial GC)：</p>
+<ul>
+<li>新生代收集（Minor GC / Young GC）：只对新生代进行垃圾收集；</li>
+<li>老年代收集（Major GC / Old GC）：只对老年代进行垃圾收集。需要注意的是 Major GC 在有的语境中也用于指代整堆收集；</li>
+<li>混合收集（Mixed GC）：对整个新生代和部分老年代进行垃圾收集。</li>
+</ul>
+<p>整堆收集 (Full GC)：收集整个 Java 堆和方法区。</p>
+<h3>1.6 空间分配担保</h3>
+<p>空间分配担保是为了确保在 Minor GC 之前老年代本身还有容纳新生代所有对象的剩余空间。</p>
+<p>《深入理解Java虚拟机》第三章对于空间分配担保的描述如下：</p>
+<blockquote>
+<p>JDK 6 Update 24 之前，在发生 Minor GC 之前，虚拟机必须先检查老年代最大可用的连续空间是否大于新生代所有对象总空间，如果这个条件成立，那这一次 Minor GC 可以确保是安全的。如果不成立，则虚拟机会先查看 <code class="notranslate">-XX:HandlePromotionFailure</code> 参数的设置值是否允许担保失败(Handle Promotion Failure);如果允许，那会继续检查老年代最大可用的连续空间是否大于历次晋升到老年代对象的平均大小，如果大于，将尝试进行一次 Minor GC，尽管这次 Minor GC 是有风险的;如果小于，或者 <code class="notranslate">-XX: HandlePromotionFailure</code> 设置不允许冒险，那这时就要改为进行一次  Full GC。</p>
+<p>JDK 6 Update 24之后的规则变为只要老年代的连续空间大于新生代对象总大小或者历次晋升的平均大小，就会进行 Minor GC，否则将进行 Full GC。</p>
+</blockquote>
+<h2>2 对象已经死亡？</h2>
+<p>堆中几乎放着所有的对象实例，对堆垃圾回收前的第一步就是要判断哪些对象已经死亡（即不能再被任何途径使用的对象）。</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/11034259-fa14fa019c864f0da481767f260890dd.png"><img src="/upload/2021/10/11034259-fa14fa019c864f0da481767f260890dd.png" alt="11034259.png" style="max-width: 100%;"></a></p>
+<h3>2.1 引用计数法</h3>
+<p>给对象中添加一个引用计数器，每当有一个地方引用它，计数器就加 1；当引用失效，计数器就减 1；任何时候计数器为 0 的对象就是不可能再被使用的。</p>
+<p><strong>这个方法实现简单，效率高，但是目前主流的虚拟机中并没有选择这个算法来管理内存，其最主要的原因是它很难解决对象之间相互循环引用的问题。</strong> 所谓对象之间的相互引用问题，如下面代码所示：除了对象 objA 和 objB 相互引用着对方之外，这两个对象之间再无任何引用。但是他们因为互相引用对方，导致它们的引用计数器都不为 0，于是引用计数算法无法通知 GC 回收器回收他们。</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">ReferenceCountingGc</span> {
+    <span class="pl-smi">Object</span> <span class="pl-s1">instance</span> = <span class="pl-c1">null</span>;
+	<span class="pl-k">public</span> <span class="pl-k">static</span> <span class="pl-smi">void</span> <span class="pl-en">main</span>(<span class="pl-smi">String</span>[] <span class="pl-s1">args</span>) {
+		<span class="pl-smi">ReferenceCountingGc</span> <span class="pl-s1">objA</span> = <span class="pl-k">new</span> <span class="pl-smi">ReferenceCountingGc</span>();
+		<span class="pl-smi">ReferenceCountingGc</span> <span class="pl-s1">objB</span> = <span class="pl-k">new</span> <span class="pl-smi">ReferenceCountingGc</span>();
+		<span class="pl-s1">objA</span>.<span class="pl-s1">instance</span> = <span class="pl-s1">objB</span>;
+		<span class="pl-s1">objB</span>.<span class="pl-s1">instance</span> = <span class="pl-s1">objA</span>;
+		<span class="pl-s1">objA</span> = <span class="pl-c1">null</span>;
+		<span class="pl-s1">objB</span> = <span class="pl-c1">null</span>;
+
+	}
+}</pre></div>
+<h3>2.2 可达性分析算法</h3>
+<p>这个算法的基本思想就是通过一系列的称为 <strong>“GC Roots”</strong> 的对象作为起点，从这些节点开始向下搜索，节点所走过的路径称为引用链，当一个对象到 GC Roots 没有任何引用链相连的话，则证明此对象是不可用的。</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/72762049-b93c3d121cb84489bb09f297721a4ee7.png"><img src="/upload/2021/10/72762049-b93c3d121cb84489bb09f297721a4ee7.png" alt="72762049.png" style="max-width: 100%;"></a></p>
+<p>可作为 GC Roots 的对象包括下面几种:</p>
+<ul>
+<li>虚拟机栈(栈帧中的本地变量表)中引用的对象</li>
+<li>本地方法栈(Native 方法)中引用的对象</li>
+<li>方法区中类静态属性引用的对象</li>
+<li>方法区中常量引用的对象</li>
+<li>所有被同步锁持有的对象</li>
+</ul>
+<h3>2.3 再谈引用</h3>
+<p>无论是通过引用计数法判断对象引用数量，还是通过可达性分析法判断对象的引用链是否可达，判定对象的存活都与“引用”有关。</p>
+<p>JDK1.2 之前，Java 中引用的定义很传统：如果 reference 类型的数据存储的数值代表的是另一块内存的起始地址，就称这块内存代表一个引用。</p>
+<p>JDK1.2 以后，Java 对引用的概念进行了扩充，将引用分为强引用、软引用、弱引用、虚引用四种（引用强度逐渐减弱）</p>
+<p><strong>1．强引用（StrongReference）</strong></p>
+<p>以前我们使用的大部分引用实际上都是强引用，这是使用最普遍的引用。如果一个对象具有强引用，那就类似于<strong>必不可少的生活用品</strong>，垃圾回收器绝不会回收它。当内存空间不足，Java 虚拟机宁愿抛出 OutOfMemoryError 错误，使程序异常终止，也不会靠随意回收具有强引用的对象来解决内存不足问题。</p>
+<p><strong>2．软引用（SoftReference）</strong></p>
+<p>如果一个对象只具有软引用，那就类似于<strong>可有可无的生活用品</strong>。如果内存空间足够，垃圾回收器就不会回收它，如果内存空间不足了，就会回收这些对象的内存。只要垃圾回收器没有回收它，该对象就可以被程序使用。软引用可用来实现内存敏感的高速缓存。</p>
+<p>软引用可以和一个引用队列（ReferenceQueue）联合使用，如果软引用所引用的对象被垃圾回收，JAVA 虚拟机就会把这个软引用加入到与之关联的引用队列中。</p>
+<p><strong>3．弱引用（WeakReference）</strong></p>
+<p>如果一个对象只具有弱引用，那就类似于<strong>可有可无的生活用品</strong>。弱引用与软引用的区别在于：只具有弱引用的对象拥有更短暂的生命周期。在垃圾回收器线程扫描它所管辖的内存区域的过程中，一旦发现了只具有弱引用的对象，不管当前内存空间足够与否，都会回收它的内存。不过，由于垃圾回收器是一个优先级很低的线程， 因此不一定会很快发现那些只具有弱引用的对象。</p>
+<p>弱引用可以和一个引用队列（ReferenceQueue）联合使用，如果弱引用所引用的对象被垃圾回收，Java 虚拟机就会把这个弱引用加入到与之关联的引用队列中。</p>
+<p><strong>4．虚引用（PhantomReference）</strong></p>
+<p>"虚引用"顾名思义，就是形同虚设，与其他几种引用都不同，虚引用并不会决定对象的生命周期。如果一个对象仅持有虚引用，那么它就和没有任何引用一样，在任何时候都可能被垃圾回收。</p>
+<p><strong>虚引用主要用来跟踪对象被垃圾回收的活动</strong>。</p>
+<p><strong>虚引用与软引用和弱引用的一个区别在于：</strong> 虚引用必须和引用队列（ReferenceQueue）联合使用。当垃圾回收器准备回收一个对象时，如果发现它还有虚引用，就会在回收对象的内存之前，把这个虚引用加入到与之关联的引用队列中。程序可以通过判断引用队列中是否已经加入了虚引用，来了解被引用的对象是否将要被垃圾回收。程序如果发现某个虚引用已经被加入到引用队列，那么就可以在所引用的对象的内存被回收之前采取必要的行动。</p>
+<p>特别注意，在程序设计中一般很少使用弱引用与虚引用，使用软引用的情况较多，这是因为<strong>软引用可以加速 JVM 对垃圾内存的回收速度，可以维护系统的运行安全，防止内存溢出（OutOfMemory）等问题的产生</strong>。</p>
+<h3>2.4 不可达的对象并非“非死不可”</h3>
+<p>即使在可达性分析法中不可达的对象，也并非是“非死不可”的，这时候它们暂时处于“缓刑阶段”，要真正宣告一个对象死亡，至少要经历两次标记过程；可达性分析法中不可达的对象被第一次标记并且进行一次筛选，筛选的条件是此对象是否有必要执行 finalize 方法。当对象没有覆盖 finalize 方法，或 finalize 方法已经被虚拟机调用过时，虚拟机将这两种情况视为没有必要执行。</p>
+<p>被判定为需要执行的对象将会被放在一个队列中进行第二次标记，除非这个对象与引用链上的任何一个对象建立关联，否则就会被真的回收。</p>
+<h3>2.5 如何判断一个常量是废弃常量？</h3>
+<p>运行时常量池主要回收的是废弃的常量。那么，我们如何判断一个常量是废弃常量呢？</p>
+<p><del><strong>JDK1.7 及之后版本的 JVM 已经将运行时常量池从方法区中移了出来，在 Java 堆（Heap）中开辟了一块区域存放运行时常量池。</strong></del></p>
+<blockquote>
+<p><strong>🐛 修正（参见：<a href="https://github.com/Snailclimb/JavaGuide/issues/747" data-hovercard-type="issue" data-hovercard-url="/Snailclimb/JavaGuide/issues/747/hovercard">issue747</a>，<a href="https://blog.csdn.net/q5706503/article/details/84640762" rel="nofollow">reference</a>）</strong> ：</p>
+<ol>
+<li><strong>JDK1.7 之前运行时常量池逻辑包含字符串常量池存放在方法区, 此时 hotspot 虚拟机对方法区的实现为永久代</strong></li>
+<li><strong>JDK1.7 字符串常量池被从方法区拿到了堆中, 这里没有提到运行时常量池,也就是说字符串常量池被单独拿到堆,运行时常量池剩下的东西还在方法区, 也就是 hotspot 中的永久代</strong> 。</li>
+<li><strong>JDK1.8 hotspot 移除了永久代用元空间(Metaspace)取而代之, 这时候字符串常量池还在堆, 运行时常量池还在方法区, 只不过方法区的实现从永久代变成了元空间(Metaspace)</strong></li>
+</ol>
+</blockquote>
+<p>假如在字符串常量池中存在字符串 "abc"，如果当前没有任何 String 对象引用该字符串常量的话，就说明常量 "abc" 就是废弃常量，如果这时发生内存回收的话而且有必要的话，"abc" 就会被系统清理出常量池了。</p>
+<h3>2.6 如何判断一个类是无用的类</h3>
+<p>方法区主要回收的是无用的类，那么如何判断一个类是无用的类的呢？</p>
+<p>判定一个常量是否是“废弃常量”比较简单，而要判定一个类是否是“无用的类”的条件则相对苛刻许多。类需要同时满足下面 3 个条件才能算是 <strong>“无用的类”</strong> ：</p>
+<ul>
+<li>该类所有的实例都已经被回收，也就是 Java 堆中不存在该类的任何实例。</li>
+<li>加载该类的 <code class="notranslate">ClassLoader</code> 已经被回收。</li>
+<li>该类对应的 <code class="notranslate">java.lang.Class</code> 对象没有在任何地方被引用，无法在任何地方通过反射访问该类的方法。</li>
+</ul>
+<p>虚拟机可以对满足上述 3 个条件的无用类进行回收，这里说的仅仅是“可以”，而并不是和对象一样不使用了就会必然被回收。</p>
+<h2>3 垃圾收集算法</h2>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E7%AE%97%E6%B3%95-7c65778e8f234e439c9be03ace5c1472.png"><img src="/upload/2021/10/%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E7%AE%97%E6%B3%95-7c65778e8f234e439c9be03ace5c1472.png" alt="垃圾收集算法.png" style="max-width: 100%;"></a></p>
+<h3>3.1 标记-清除算法</h3>
+<p>该算法分为“标记”和“清除”阶段：首先标记出所有不需要回收的对象，在标记完成后统一回收掉所有没有被标记的对象。它是最基础的收集算法，后续的算法都是对其不足进行改进得到。这种垃圾收集算法会带来两个明显的问题：</p>
+<ol>
+<li><strong>效率问题</strong></li>
+<li><strong>空间问题（标记清除后会产生大量不连续的碎片）</strong></li>
+</ol>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/%E6%A0%87%E8%AE%B0-%E6%B8%85%E9%99%A4%E7%AE%97%E6%B3%95-421bc4314923454788fc6c4d281709c1.jpeg"><img src="/upload/2021/10/%E6%A0%87%E8%AE%B0-%E6%B8%85%E9%99%A4%E7%AE%97%E6%B3%95-421bc4314923454788fc6c4d281709c1.jpeg" alt="标记清除算法.jpeg" style="max-width: 100%;"></a></p>
+<h3>3.2 标记-复制算法</h3>
+<p>为了解决效率问题，“标记-复制”收集算法出现了。它可以将内存分为大小相同的两块，每次使用其中的一块。当这一块的内存使用完后，就将还存活的对象复制到另一块去，然后再把使用的空间一次清理掉。这样就使每次的内存回收都是对内存区间的一半进行回收。</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/90984624-6522ae90e3ef4252b2832306bc1ba057.png"><img src="/upload/2021/10/90984624-6522ae90e3ef4252b2832306bc1ba057.png" alt="90984624.png" style="max-width: 100%;"></a></p>
+<h3>3.3 标记-整理算法</h3>
+<p>根据老年代的特点提出的一种标记算法，标记过程仍然与“标记-清除”算法一样，但后续步骤不是直接对可回收对象回收，而是让所有存活的对象向一端移动，然后直接清理掉端边界以外的内存。</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/94057049-ba3a486c9d9b4e078a53ecf86595da94.png"><img src="/upload/2021/10/94057049-ba3a486c9d9b4e078a53ecf86595da94.png" alt="94057049.png" style="max-width: 100%;"></a></p>
+<h3>3.4 分代收集算法</h3>
+<p>当前虚拟机的垃圾收集都采用分代收集算法，这种算法没有什么新的思想，只是根据对象存活周期的不同将内存分为几块。一般将 java 堆分为新生代和老年代，这样我们就可以根据各个年代的特点选择合适的垃圾收集算法。</p>
+<p><strong>比如在新生代中，每次收集都会有大量对象死去，所以可以选择”标记-复制“算法，只需要付出少量对象的复制成本就可以完成每次垃圾收集。而老年代的对象存活几率是比较高的，而且没有额外的空间对它进行分配担保，所以我们必须选择“标记-清除”或“标记-整理”算法进行垃圾收集。</strong></p>
+<p><strong>延伸面试问题：</strong> HotSpot 为什么要分为新生代和老年代？</p>
+<p>根据上面的对分代收集算法的介绍回答。</p>
+<h2>4 垃圾收集器</h2>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8-04b19beeeaea452787247c59b43a4c13.png"><img src="/upload/2021/10/%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8-04b19beeeaea452787247c59b43a4c13.png" alt="垃圾收集器.png" style="max-width: 100%;"></a></p>
+<p><strong>如果说收集算法是内存回收的方法论，那么垃圾收集器就是内存回收的具体实现。</strong></p>
+<p>虽然我们对各个收集器进行比较，但并非要挑选出一个最好的收集器。因为直到现在为止还没有最好的垃圾收集器出现，更加没有万能的垃圾收集器，<strong>我们能做的就是根据具体应用场景选择适合自己的垃圾收集器</strong>。试想一下：如果有一种四海之内、任何场景下都适用的完美收集器存在，那么我们的 HotSpot 虚拟机就不会实现那么多不同的垃圾收集器了。</p>
+<h3>4.1 Serial 收集器</h3>
+<p>Serial（串行）收集器是最基本、历史最悠久的垃圾收集器了。大家看名字就知道这个收集器是一个单线程收集器了。它的 <strong>“单线程”</strong> 的意义不仅仅意味着它只会使用一条垃圾收集线程去完成垃圾收集工作，更重要的是它在进行垃圾收集工作的时候必须暂停其他所有的工作线程（ <strong>"Stop The World"</strong> ），直到它收集结束。</p>
+<p><strong>新生代采用标记-复制算法，老年代采用标记-整理算法。</strong></p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/46873026-6b861ea7783246db9c37403ba70adc53.png"><img src="/upload/2021/10/46873026-6b861ea7783246db9c37403ba70adc53.png" alt="46873026.png" style="max-width: 100%;"></a></p>
+<p>虚拟机的设计者们当然知道 Stop The World 带来的不良用户体验，所以在后续的垃圾收集器设计中停顿时间在不断缩短（仍然还有停顿，寻找最优秀的垃圾收集器的过程仍然在继续）。</p>
+<p>但是 Serial 收集器有没有优于其他垃圾收集器的地方呢？当然有，它<strong>简单而高效（与其他收集器的单线程相比）</strong>。Serial 收集器由于没有线程交互的开销，自然可以获得很高的单线程收集效率。Serial 收集器对于运行在 Client 模式下的虚拟机来说是个不错的选择。</p>
+<h3>4.2 ParNew 收集器</h3>
+<p><strong>ParNew 收集器其实就是 Serial 收集器的多线程版本，除了使用多线程进行垃圾收集外，其余行为（控制参数、收集算法、回收策略等等）和 Serial 收集器完全一样。</strong></p>
+<p><strong>新生代采用标记-复制算法，老年代采用标记-整理算法。</strong></p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/22018368-939611b296eb4ada88e3d3d42981fa7f.png"><img src="/upload/2021/10/22018368-939611b296eb4ada88e3d3d42981fa7f.png" alt="22018368.png" style="max-width: 100%;"></a></p>
+<p>它是许多运行在 Server 模式下的虚拟机的首要选择，除了 Serial 收集器外，只有它能与 CMS 收集器（真正意义上的并发收集器，后面会介绍到）配合工作。</p>
+<p><strong>并行和并发概念补充：</strong></p>
+<ul>
+<li>
+<p><strong>并行（Parallel）</strong> ：指多条垃圾收集线程并行工作，但此时用户线程仍然处于等待状态。</p>
+</li>
+<li>
+<p><strong>并发（Concurrent）</strong>：指用户线程与垃圾收集线程同时执行（但不一定是并行，可能会交替执行），用户程序在继续运行，而垃圾收集器运行在另一个 CPU 上。</p>
+</li>
+</ul>
+<h3>4.3 Parallel Scavenge 收集器</h3>
+<p>Parallel Scavenge 收集器也是使用标记-复制算法的多线程收集器，它看上去几乎和 ParNew 都一样。 <strong>那么它有什么特别之处呢？</strong></p>
+<pre class="notranslate"><code class="notranslate">-XX:+UseParallelGC
+
+    使用 Parallel 收集器+ 老年代串行
+
+-XX:+UseParallelOldGC
+
+    使用 Parallel 收集器+ 老年代并行
+
+</code></pre>
+<p><strong>Parallel Scavenge 收集器关注点是吞吐量（高效率的利用 CPU）。CMS 等垃圾收集器的关注点更多的是用户线程的停顿时间（提高用户体验）。所谓吞吐量就是 CPU 中用于运行用户代码的时间与 CPU 总消耗时间的比值。</strong> Parallel Scavenge 收集器提供了很多参数供用户找到最合适的停顿时间或最大吞吐量，如果对于收集器运作不太了解，手工优化存在困难的时候，使用 Parallel Scavenge 收集器配合自适应调节策略，把内存管理优化交给虚拟机去完成也是一个不错的选择。</p>
+<p><strong>新生代采用标记-复制算法，老年代采用标记-整理算法。</strong></p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/parllel-scavenge%E6%94%B6%E9%9B%86%E5%99%A8-150d405c6b1348238f1023827e2c542d.png"><img src="/upload/2021/10/parllel-scavenge%E6%94%B6%E9%9B%86%E5%99%A8-150d405c6b1348238f1023827e2c542d.png" alt="parllelscavenge收集器.png" style="max-width: 100%;"></a></p>
+<p><strong>这是 JDK1.8 默认收集器</strong></p>
+<p>使用 java -XX:+PrintCommandLineFlags -version 命令查看</p>
+<pre class="notranslate"><code class="notranslate">-XX:InitialHeapSize=262921408 -XX:MaxHeapSize=4206742528 -XX:+PrintCommandLineFlags -XX:+UseCompressedClassPointers -XX:+UseCompressedOops -XX:+UseParallelGC
+java version "1.8.0_211"
+Java(TM) SE Runtime Environment (build 1.8.0_211-b12)
+Java HotSpot(TM) 64-Bit Server VM (build 25.211-b12, mixed mode)
+</code></pre>
+<p>JDK1.8 默认使用的是 Parallel Scavenge + Parallel Old，如果指定了-XX:+UseParallelGC 参数，则默认指定了-XX:+UseParallelOldGC，可以使用-XX:-UseParallelOldGC 来禁用该功能</p>
+<h3>4.4.Serial Old 收集器</h3>
+<p><strong>Serial 收集器的老年代版本</strong>，它同样是一个单线程收集器。它主要有两大用途：一种用途是在 JDK1.5 以及以前的版本中与 Parallel Scavenge 收集器搭配使用，另一种用途是作为 CMS 收集器的后备方案。</p>
+<h3>4.5 Parallel Old 收集器</h3>
+<p><strong>Parallel Scavenge 收集器的老年代版本</strong>。使用多线程和“标记-整理”算法。在注重吞吐量以及 CPU 资源的场合，都可以优先考虑 Parallel Scavenge 收集器和 Parallel Old 收集器。</p>
+<h3>4.6 CMS 收集器</h3>
+<p><strong>CMS（Concurrent Mark Sweep）收集器是一种以获取最短回收停顿时间为目标的收集器。它非常符合在注重用户体验的应用上使用。</strong></p>
+<p><strong>CMS（Concurrent Mark Sweep）收集器是 HotSpot 虚拟机第一款真正意义上的并发收集器，它第一次实现了让垃圾收集线程与用户线程（基本上）同时工作。</strong></p>
+<p>从名字中的<strong>Mark Sweep</strong>这两个词可以看出，CMS 收集器是一种 <strong>“标记-清除”算法</strong>实现的，它的运作过程相比于前面几种垃圾收集器来说更加复杂一些。整个过程分为四个步骤：</p>
+<ul>
+<li><strong>初始标记：</strong> 暂停所有的其他线程，并记录下直接与 root 相连的对象，速度很快 ；</li>
+<li><strong>并发标记：</strong> 同时开启 GC 和用户线程，用一个闭包结构去记录可达对象。但在这个阶段结束，这个闭包结构并不能保证包含当前所有的可达对象。因为用户线程可能会不断的更新引用域，所以 GC 线程无法保证可达性分析的实时性。所以这个算法里会跟踪记录这些发生引用更新的地方。</li>
+<li><strong>重新标记：</strong> 重新标记阶段就是为了修正并发标记期间因为用户程序继续运行而导致标记产生变动的那一部分对象的标记记录，这个阶段的停顿时间一般会比初始标记阶段的时间稍长，远远比并发标记阶段时间短</li>
+<li><strong>并发清除：</strong> 开启用户线程，同时 GC 线程开始对未标记的区域做清扫。</li>
+</ul>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/CMS%E6%94%B6%E9%9B%86%E5%99%A8-1f7aed669dab46c88d2c7fc7db2668eb.png"><img src="/upload/2021/10/CMS%E6%94%B6%E9%9B%86%E5%99%A8-1f7aed669dab46c88d2c7fc7db2668eb.png" alt="CMS收集器.png" style="max-width: 100%;"></a></p>
+<p>从它的名字就可以看出它是一款优秀的垃圾收集器，主要优点：<strong>并发收集、低停顿</strong>。但是它有下面三个明显的缺点：</p>
+<ul>
+<li><strong>对 CPU 资源敏感；</strong></li>
+<li><strong>无法处理浮动垃圾；</strong></li>
+<li><strong>它使用的回收算法-“标记-清除”算法会导致收集结束时会有大量空间碎片产生。</strong></li>
+</ul>
+<h3>4.7 G1 收集器</h3>
+<p><strong>G1 (Garbage-First) 是一款面向服务器的垃圾收集器,主要针对配备多颗处理器及大容量内存的机器. 以极高概率满足 GC 停顿时间要求的同时,还具备高吞吐量性能特征.</strong></p>
+<p>被视为 JDK1.7 中 HotSpot 虚拟机的一个重要进化特征。它具备一下特点：</p>
+<ul>
+<li><strong>并行与并发</strong>：G1 能充分利用 CPU、多核环境下的硬件优势，使用多个 CPU（CPU 或者 CPU 核心）来缩短 Stop-The-World 停顿时间。部分其他收集器原本需要停顿 Java 线程执行的 GC 动作，G1 收集器仍然可以通过并发的方式让 java 程序继续执行。</li>
+<li><strong>分代收集</strong>：虽然 G1 可以不需要其他收集器配合就能独立管理整个 GC 堆，但是还是保留了分代的概念。</li>
+<li><strong>空间整合</strong>：与 CMS 的“标记-清理”算法不同，G1 从整体来看是基于“标记-整理”算法实现的收集器；从局部上来看是基于“标记-复制”算法实现的。</li>
+<li><strong>可预测的停顿</strong>：这是 G1 相对于 CMS 的另一个大优势，降低停顿时间是 G1 和 CMS 共同的关注点，但 G1 除了追求低停顿外，还能建立可预测的停顿时间模型，能让使用者明确指定在一个长度为 M 毫秒的时间片段内。</li>
+</ul>
+<p>G1 收集器的运作大致分为以下几个步骤：</p>
+<ul>
+<li><strong>初始标记</strong></li>
+<li><strong>并发标记</strong></li>
+<li><strong>最终标记</strong></li>
+<li><strong>筛选回收</strong></li>
+</ul>
+<p><strong>G1 收集器在后台维护了一个优先列表，每次根据允许的收集时间，优先选择回收价值最大的 Region(这也就是它的名字 Garbage-First 的由来)</strong> 。这种使用 Region 划分内存空间以及有优先级的区域回收方式，保证了 G1 收集器在有限时间内可以尽可能高的收集效率（把内存化整为零）。</p>
+<h3>4.8 ZGC 收集器</h3>
+<p>与 CMS 中的 ParNew 和 G1 类似，ZGC 也采用标记-复制算法，不过 ZGC 对该算法做了重大改进。</p>
+<p>在 ZGC 中出现 Stop The World 的情况会更少！</p>
+<p>详情可以看 ： <a href="https://tech.meituan.com/2020/08/06/new-zgc-practice-in-meituan.html" rel="nofollow">《新一代垃圾回收器 ZGC 的探索与实践》</a></p>
+<h2>参考</h2>
+<ul>
+<li>《深入理解 Java 虚拟机：JVM 高级特性与最佳实践（第二版》</li>
+<li><a href="https://my.oschina.net/hosee/blog/644618" rel="nofollow">https://my.oschina.net/hosee/blog/644618</a></li>
+<li><a href="https://docs.oracle.com/javase/specs/jvms/se8/html/index.html" rel="nofollow">https://docs.oracle.com/javase/specs/jvms/se8/html/index.html</a></li>
+</ul></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+
+</div>
+    <div id="footer"><div id="footer1">Copyright © <span id="copyrightYear"></span> <a href="https://shuaiwang888.github.io/appStore-Blog.github.io">Blog Title</a></div>
+<div id="footer2">
+    <span id="runday"></span><span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>
+</div>
+
+<script>
+var now=new Date();
+document.getElementById("copyrightYear").innerHTML=now.getFullYear();
+
+if(""!=""){
+    var startSite=new Date("");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";
+}
+</script></div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z', 'copy': 'M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z', 'check': 'M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","shuaiwang888/appStore-Blog.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const createClipboardHTML = (codeContent, additionalClasses = '') => `
+        <pre class="notranslate"><code class="notranslate">${codeContent}</code></pre>
+        <div class="clipboard-container position-absolute right-0 top-0 ${additionalClasses}">
+            <clipboard-copy class="ClipboardButton btn m-2 p-0" role="button" style="display: inherit;">
+                <svg height="16" width="16" class="octicon octicon-copy m-2"><path d="${IconList["copy"]}"></path></svg>
+                <svg height="16" width="16" class="octicon octicon-check color-fg-success m-2 d-none"><path d="${IconList["check"]}"></path></svg>
+            </clipboard-copy>
+            <div class="copy-feedback">Copied!</div>
+        </div>
+    `;
+
+    const handleCodeElements = (selector = '') => {
+        document.querySelectorAll(selector).forEach(codeElement => {
+            const codeContent = codeElement.innerHTML;
+            const newStructure = document.createElement('div');
+            newStructure.className = 'snippet-clipboard-content position-relative overflow-auto';
+            newStructure.innerHTML = createClipboardHTML(codeContent);
+
+            const parentElement = codeElement.parentElement;
+            if (selector.includes('highlight')) {
+                parentElement.insertBefore(newStructure, codeElement.nextSibling);
+                parentElement.removeChild(codeElement);
+            } else {
+                parentElement.parentElement.replaceChild(newStructure, parentElement);
+            }
+        });
+    };
+
+    handleCodeElements('pre.notranslate > code.notranslate');
+    handleCodeElements('div.highlight > pre.notranslate');
+
+    let currentFeedback = null;
+    document.querySelectorAll('clipboard-copy').forEach(copyButton => {
+        copyButton.addEventListener('click', () => {
+            const codeContent = copyButton.closest('.snippet-clipboard-content').innerText;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = codeContent;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            const copyIcon = copyButton.querySelector('.octicon-copy');
+            const checkIcon = copyButton.querySelector('.octicon-check');
+            const copyFeedback = copyButton.nextElementSibling;
+
+            if (currentFeedback && currentFeedback !== copyFeedback) {currentFeedback.style.display = 'none';}
+            currentFeedback = copyFeedback;
+
+            copyIcon.classList.add('d-none');
+            checkIcon.classList.remove('d-none');
+            copyFeedback.style.display = 'block';
+            copyButton.style.borderColor = 'var(--color-success-fg)';
+
+            setTimeout(() => {
+                copyIcon.classList.remove('d-none');
+                checkIcon.classList.add('d-none');
+                copyFeedback.style.display = 'none';
+                copyButton.style.borderColor = '';
+            }, 2000);
+        });
+    });
+});
+
+</script>
+
+
+</html>
