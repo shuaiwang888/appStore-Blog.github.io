@@ -1,5 +1,23 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>Blog Title</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link><description>Blog description</description><copyright>Blog Title</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://github.githubassets.com/favicons/favicon.svg</url><title>avatar</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link></image><lastBuildDate>Sat, 06 Sep 2025 09:05:06 +0000</lastBuildDate><managingEditor>Blog Title</managingEditor><ttl>60</ttl><webMaster>Blog Title</webMaster><item><title>Spring 框架设计模式</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/Spring%20-kuang-jia-she-ji-mo-shi.html</link><description>&lt;!-- TOC --&gt;
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>Blog Title</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link><description>Blog description</description><copyright>Blog Title</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://github.githubassets.com/favicons/favicon.svg</url><title>avatar</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io</link></image><lastBuildDate>Sat, 06 Sep 2025 09:05:42 +0000</lastBuildDate><managingEditor>Blog Title</managingEditor><ttl>60</ttl><webMaster>Blog Title</webMaster><item><title>Spring Boot</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/Spring%20Boot.html</link><description>## **SpingBoot - Maven补充**
+
+### **一、依赖冲突**
+
+![QQ图片20210925161432.png](/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210925161432-2bd4801c2b3f4e1992be661f96a0027c.png)
+
+**如何解决依赖冲突？**
+
+&gt; 方法一：默认情况下：优先保留前面先声明的版本，所以就算出现的依赖冲突但整个项目运行中是不会报错的，Maven已经自动处理好了！
+
+&gt; 方法二：单独为依赖库增加`dependency`指定版本号，就如依赖冲突例子可得，可以直接在dependencies中添加spring-beans的版本！
+
+&gt; 方法三：使用`exclusion`排除某个依赖，比如在添加spring-webmvc依赖时，使用属性标签`exclusion`排除`spring-beans`，这样`spring-beans`版本只能选择`spring-jdbc`的版本了！
+
+&gt; 方法四(最常用的解决方案)：使用`dependencyManagement`锁定依赖库的版本号，注意该方法只能声明版本号，不能真正下载导入依赖库！
+
+
+### **二、分模块构建项目**
+项目规模比较庞大时，可以考虑对项目进行拆分，分模块进行构建项目，有2种常见的拆分思路：按业务模块：员工模块、部门模块、工资模块等；按层：dao层、service层、web层等。</description><guid isPermaLink="true">https://shuaiwang888.github.io/appStore-Blog.github.io/post/Spring%20Boot.html</guid><pubDate>Sat, 06 Sep 2025 09:05:08 +0000</pubDate></item><item><title>Spring 框架设计模式</title><link>https://shuaiwang888.github.io/appStore-Blog.github.io/post/Spring%20-kuang-jia-she-ji-mo-shi.html</link><description>&lt;!-- TOC --&gt;
 
 - [控制反转(IoC)和依赖注入(DI)](#控制反转ioc和依赖注入di)
 - [工厂设计模式](#工厂设计模式)
