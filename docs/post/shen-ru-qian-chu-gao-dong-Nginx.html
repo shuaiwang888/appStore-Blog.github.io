@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark" data-light-theme="light" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
+    
+    <link rel="icon" href="https://github.githubassets.com/favicons/favicon.svg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="## 1. 什么是Nginx？
+
+
+Nginx是一个**轻量级/高性能**的反向代理Web服务器，他实现非常高效的反向代理、负载平衡，他可以处理2-3万并发连接数，官方监测能支持5万并发，现在中国使用nginx网站用户有很多，例如：新浪、网易、 腾讯等。">
+<meta property="og:title" content="深入浅出搞懂Nginx">
+<meta property="og:description" content="## 1. 什么是Nginx？
+
+
+Nginx是一个**轻量级/高性能**的反向代理Web服务器，他实现非常高效的反向代理、负载平衡，他可以处理2-3万并发连接数，官方监测能支持5万并发，现在中国使用nginx网站用户有很多，例如：新浪、网易、 腾讯等。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://shuaiwang888.github.io/appStore-Blog.github.io/post/shen-ru-qian-chu-gao-dong-Nginx.html">
+<meta property="og:image" content="https://github.githubassets.com/favicons/favicon.svg">
+<title>深入浅出搞懂Nginx</title>
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+.copy-feedback {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    color: var(--color-fg-on-emphasis);
+    background-color: var(--color-fg-muted);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
+</style>
+
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">深入浅出搞懂Nginx</h1>
+<div class="title-right">
+    <a href="https://shuaiwang888.github.io/appStore-Blog.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/shuaiwang888/appStore-Blog.github.io/issues/50" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><h2>1. 什么是Nginx？</h2>
+<p>Nginx是一个<strong>轻量级/高性能</strong>的反向代理Web服务器，他实现非常高效的反向代理、负载平衡，他可以处理2-3万并发连接数，官方监测能支持5万并发，现在中国使用nginx网站用户有很多，例如：新浪、网易、 腾讯等。<br>
+<a target="_blank" rel="noopener noreferrer" href="/upload/2022/03/image-6d4b9f6bd72e4b30a7ca12434a1e69e7.png"><img src="/upload/2022/03/image-6d4b9f6bd72e4b30a7ca12434a1e69e7.png" alt="image.png" style="max-width: 100%;"></a></p>
+<h2>2. 为什么要用Nginx？</h2>
+<p>跨平台、配置简单、方向代理、高并发连接：处理2-3万并发连接数，官方监测能支持5万并发，内存消耗小：开启10个nginx才占150M内存 ，nginx处理静态文件好，耗费内存少，</p>
+<p>而且Nginx内置的健康检查功能：如果有一个服务器宕机，会做一个健康检查，再发送的请求就不会发送到宕机的服务器了。重新将请求提交到其他的节点上。</p>
+<p><strong>使用Nginx的话还能：</strong></p>
+<ol>
+<li>节省宽带：支持GZIP压缩，可以添加浏览器本地缓存</li>
+<li>稳定性高：宕机的概率非常小</li>
+<li>接收用户请求是异步的</li>
+</ol>
+<h2>3. 为什么Nginx性能这么高？</h2>
+<p>因为他的事件处理机制：异步非阻塞事件处理机制：运用了epoll模型，提供了一个队列，排队解决;</p>
+<p><strong>Nginx采用了Linux的<code class="notranslate">epoll</code>模型，epoll模型基于事件驱动机制，它可以监控多个事件是否准备完毕，如果OK，那么放入epoll队列中，这个过程是异步的。worker只需要从epoll队列循环处理即可。</strong></p>
+<h2>4. Nginx怎么处理请求的？</h2>
+<p>nginx接收一个请求后，首先由listen和server_name指令匹配server模块，再匹配server模块里的location，location就是实际地址</p>
+<div class="highlight highlight-text-xml"><pre class="notranslate">    server {            	 # 第一个Server区块开始，表示一个独立的虚拟主机站点
+        listen       80；      	 # 提供服务的端口，默认80
+        server_name  localhost； # 提供服务的域名主机名
+        location / {             # 第一个location区块开始
+            root   html；        # 站点的根目录，相当于Nginx的安装目录
+            index  index.html index.htm； # 默认的首页文件，多个用空格分开
+        }          		 # 第一个location区块结果</pre></div>
+<h2>5. 什么是正向代理和反向代理？</h2>
+<ul>
+<li>正向代理就是一个人发送一个请求直接就到达了目标的服务器</li>
+<li>反方代理就是请求统一被Nginx接收，nginx反向代理服务器接收到之后，按照一定的规 则分发给了后端的业务处理服务器进行处理了</li>
+</ul>
+<h2>6. 使用“反向代理服务器的优点是什么?</h2>
+<ul>
+<li>反向代理服务器可以隐藏源服务器的存在和特征。它充当互联网云和web服务器之间的中间层。这对于安全方面来说是很好的，特别是当您使用web托管服务时。</li>
+</ul>
+<h2>7. Nginx的优缺点？</h2>
+<p><strong>优点：</strong></p>
+<ol>
+<li>占内存小，可实现高并发连接，处理响应快</li>
+<li>可实现http服务器、虚拟主机、方向代理、负载均衡</li>
+<li>Nginx配置简单</li>
+<li>可以不暴露正式的服务器IP地址</li>
+</ol>
+<p><strong>缺点：</strong></p>
+<ol>
+<li>动态处理差：nginx处理静态文件好,耗费内存少，但是处理动态页面则很鸡肋，现在一般前端用nginx作为反向代理抗住压力，</li>
+</ol>
+<h2>8. Nginx应用场景？</h2>
+<ol>
+<li>http服务器。Nginx是一个http服务可以独立提供http服务。可以做网页静态服务器。</li>
+<li>虚拟主机。可以实现在一台服务器虚拟出多个网站，例如个人网站使用的虚拟机。</li>
+<li>反向代理，负载均衡。当网站的访问量达到一定程度后，单台服务器不能满足用户的请求时，需要用多台服务器集群可以使用nginx做反向代理。并且多台服务器可以平均分担负载，不会应为某台服务器负载高宕机而某台服务器闲置的情况。</li>
+<li>nginx中也可以配置安全管理、比如可以使用Nginx搭建API接口网关,对每个接口服务进行拦截。</li>
+</ol>
+<h2>9. Nginx目录结构有哪些？</h2>
+<div class="highlight highlight-text-xml"><pre class="notranslate">[root@localhost ~]# tree /usr/local/nginx
+/usr/local/nginx
+├── client_body_temp
+├── conf                             # Nginx所有配置文件的目录
+│   ├── fastcgi.conf                 # fastcgi相关参数的配置文件
+│   ├── fastcgi.conf.default         # fastcgi.conf的原始备份文件
+│   ├── fastcgi_params               # fastcgi的参数文件
+│   ├── fastcgi_params.default       
+│   ├── koi-utf
+│   ├── koi-win
+│   ├── mime.types                   # 媒体类型
+│   ├── mime.types.default
+│   ├── nginx.conf                   # Nginx主配置文件
+│   ├── nginx.conf.default
+│   ├── scgi_params                  # scgi相关参数文件
+│   ├── scgi_params.default  
+│   ├── uwsgi_params                 # uwsgi相关参数文件
+│   ├── uwsgi_params.default
+│   └── win-utf
+├── fastcgi_temp                     # fastcgi临时数据目录
+├── html                             # Nginx默认站点目录
+│   ├── 50x.html                     # 错误页面优雅替代显示文件，例如当出现502错误时会调用此页面
+│   └── index.html                   # 默认的首页文件
+├── logs                             # Nginx日志目录
+│   ├── access.log                   # 访问日志文件
+│   ├── error.log                    # 错误日志文件
+│   └── nginx.pid                    # pid文件，Nginx进程启动后，会把所有进程的ID号写到此文件
+├── proxy_temp                       # 临时目录
+├── sbin                             # Nginx命令目录
+│   └── nginx                        # Nginx的启动命令
+├── scgi_temp                        # 临时目录
+└── uwsgi_temp                       # 临时目录</pre></div>
+<h2>10. Nginx配置文件nginx.conf有哪些属性模块?</h2>
+<div class="highlight highlight-text-xml"><pre class="notranslate">worker_processes  1；                					# worker进程的数量
+events {                              					# 事件区块开始
+    worker_connections  1024；            				# 每个worker进程支持的最大连接数
+}                                    					# 事件区块结束
+http {                               					# HTTP区块开始
+    include       mime.types；            				# Nginx支持的媒体类型库文件
+    default_type  application/octet-stream；     		# 默认的媒体类型
+    sendfile        on；       							# 开启高效传输模式
+    keepalive_timeout  65；       						# 连接超时
+    server {            								# 第一个Server区块开始，表示一个独立的虚拟主机站点
+        listen       80；      							# 提供服务的端口，默认80
+        server_name  localhost；       					# 提供服务的域名主机名
+        location / {            						# 第一个location区块开始
+            root   html；       						# 站点的根目录，相当于Nginx的安装目录
+            index  index.html index.htm；      			# 默认的首页文件，多个用空格分开
+        }          										# 第一个location区块结果
+        error_page   500502503504  /50x.html；     		# 出现对应的http状态码时，使用50x.html回应客户
+        location = /50x.html {          				# location区块开始，访问50x.html
+            root   html；      							# 指定对应的站点目录为html
+        }
+    }  
+    ......</pre></div>
+<h2>11. Nginx静态资源?</h2>
+<p>静态资源访问，就是存放在nginx的html页面，我们可以自己编写</p>
+<h2>12. 如何用Nginx解决前端跨域问题？</h2>
+<p>使用Nginx转发请求。把跨域的接口写成调本域的接口，然后将这些接口转发到真正的请求地址。</p>
+<h2>13. Nginx虚拟主机怎么配置?</h2>
+<ol>
+<li>基于域名的虚拟主机，通过域名来区分虚拟主机——应用：外部网站</li>
+<li>基于端口的虚拟主机，通过端口来区分虚拟主机——应用：公司内部网站，外部网站的管理后台</li>
+<li>基于ip的虚拟主机。</li>
+</ol>
+<h2>14. location的作用是什么？</h2>
+<p>location指令的作用是根据用户请求的URI来执行不同的应用，也就是根据用户请求的网站URL进行匹配，匹配成功即进行相关的操作。</p>
+<p><strong>location的语法能说出来吗？</strong></p>
+<div class="highlight highlight-text-xml"><pre class="notranslate">注意：~ 代表自己输入的英文字母
+
+匹配符	匹配规则	优先级
+=	精确匹配	1
+^~	以某个字符串开头	2
+~	区分大小写的正则匹配	3
+~*	不区分大小写的正则匹配	4
+!~	区分大小写不匹配的正则	5
+!~*	不区分大小写不匹配的正则	6
+/	通用匹配，任何请求都会匹配到	7</pre></div>
+<p><strong>Location正则案例</strong></p>
+<p>示例：</p>
+<div class="highlight highlight-text-xml"><pre class="notranslate">	#优先级1,精确匹配，根路径
+    location =/ {
+        return 400;
+    }
+
+    #优先级2,以某个字符串开头,以av开头的，优先匹配这里，区分大小写
+    location ^~ /av {
+       root /data/av/;
+    }
+
+    #优先级3，区分大小写的正则匹配，匹配/media*****路径
+    location ~ /media {
+          alias /data/static/;
+    }
+
+    #优先级4 ，不区分大小写的正则匹配，所有的****.jpg|gif|png 都走这里
+    location ~* .*\.(jpg|gif|png|js|css)$ {
+       root  /data/av/;
+    }
+
+    #优先7，通用匹配
+    location / {
+        return 403;
+    }</pre></div>
+<h2>15. 限流怎么做的？</h2>
+<p>Nginx限流就是限制用户请求速度，防止服务器受不了</p>
+<p><strong>限流有3种</strong></p>
+<ul>
+<li>正常限制访问频率（正常流量）</li>
+<li>突发限制访问频率（突发流量）</li>
+<li>限制并发连接数</li>
+</ul>
+<p>Nginx的限流都是基于漏桶流算法，底下会说道什么是桶铜流</p>
+<p><strong>实现三种限流算法</strong></p>
+<p>1、正常限制访问频率（正常流量）：</p>
+<ul>
+<li>
+<p>限制一个用户发送的请求，我Nginx多久接收一个请求。</p>
+</li>
+<li>
+<p>Nginx中使用<code class="notranslate">ngx_http_limit_req_module</code>模块来限制的访问频率，限制的原理实质是基于<code class="notranslate">漏桶算法原理</code>来实现的。<strong>在<code class="notranslate">nginx.conf</code>配置文件中可以使用<code class="notranslate">limit_req_zone</code>命令及<code class="notranslate">limit_req</code>命令限制单个IP的请求处理频率。</strong></p>
+</li>
+</ul>
+<div class="highlight highlight-text-xml"><pre class="notranslate">	#定义限流维度，一个用户一分钟一个请求进来，多余的全部漏掉
+	limit_req_zone $binary_remote_addr zone=one:10m rate=1r/m;
+
+	#绑定限流维度
+	server{
+		
+		location/seckill.html{
+			limit_req zone=zone;	
+			proxy_pass http://lj_seckill;
+		}
+
+	}</pre></div>
+<ul>
+<li>1r/s代表1秒一个请求，1r/m一分钟接收一个请求， 如果Nginx这时还有别人的请求没有处理完，Nginx就会拒绝处理该用户请求。</li>
+</ul>
+<p>2、突发限制访问频率（突发流量）：</p>
+<ul>
+<li>
+<p>限制一个用户发送的请求，我Nginx多久接收一个。</p>
+</li>
+<li>
+<p>上面的配置一定程度可以限制访问频率，但是也存在着一个问题：如果突发流量超出请求被拒绝处理，无法处理活动时候的突发流量，这时候应该如何进一步处理呢？ <strong>Nginx提供burst参数结合nodelay参数可以解决流量突发的问题，可以设置能处理的超过设置的请求数外能额外处理的请求数。</strong> 我们可以将之前的例子添加burst参数以及nodelay参数：</p>
+</li>
+</ul>
+<div class="highlight highlight-text-xml"><pre class="notranslate">	#定义限流维度，一个用户一分钟一个请求进来，多余的全部漏掉
+	limit_req_zone $binary_remote_addr zone=one:10m rate=1r/m;
+
+	#绑定限流维度
+	server{
+		
+		location/seckill.html{
+			limit_req zone=zone burst=5 nodelay;
+			proxy_pass http://lj_seckill;
+		}
+
+	}</pre></div>
+<ul>
+<li>为什么就多了一个 burst=5 nodelay; 呢，多了这个可以代表Nginx对于一个用户的请求会立即处理前五个，多余的就慢慢来落，没有其他用户的请求我就处理你的，有其他的请求的话我Nginx就漏掉不接受你的请求</li>
+</ul>
+<p>3、 限制并发连接数</p>
+<ul>
+<li>Nginx中的<code class="notranslate">ngx_http_limit_conn_module</code>模块提供了限制并发连接数的功能，可以使用<code class="notranslate">limit_conn_zone</code>指令以及<code class="notranslate">limit_conn</code>执行进行配置。接下来我们可以通过一个简单的例子来看下：</li>
+</ul>
+<div class="highlight highlight-text-xml"><pre class="notranslate">	http {
+		limit_conn_zone $binary_remote_addr zone=myip:10m;
+		limit_conn_zone $server_name zone=myServerName:10m;
+	}
+
+    server {
+        location / {
+            limit_conn myip 10;
+            limit_conn myServerName 100;
+            rewrite / http://www.lijie.net permanent;
+        }
+    }</pre></div>
+<ul>
+<li>上面配置了单个IP同时并发连接数最多只能10个连接，并且设置了整个虚拟服务器同时最大并发数最多只能100个链接。当然，只有当请求的header被服务器处理后，虚拟服务器的连接数才会计数。刚才有提到过Nginx是基于漏桶算法原理实现的，实际上限流一般都是基于漏桶算法和令牌桶算法实现的。接下来我们来看看两个算法的介绍：</li>
+</ul>
+<h2>16. 漏桶流算法和令牌桶算法知道？</h2>
+<p><strong>漏桶算法</strong></p>
+<blockquote>
+<p>漏桶算法是网络世界中流量整形或速率限制时经常使用的一种算法，它的主要目的是控制数据注入到网络的速率，平滑网络上的突发流量。漏桶算法提供了一种机制，通过它，突发流量可以被整形以便为网络提供一个稳定的流量。也就是我们刚才所讲的情况。漏桶算法提供的机制实际上就是刚才的案例：突发流量会进入到一个漏桶，漏桶会按照我们定义的速率依次处理请求，如果水流过大也就是突发流量过大就会直接溢出，则多余的请求会被拒绝。所以漏桶算法能控制数据的传输速率。</p>
+</blockquote>
+<p><strong>令牌桶算法</strong></p>
+<blockquote>
+<p>令牌桶算法是网络流量整形和速率限制中最常使用的一种算法。典型情况下，令牌桶算法用来控制发送到网络上的数据的数目，并允许突发数据的发送。Google开源项目Guava中的RateLimiter使用的就是令牌桶控制算法。令牌桶算法的机制如下：存在一个大小固定的令牌桶，会以恒定的速率源源不断产生令牌。如果令牌消耗速率小于生产令牌的速度，令牌就会一直产生直至装满整个令牌桶。</p>
+</blockquote>
+<h2>17. 为什么要做动静分离？</h2>
+<ul>
+<li>
+<p>Nginx是当下最热的Web容器，网站优化的重要点在于静态化网站，网站静态化的关键点则是是动静分离，动静分离是让动态网站里的动态网页根据一定规则把不变的资源和经常变的资源区分开来，动静资源做好了拆分以后，我们则根据静态资源的特点将其做缓存操作。</p>
+</li>
+<li>
+<p>让静态的资源只走静态资源服务器，动态的走动态的服务器</p>
+</li>
+<li>
+<p>Nginx的静态处理能力很强，但是动态处理能力不足，因此，在企业中常用动静分离技术。</p>
+</li>
+<li>
+<p>对于静态资源比如图片，js，css等文件，我们则在反向代理服务器nginx中进行缓存。这样浏览器在请求一个静态资源时，代理服务器nginx就可以直接处理，无需将请求转发给后端服务器tomcat。<br>
+若用户请求的动态文件，比如servlet,jsp则转发给Tomcat服务器处理，从而实现动静分离。这也是反向代理服务器的一个重要的作用。</p>
+</li>
+</ul>
+<h2>18. Nginx怎么做的动静分离？</h2>
+<ul>
+<li>只需要指定路径对应的目录。location/可以使用正则表达式匹配。并指定对应的硬盘中的目录。如下：（操作都是在Linux上）</li>
+</ul>
+<div class="highlight highlight-text-xml"><pre class="notranslate">		location /image/ {
+            root   /usr/local/static/;
+            autoindex on;
+        }</pre></div>
+<ol>
+<li>创建目录</li>
+</ol>
+<pre class="notranslate"><code class="notranslate">mkdir /usr/local/static/image
+</code></pre>
+<ol start="2">
+<li>进入目录</li>
+</ol>
+<pre class="notranslate"><code class="notranslate">cd  /usr/local/static/image
+</code></pre>
+<ol start="3">
+<li>放一张照片上去#</li>
+</ol>
+<pre class="notranslate"><code class="notranslate">1.jpg
+</code></pre>
+<ol start="4">
+<li>重启 nginx</li>
+</ol>
+<pre class="notranslate"><code class="notranslate">sudo nginx -s reload
+</code></pre>
+<ol start="5">
+<li>打开浏览器 输入 <code class="notranslate">server_name/image/1.jpg</code> 就可以访问该静态图片了</li>
+</ol>
+<h2>19. Nginx负载均衡的算法怎么实现的?策略有哪些?</h2>
+<p>为了避免服务器崩溃，大家会通过负载均衡的方式来分担服务器压力。将对台服务器组成一个集群，当用户访问时，先访问到一个转发服务器，再由转发服务器将访问分发到压力更小的服务器。</p>
+<p><strong>Nginx负载均衡实现的策略有以下五种：</strong></p>
+<h3>1 轮询(默认)</h3>
+<ul>
+<li>每个请求按时间顺序逐一分配到不同的后端服务器，如果后端某个服务器宕机，能自动剔除故障系统。</li>
+</ul>
+<div class="highlight highlight-text-xml"><pre class="notranslate">upstream backserver { 
+ server 192.168.0.12; 
+ server 192.168.0.13; 
+} </pre></div>
+<h3>2 权重 weight</h3>
+<ul>
+<li>
+<p>weight的值越大分配</p>
+</li>
+<li>
+<p>到的访问概率越高，主要用于后端每台服务器性能不均衡的情况下。其次是为在主从的情况下设置不同的权值，达到合理有效的地利用主机资源。</p>
+</li>
+</ul>
+<div class="highlight highlight-text-xml"><pre class="notranslate">upstream backserver { 
+ server 192.168.0.12 weight=2; 
+ server 192.168.0.13 weight=8; 
+} </pre></div>
+<ul>
+<li>权重越高，在被访问的概率越大，如上例，分别是20%，80%。</li>
+</ul>
+<h3>3 ip_hash( IP绑定)</h3>
+<ul>
+<li>每个请求按访问IP的哈希结果分配，使来自同一个IP的访客固定访问一台后端服务器，并且可以有效解决动态网页存在的session共享问题</li>
+</ul>
+<div class="highlight highlight-text-xml"><pre class="notranslate">upstream backserver { 
+ ip_hash; 
+ server 192.168.0.12:88; 
+ server 192.168.0.13:80; 
+} </pre></div>
+<h3>4 fair(第三方插件)</h3>
+<ul>
+<li>
+<p>必须安装upstream_fair模块。</p>
+</li>
+<li>
+<p>对比 weight、ip_hash更加智能的负载均衡算法，fair算法可以根据页面大小和加载时间长短智能地进行负载均衡，响应时间短的优先分配。</p>
+</li>
+</ul>
+<div class="highlight highlight-text-xml"><pre class="notranslate">upstream backserver { 
+ server server1; 
+ server server2; 
+ fair; 
+} </pre></div>
+<ul>
+<li>哪个服务器的响应速度快，就将请求分配到那个服务器上。</li>
+</ul>
+<h3>5、url_hash(第三方插件)</h3>
+<ul>
+<li>
+<p>必须安装Nginx的hash软件包</p>
+</li>
+<li>
+<p>按访问url的hash结果来分配请求，使每个url定向到同一个后端服务器，可以进一步提高后端缓存服务器的效率。</p>
+</li>
+</ul>
+<div class="highlight highlight-text-xml"><pre class="notranslate">upstream backserver { 
+ server squid1:3128; 
+ server squid2:3128; 
+ hash $request_uri; 
+ hash_method crc32; 
+} </pre></div>
+<h2>20. Nginx配置高可用性怎么配置？</h2>
+<ul>
+<li>Nginx既然作为入口网关，很重要，如果出现单点问题，显然是不可接受的。</li>
+<li>当上游服务器(真实访问服务器)，一旦出现故障或者是没有及时相应的话，应该直接轮训到下一台服务器，保证服务器的高可用</li>
+<li><strong>Keepalived+Nginx实现高可用</strong>, 实现高可用的思路：</li>
+</ul>
+<ol>
+<li>请求不要直接打到Nginx上，应该先通过Keepalived（这就是所谓虚拟IP，VIP）</li>
+<li>Keepalived应该能监控Nginx的生命状态（提供一个用户自定义的脚本，定期检查Nginx进程状态，进行权重变化,，从而实现Nginx故障切换）</li>
+</ol>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/79edb6370cae728fed4d3d01a62d1d824663fbad9e55d3d6c5599f1b5e099899/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f37333362623534626239616434393062623561663865363437316536623165342e706e673f782d6f73732d70726f636573733d696d6167652f77617465726d61726b2c747970655f643346354c58706c626d686c61512c736861646f775f35302c746578745f51314e4554694241625442664e5445774e7a41784f44513d2c73697a655f32302c636f6c6f725f4646464646462c745f37302c675f73652c785f3136"><img src="https://camo.githubusercontent.com/79edb6370cae728fed4d3d01a62d1d824663fbad9e55d3d6c5599f1b5e099899/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f37333362623534626239616434393062623561663865363437316536623165342e706e673f782d6f73732d70726f636573733d696d6167652f77617465726d61726b2c747970655f643346354c58706c626d686c61512c736861646f775f35302c746578745f51314e4554694241625442664e5445774e7a41784f44513d2c73697a655f32302c636f6c6f725f4646464646462c745f37302c675f73652c785f3136" alt="" data-canonical-src="https://img-blog.csdnimg.cn/733bb54bb9ad490bb5af8e6471e6b1e4.png?x-oss-process=image/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBAbTBfNTEwNzAxODQ=,size_20,color_FFFFFF,t_70,g_se,x_16" style="max-width: 100%;"></a></p>
+<ul>
+<li>Nginx配置代码：</li>
+</ul>
+<div class="highlight highlight-text-xml"><pre class="notranslate">server {
+        listen       80;
+        server_name  www.lijie.com;
+        location / {
+		    ### 指定上游服务器负载均衡服务器
+		    proxy_pass http://backServer;
+			###nginx与上游服务器(真实访问的服务器)超时时间 后端服务器连接的超时时间_发起握手等候响应超时时间
+			proxy_connect_timeout 1s;
+			###nginx发送给上游服务器(真实访问的服务器)超时时间
+            proxy_send_timeout 1s;
+			### nginx接受上游服务器(真实访问的服务器)超时时间
+            proxy_read_timeout 1s;
+            index  index.html index.htm;
+        }
+    }</pre></div>
+<h2>21. Nginx怎么判断别IP不可访问？</h2>
+<pre class="notranslate"><code class="notranslate"> 	 # 如果访问的ip地址为192.168.9.115,则返回403
+     if  ($remote_addr = 192.168.9.115) {  
+         return 403;  
+     }  
+</code></pre>
+<h2>22. 怎么限制浏览器访问？</h2>
+<div class="highlight highlight-text-xml"><pre class="notranslate">	## 不允许谷歌浏览器访问 如果是谷歌浏览器返回500
+ 	if ($http_user_agent ~ Chrome) {   
+        return 500;  
+    }</pre></div>
+<h2>23. Rewrite全局变量是什么？</h2>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th>变量</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>$args</td>
+<td>这个变量等于请求行中的参数，同$query_string</td>
+</tr>
+<tr>
+<td>$content length</td>
+<td>请求头中的Content-length字段。</td>
+</tr>
+<tr>
+<td>$content_type</td>
+<td>请求头中的Content-Type字段。</td>
+</tr>
+<tr>
+<td>$document_root</td>
+<td>当前请求在root指令中指定的值。</td>
+</tr>
+<tr>
+<td>$host</td>
+<td>请求主机头字段，否则为服务器名称。</td>
+</tr>
+<tr>
+<td>$http_user_agent</td>
+<td>客户端agent信息</td>
+</tr>
+<tr>
+<td>$http_cookie</td>
+<td>客户端cookie信息</td>
+</tr>
+<tr>
+<td>$limit_rate</td>
+<td>这个变量可以限制连接速率。</td>
+</tr>
+<tr>
+<td>$request_method</td>
+<td>客户端请求的动作，通常为GET或POST。</td>
+</tr>
+<tr>
+<td>$remote_addr</td>
+<td>客户端的IP地址。</td>
+</tr>
+<tr>
+<td>$remote_port</td>
+<td>客户端的端口。</td>
+</tr>
+<tr>
+<td>$remote_user</td>
+<td>已经经过Auth Basic Module验证的用户名。</td>
+</tr>
+<tr>
+<td>$request_filename</td>
+<td>当前请求的文件路径，由root或alias指令与URI请求生成。</td>
+</tr>
+<tr>
+<td>$scheme</td>
+<td>HTTP方法（如http，https）。</td>
+</tr>
+<tr>
+<td>$server_protocol</td>
+<td>请求使用的协议，通常是HTTP/1.0或HTTP/1.1。</td>
+</tr>
+<tr>
+<td>$server_addr</td>
+<td>服务器地址，在完成一次系统调用后可以确定这个值。</td>
+</tr>
+<tr>
+<td>$server_name</td>
+<td>服务器名称。</td>
+</tr>
+<tr>
+<td>$server_port</td>
+<td>请求到达服务器的端口号。</td>
+</tr>
+<tr>
+<td>$request_uri</td>
+<td>包含请求参数的原始URI，不包含主机名，如”/foo/bar.php?arg=baz”。</td>
+</tr>
+<tr>
+<td>$uri</td>
+<td>不带请求参数的当前URI，$uri不包含主机名，如”/foo/bar.html”。</td>
+</tr>
+<tr>
+<td>$document_uri</td>
+<td>与$uri相同。</td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+
+</div>
+    <div id="footer"><div id="footer1">Copyright © <span id="copyrightYear"></span> <a href="https://shuaiwang888.github.io/appStore-Blog.github.io">Blog Title</a></div>
+<div id="footer2">
+    <span id="runday"></span><span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>
+</div>
+
+<script>
+var now=new Date();
+document.getElementById("copyrightYear").innerHTML=now.getFullYear();
+
+if(""!=""){
+    var startSite=new Date("");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";
+}
+</script></div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z', 'copy': 'M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z', 'check': 'M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","shuaiwang888/appStore-Blog.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const createClipboardHTML = (codeContent, additionalClasses = '') => `
+        <pre class="notranslate"><code class="notranslate">${codeContent}</code></pre>
+        <div class="clipboard-container position-absolute right-0 top-0 ${additionalClasses}">
+            <clipboard-copy class="ClipboardButton btn m-2 p-0" role="button" style="display: inherit;">
+                <svg height="16" width="16" class="octicon octicon-copy m-2"><path d="${IconList["copy"]}"></path></svg>
+                <svg height="16" width="16" class="octicon octicon-check color-fg-success m-2 d-none"><path d="${IconList["check"]}"></path></svg>
+            </clipboard-copy>
+            <div class="copy-feedback">Copied!</div>
+        </div>
+    `;
+
+    const handleCodeElements = (selector = '') => {
+        document.querySelectorAll(selector).forEach(codeElement => {
+            const codeContent = codeElement.innerHTML;
+            const newStructure = document.createElement('div');
+            newStructure.className = 'snippet-clipboard-content position-relative overflow-auto';
+            newStructure.innerHTML = createClipboardHTML(codeContent);
+
+            const parentElement = codeElement.parentElement;
+            if (selector.includes('highlight')) {
+                parentElement.insertBefore(newStructure, codeElement.nextSibling);
+                parentElement.removeChild(codeElement);
+            } else {
+                parentElement.parentElement.replaceChild(newStructure, parentElement);
+            }
+        });
+    };
+
+    handleCodeElements('pre.notranslate > code.notranslate');
+    handleCodeElements('div.highlight > pre.notranslate');
+
+    let currentFeedback = null;
+    document.querySelectorAll('clipboard-copy').forEach(copyButton => {
+        copyButton.addEventListener('click', () => {
+            const codeContent = copyButton.closest('.snippet-clipboard-content').innerText;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = codeContent;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            const copyIcon = copyButton.querySelector('.octicon-copy');
+            const checkIcon = copyButton.querySelector('.octicon-check');
+            const copyFeedback = copyButton.nextElementSibling;
+
+            if (currentFeedback && currentFeedback !== copyFeedback) {currentFeedback.style.display = 'none';}
+            currentFeedback = copyFeedback;
+
+            copyIcon.classList.add('d-none');
+            checkIcon.classList.remove('d-none');
+            copyFeedback.style.display = 'block';
+            copyButton.style.borderColor = 'var(--color-success-fg)';
+
+            setTimeout(() => {
+                copyIcon.classList.remove('d-none');
+                checkIcon.classList.add('d-none');
+                copyFeedback.style.display = 'none';
+                copyButton.style.borderColor = '';
+            }, 2000);
+        });
+    });
+});
+
+</script>
+
+
+</html>
