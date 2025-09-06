@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark" data-light-theme="light" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
+    
+    <link rel="icon" href="https://github.githubassets.com/favicons/favicon.svg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="> 本文来自一枝花算不算浪漫投稿， 原文地址：[https://juejin.im/post/5eacc1c75188256d976df748](https://juejin.im/post/5eacc1c75188256d976df748)。">
+<meta property="og:title" content="详解ThreadLocal关键字">
+<meta property="og:description" content="> 本文来自一枝花算不算浪漫投稿， 原文地址：[https://juejin.im/post/5eacc1c75188256d976df748](https://juejin.im/post/5eacc1c75188256d976df748)。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://shuaiwang888.github.io/appStore-Blog.github.io/post/xiang-jie-ThreadLocal-guan-jian-zi.html">
+<meta property="og:image" content="https://github.githubassets.com/favicons/favicon.svg">
+<title>详解ThreadLocal关键字</title>
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+.copy-feedback {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    color: var(--color-fg-on-emphasis);
+    background-color: var(--color-fg-muted);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
+</style>
+
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">详解ThreadLocal关键字</h1>
+<div class="title-right">
+    <a href="https://shuaiwang888.github.io/appStore-Blog.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/shuaiwang888/appStore-Blog.github.io/issues/33" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><blockquote>
+<p>本文来自一枝花算不算浪漫投稿， 原文地址：<a href="https://juejin.im/post/5eacc1c75188256d976df748" rel="nofollow">https://juejin.im/post/5eacc1c75188256d976df748</a>。</p>
+</blockquote>
+<h3>前言</h3>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/1-58148067f4714e6b86592d8f1febba23.png"><img src="/upload/2021/10/1-58148067f4714e6b86592d8f1febba23.png" alt="1.png" style="max-width: 100%;"></a></p>
+<p><strong>全文共 10000+字，31 张图，这篇文章同样耗费了不少的时间和精力才创作完成，原创不易，请大家点点关注+在看，感谢。</strong></p>
+<p>对于<code class="notranslate">ThreadLocal</code>，大家的第一反应可能是很简单呀，线程的变量副本，每个线程隔离。那这里有几个问题大家可以思考一下：</p>
+<ul>
+<li><code class="notranslate">ThreadLocal</code>的 key 是<strong>弱引用</strong>，那么在 <code class="notranslate">ThreadLocal.get()</code>的时候，发生<strong>GC</strong>之后，key 是否为<strong>null</strong>？</li>
+<li><code class="notranslate">ThreadLocal</code>中<code class="notranslate">ThreadLocalMap</code>的<strong>数据结构</strong>？</li>
+<li><code class="notranslate">ThreadLocalMap</code>的<strong>Hash 算法</strong>？</li>
+<li><code class="notranslate">ThreadLocalMap</code>中<strong>Hash 冲突</strong>如何解决？</li>
+<li><code class="notranslate">ThreadLocalMap</code>的<strong>扩容机制</strong>？</li>
+<li><code class="notranslate">ThreadLocalMap</code>中<strong>过期 key 的清理机制</strong>？<strong>探测式清理</strong>和<strong>启发式清理</strong>流程？</li>
+<li><code class="notranslate">ThreadLocalMap.set()</code>方法实现原理？</li>
+<li><code class="notranslate">ThreadLocalMap.get()</code>方法实现原理？</li>
+<li>项目中<code class="notranslate">ThreadLocal</code>使用情况？遇到的坑？</li>
+<li>......</li>
+</ul>
+<p>上述的一些问题你是否都已经掌握的很清楚了呢？本文将围绕这些问题使用图文方式来剖析<code class="notranslate">ThreadLocal</code>的<strong>点点滴滴</strong>。</p>
+<h3>目录</h3>
+<p><strong>注明：</strong> 本文源码基于<code class="notranslate">JDK 1.8</code></p>
+<h3><code class="notranslate">ThreadLocal</code>代码演示</h3>
+<p>我们先看下<code class="notranslate">ThreadLocal</code>使用示例：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">ThreadLocalTest</span> {
+    <span class="pl-k">private</span> <span class="pl-smi">List</span>&lt;<span class="pl-smi">String</span>&gt; <span class="pl-s1">messages</span> = <span class="pl-smi">Lists</span>.<span class="pl-en">newArrayList</span>();
+
+    <span class="pl-k">public</span> <span class="pl-k">static</span> <span class="pl-k">final</span> <span class="pl-smi">ThreadLocal</span>&lt;<span class="pl-smi">ThreadLocalTest</span>&gt; <span class="pl-s1">holder</span> = <span class="pl-smi">ThreadLocal</span>.<span class="pl-en">withInitial</span>(<span class="pl-smi">ThreadLocalTest</span>::<span class="pl-k">new</span>);
+
+    <span class="pl-k">public</span> <span class="pl-k">static</span> <span class="pl-smi">void</span> <span class="pl-en">add</span>(<span class="pl-smi">String</span> <span class="pl-s1">message</span>) {
+        <span class="pl-s1">holder</span>.<span class="pl-en">get</span>().<span class="pl-s1">messages</span>.<span class="pl-en">add</span>(<span class="pl-s1">message</span>);
+    }
+
+    <span class="pl-k">public</span> <span class="pl-k">static</span> <span class="pl-smi">List</span>&lt;<span class="pl-smi">String</span>&gt; <span class="pl-en">clear</span>() {
+        <span class="pl-smi">List</span>&lt;<span class="pl-smi">String</span>&gt; <span class="pl-s1">messages</span> = <span class="pl-s1">holder</span>.<span class="pl-en">get</span>().<span class="pl-s1">messages</span>;
+        <span class="pl-s1">holder</span>.<span class="pl-en">remove</span>();
+
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"size: "</span> + <span class="pl-s1">holder</span>.<span class="pl-en">get</span>().<span class="pl-s1">messages</span>.<span class="pl-en">size</span>());
+        <span class="pl-k">return</span> <span class="pl-s1">messages</span>;
+    }
+
+    <span class="pl-k">public</span> <span class="pl-k">static</span> <span class="pl-smi">void</span> <span class="pl-en">main</span>(<span class="pl-smi">String</span>[] <span class="pl-s1">args</span>) {
+        <span class="pl-smi">ThreadLocalTest</span>.<span class="pl-en">add</span>(<span class="pl-s">"一枝花算不算浪漫"</span>);
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s1">holder</span>.<span class="pl-en">get</span>().<span class="pl-s1">messages</span>);
+        <span class="pl-smi">ThreadLocalTest</span>.<span class="pl-en">clear</span>();
+    }
+}</pre></div>
+<p>打印结果：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate">[<span class="pl-s1">一枝花算不算浪漫</span>]
+<span class="pl-s1">size</span>: <span class="pl-c1">0</span></pre></div>
+<p><code class="notranslate">ThreadLocal</code>对象可以提供线程局部变量，每个线程<code class="notranslate">Thread</code>拥有一份自己的<strong>副本变量</strong>，多个线程互不干扰。</p>
+<blockquote>
+<h3>问：说说ThreadLocal原理？</h3>
+</blockquote>
+<ol>
+<li>
+<p>ThreadLocal可以理解为线程本地变量，他会在每个线程都创建一个副本，那么在线程之间访问内部副本变量就行了，做到了线程之间互相隔离，相比于synchronized的做法是用空间来换时间。</p>
+</li>
+<li>
+<p>ThreadLocal有一个静态内部类ThreadLocalMap，ThreadLocalMap又包含了一个Entry数组，Entry本身是一个弱引用，他的key是指向ThreadLocal的弱引用，Entry具备了保存key value键值对的能力。</p>
+</li>
+<li>
+<p><strong>ThreadLocalMap 中使用的 key 为 ThreadLocal 的弱引用,而 value 是强引用。所以，如果 ThreadLocal 没有被外部强引用的情况下，在垃圾回收的时候，key 会被清理掉，而 value 不会被清理掉。这样一来，ThreadLocalMap 中就会出现key为null的Entry。假如我们不做任何措施的话，value 永远无法被GC 回收，这个时候就可能会产生内存泄露。ThreadLocalMap实现中已经考虑了这种情况，在调用 set()、get()、remove() 方法的时候，会清理掉 key 为 null 的记录。使用完 ThreadLocal方法后 最好手动调用remove()方法</strong></p>
+</li>
+<li>
+<p>弱引用的目的是为了防止内存泄露，如果是强引用那么ThreadLocal对象除非线程结束否则始终无法被回收，弱引用则会在下一次GC的时候被回收。</p>
+</li>
+<li>
+<p>但是这样还是会存在内存泄露的问题，假如key和ThreadLocal对象被回收之后，entry中就存在key为null，但是value有值的entry对象，但是永远没办法被访问到，同样除非线程结束运行。</p>
+</li>
+<li>
+<p>但是只要ThreadLocal使用恰当，在使用完之后调用remove方法删除Entry对象，实际上是不会出现这个问题的。</p>
+</li>
+</ol>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/ef6ec1857a5fc6a17e7b631b6d625517717ad0c0c64c628299876cfd2049e21f/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f38636239663439346530303134656131613734356334646338323362353863662e706e67"><img src="https://camo.githubusercontent.com/ef6ec1857a5fc6a17e7b631b6d625517717ad0c0c64c628299876cfd2049e21f/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f38636239663439346530303134656131613734356334646338323362353863662e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/8cb9f494e0014ea1a745c4dc823b58cf.png" style="max-width: 100%;"></a></p>
+<ul>
+<li><strong>典型场景1： 每个线程需要一个独享的对象（通常是工具类，典型需要使用的类有SimpleDateFormat和Random）</strong></li>
+<li><strong>典型场景2： 每个线程内需要保存全局变量（例如在拦截器中获取用户信息），可以让不同方法直接使用，避免参数传递的麻烦。</strong></li>
+</ul>
+<h3><code class="notranslate">ThreadLocal</code>的数据结构</h3>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/2-dfef75f5f7844a339e3c9cbc0b7c0f8b.png"><img src="/upload/2021/10/2-dfef75f5f7844a339e3c9cbc0b7c0f8b.png" alt="2.png" style="max-width: 100%;"></a></p>
+<p><code class="notranslate">Thread</code>类有一个类型为<code class="notranslate">ThreadLocal.ThreadLocalMap</code>的实例变量<code class="notranslate">threadLocals</code>，也就是说每个线程有一个自己的<code class="notranslate">ThreadLocalMap</code>。</p>
+<p><code class="notranslate">ThreadLocalMap</code>有自己的独立实现，可以简单地将它的<code class="notranslate">key</code>视作<code class="notranslate">ThreadLocal</code>，<code class="notranslate">value</code>为代码中放入的值（实际上<code class="notranslate">key</code>并不是<code class="notranslate">ThreadLocal</code>本身，而是它的一个<strong>弱引用</strong>）。</p>
+<p>每个线程在往<code class="notranslate">ThreadLocal</code>里放值的时候，都会往自己的<code class="notranslate">ThreadLocalMap</code>里存，读也是以<code class="notranslate">ThreadLocal</code>作为引用，在自己的<code class="notranslate">map</code>里找对应的<code class="notranslate">key</code>，从而实现了<strong>线程隔离</strong>。</p>
+<p><code class="notranslate">ThreadLocalMap</code>有点类似<code class="notranslate">HashMap</code>的结构，只是<code class="notranslate">HashMap</code>是由<strong>数组+链表</strong>实现的，而<code class="notranslate">ThreadLocalMap</code>中并没有<strong>链表</strong>结构。</p>
+<p>我们还要注意<code class="notranslate">Entry</code>， 它的<code class="notranslate">key</code>是<code class="notranslate">ThreadLocal&lt;?&gt; k</code> ，继承自<code class="notranslate">WeakReference</code>， 也就是我们常说的弱引用类型。</p>
+<h3>GC 之后 key 是否为 null？</h3>
+<p>回应开头的那个问题， <code class="notranslate">ThreadLocal</code> 的<code class="notranslate">key</code>是弱引用，那么在<code class="notranslate">ThreadLocal.get()</code>的时候，发生<code class="notranslate">GC</code>之后，<code class="notranslate">key</code>是否是<code class="notranslate">null</code>？</p>
+<p>为了搞清楚这个问题，我们需要搞清楚<code class="notranslate">Java</code>的<strong>四种引用类型</strong>：</p>
+<ul>
+<li><strong>强引用</strong>：我们常常 new 出来的对象就是强引用类型，只要强引用存在，垃圾回收器将永远不会回收被引用的对象，哪怕内存不足的时候</li>
+<li><strong>软引用</strong>：使用 SoftReference 修饰的对象被称为软引用，软引用指向的对象在内存要溢出的时候被回收</li>
+<li><strong>弱引用</strong>：使用 WeakReference 修饰的对象被称为弱引用，只要发生垃圾回收，若这个对象只被弱引用指向，那么就会被回收</li>
+<li><strong>虚引用</strong>：虚引用是最弱的引用关系，可以用PhantomReference来描述，他必须和ReferenceQueue一起使用，同样的当发生GC的时候，虚引用也会被回收。可以用虚引用来管理堆外内存。虚引用中唯一的作用就是用队列接收对象即将死亡的通知</li>
+</ul>
+<p>接着再来看下代码，我们使用反射的方式来看看<code class="notranslate">GC</code>后<code class="notranslate">ThreadLocal</code>中的数据情况：(下面代码来源自：<a href="https://blog.csdn.net/thewindkee/article/details/103726942" rel="nofollow">https://blog.csdn.net/thewindkee/article/details/103726942</a> 本地运行演示 GC 回收场景)</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">ThreadLocalDemo</span> {
+
+    <span class="pl-k">public</span> <span class="pl-k">static</span> <span class="pl-smi">void</span> <span class="pl-en">main</span>(<span class="pl-smi">String</span>[] <span class="pl-s1">args</span>) <span class="pl-k">throws</span> <span class="pl-smi">NoSuchFieldException</span>, <span class="pl-smi">IllegalAccessException</span>, <span class="pl-smi">InterruptedException</span> {
+        <span class="pl-smi">Thread</span> <span class="pl-s1">t</span> = <span class="pl-k">new</span> <span class="pl-smi">Thread</span>(()-&gt;<span class="pl-en">test</span>(<span class="pl-s">"abc"</span>,<span class="pl-c1">false</span>));
+        <span class="pl-s1">t</span>.<span class="pl-en">start</span>();
+        <span class="pl-s1">t</span>.<span class="pl-en">join</span>();
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"--gc后--"</span>);
+        <span class="pl-smi">Thread</span> <span class="pl-s1">t2</span> = <span class="pl-k">new</span> <span class="pl-smi">Thread</span>(() -&gt; <span class="pl-en">test</span>(<span class="pl-s">"def"</span>, <span class="pl-c1">true</span>));
+        <span class="pl-s1">t2</span>.<span class="pl-en">start</span>();
+        <span class="pl-s1">t2</span>.<span class="pl-en">join</span>();
+    }
+
+    <span class="pl-k">private</span> <span class="pl-k">static</span> <span class="pl-smi">void</span> <span class="pl-en">test</span>(<span class="pl-smi">String</span> <span class="pl-s1">s</span>,<span class="pl-smi">boolean</span> <span class="pl-s1">isGC</span>)  {
+        <span class="pl-k">try</span> {
+            <span class="pl-k">new</span> <span class="pl-smi">ThreadLocal</span>&lt;&gt;().<span class="pl-en">set</span>(<span class="pl-s1">s</span>);
+            <span class="pl-k">if</span> (<span class="pl-s1">isGC</span>) {
+                <span class="pl-smi">System</span>.<span class="pl-en">gc</span>();
+            }
+            <span class="pl-smi">Thread</span> <span class="pl-s1">t</span> = <span class="pl-smi">Thread</span>.<span class="pl-en">currentThread</span>();
+            <span class="pl-smi">Class</span>&lt;? <span class="pl-k">extends</span> <span class="pl-smi">Thread</span>&gt; <span class="pl-s1">clz</span> = <span class="pl-s1">t</span>.<span class="pl-en">getClass</span>();
+            <span class="pl-smi">Field</span> <span class="pl-s1">field</span> = <span class="pl-s1">clz</span>.<span class="pl-en">getDeclaredField</span>(<span class="pl-s">"threadLocals"</span>);
+            <span class="pl-s1">field</span>.<span class="pl-en">setAccessible</span>(<span class="pl-c1">true</span>);
+            <span class="pl-smi">Object</span> <span class="pl-s1">ThreadLocalMap</span> = <span class="pl-s1">field</span>.<span class="pl-en">get</span>(<span class="pl-s1">t</span>);
+            <span class="pl-smi">Class</span>&lt;?&gt; <span class="pl-s1">tlmClass</span> = <span class="pl-smi">ThreadLocalMap</span>.<span class="pl-en">getClass</span>();
+            <span class="pl-smi">Field</span> <span class="pl-s1">tableField</span> = <span class="pl-s1">tlmClass</span>.<span class="pl-en">getDeclaredField</span>(<span class="pl-s">"table"</span>);
+            <span class="pl-s1">tableField</span>.<span class="pl-en">setAccessible</span>(<span class="pl-c1">true</span>);
+            <span class="pl-smi">Object</span>[] <span class="pl-s1">arr</span> = (<span class="pl-smi">Object</span>[]) <span class="pl-s1">tableField</span>.<span class="pl-en">get</span>(<span class="pl-s1">ThreadLocalMap</span>);
+            <span class="pl-k">for</span> (<span class="pl-smi">Object</span> <span class="pl-s1">o</span> : <span class="pl-s1">arr</span>) {
+                <span class="pl-k">if</span> (<span class="pl-s1">o</span> != <span class="pl-c1">null</span>) {
+                    <span class="pl-smi">Class</span>&lt;?&gt; <span class="pl-s1">entryClass</span> = <span class="pl-s1">o</span>.<span class="pl-en">getClass</span>();
+                    <span class="pl-smi">Field</span> <span class="pl-s1">valueField</span> = <span class="pl-s1">entryClass</span>.<span class="pl-en">getDeclaredField</span>(<span class="pl-s">"value"</span>);
+                    <span class="pl-smi">Field</span> <span class="pl-s1">referenceField</span> = <span class="pl-s1">entryClass</span>.<span class="pl-en">getSuperclass</span>().<span class="pl-en">getSuperclass</span>().<span class="pl-en">getDeclaredField</span>(<span class="pl-s">"referent"</span>);
+                    <span class="pl-s1">valueField</span>.<span class="pl-en">setAccessible</span>(<span class="pl-c1">true</span>);
+                    <span class="pl-s1">referenceField</span>.<span class="pl-en">setAccessible</span>(<span class="pl-c1">true</span>);
+                    <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-smi">String</span>.<span class="pl-en">format</span>(<span class="pl-s">"弱引用key:%s,值:%s"</span>, <span class="pl-s1">referenceField</span>.<span class="pl-en">get</span>(<span class="pl-s1">o</span>), <span class="pl-s1">valueField</span>.<span class="pl-en">get</span>(<span class="pl-s1">o</span>)));
+                }
+            }
+        } <span class="pl-k">catch</span> (<span class="pl-smi">Exception</span> <span class="pl-s1">e</span>) {
+            <span class="pl-s1">e</span>.<span class="pl-en">printStackTrace</span>();
+        }
+    }
+}</pre></div>
+<p>结果如下：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-s1">弱引用key</span>:<span class="pl-smi">java</span>.<span class="pl-smi">lang</span>.<span class="pl-smi">ThreadLocal</span><span class="pl-c1">@</span><span class="pl-c1">433619</span><span class="pl-c1">b6</span>,<span class="pl-s1">值</span>:<span class="pl-smi">abc</span>
+<span class="pl-s1">弱引用key</span>:<span class="pl-smi">java</span>.<span class="pl-smi">lang</span>.<span class="pl-smi">ThreadLocal</span><span class="pl-c1">@</span><span class="pl-c1">418</span><span class="pl-c1">a15e3</span>,<span class="pl-s1">值</span>:<span class="pl-smi">java</span>.<span class="pl-smi">lang</span>.<span class="pl-smi">ref</span>.<span class="pl-smi">SoftReference</span><span class="pl-c1">@</span><span class="pl-c1">bf97a12</span>
+--<span class="pl-s1">gc后</span>--
+<span class="pl-s1">弱引用key</span>:<span class="pl-c1">null</span>,<span class="pl-s1">值</span>:<span class="pl-s1">def</span></pre></div>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/3-82bffba213924d42bd29abc773a699d1.png"><img src="/upload/2021/10/3-82bffba213924d42bd29abc773a699d1.png" alt="3.png" style="max-width: 100%;"></a></p>
+<p>如图所示，因为这里创建的<code class="notranslate">ThreadLocal</code>并没有指向任何值，也就是没有任何引用：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">new</span> <span class="pl-smi">ThreadLocal</span>&lt;&gt;().<span class="pl-en">set</span>(<span class="pl-s1">s</span>);</pre></div>
+<p>所以这里在<code class="notranslate">GC</code>之后，<code class="notranslate">key</code>就会被回收，我们看到上面<code class="notranslate">debug</code>中的<code class="notranslate">referent=null</code>, 如果<strong>改动一下代码：</strong></p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/4-2f6d816f1c9b4e9f9abe1e4a17be748c.png"><img src="/upload/2021/10/4-2f6d816f1c9b4e9f9abe1e4a17be748c.png" alt="4.png" style="max-width: 100%;"></a></p>
+<p>这个问题刚开始看，如果没有过多思考，<strong>弱引用</strong>，还有<strong>垃圾回收</strong>，那么肯定会觉得是<code class="notranslate">null</code>。</p>
+<p>其实是不对的，因为题目说的是在做 <code class="notranslate">ThreadLocal.get()</code> 操作，证明其实还是有<strong>强引用</strong>存在的，所以 <code class="notranslate">key</code> 并不为 <code class="notranslate">null</code>，如下图所示，<code class="notranslate">ThreadLocal</code>的<strong>强引用</strong>仍然是存在的。</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/5-fa5e255390044335ae30c22dd0d8d792.png"><img src="/upload/2021/10/5-fa5e255390044335ae30c22dd0d8d792.png" alt="5.png" style="max-width: 100%;"></a></p>
+<p>如果我们的<strong>强引用</strong>不存在的话，那么 <code class="notranslate">key</code> 就会被回收，也就是会出现我们 <code class="notranslate">value</code> 没被回收，<code class="notranslate">key</code> 被回收，导致 <code class="notranslate">value</code> 永远存在，出现内存泄漏。</p>
+<h3><code class="notranslate">ThreadLocal.set()</code>方法源码详解</h3>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/6-3ead29ee1af44032953fdcb8512d3e5a.png"><img src="/upload/2021/10/6-3ead29ee1af44032953fdcb8512d3e5a.png" alt="6.png" style="max-width: 100%;"></a></p>
+<p><code class="notranslate">ThreadLocal</code>中的<code class="notranslate">set</code>方法原理如上图所示，很简单，主要是判断<code class="notranslate">ThreadLocalMap</code>是否存在，然后使用<code class="notranslate">ThreadLocal</code>中的<code class="notranslate">set</code>方法进行数据处理。</p>
+<p>代码如下：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">set</span>(<span class="pl-smi">T</span> <span class="pl-s1">value</span>) {
+    <span class="pl-smi">Thread</span> <span class="pl-s1">t</span> = <span class="pl-smi">Thread</span>.<span class="pl-en">currentThread</span>();
+    <span class="pl-smi">ThreadLocalMap</span> <span class="pl-s1">map</span> = <span class="pl-en">getMap</span>(<span class="pl-s1">t</span>);
+    <span class="pl-k">if</span> (<span class="pl-s1">map</span> != <span class="pl-c1">null</span>)
+        <span class="pl-s1">map</span>.<span class="pl-en">set</span>(<span class="pl-smi">this</span>, <span class="pl-s1">value</span>);
+    <span class="pl-k">else</span>
+        <span class="pl-en">createMap</span>(<span class="pl-s1">t</span>, <span class="pl-s1">value</span>);
+}
+
+<span class="pl-smi">void</span> <span class="pl-en">createMap</span>(<span class="pl-smi">Thread</span> <span class="pl-s1">t</span>, <span class="pl-smi">T</span> <span class="pl-s1">firstValue</span>) {
+    <span class="pl-s1">t</span>.<span class="pl-s1">threadLocals</span> = <span class="pl-k">new</span> <span class="pl-smi">ThreadLocalMap</span>(<span class="pl-smi">this</span>, <span class="pl-s1">firstValue</span>);
+}</pre></div>
+<p>主要的核心逻辑还是在<code class="notranslate">ThreadLocalMap</code>中的，一步步往下看，后面还有更详细的剖析。</p>
+<h3><code class="notranslate">ThreadLocalMap</code> Hash 算法</h3>
+<p>既然是<code class="notranslate">Map</code>结构，那么<code class="notranslate">ThreadLocalMap</code>当然也要实现自己的<code class="notranslate">hash</code>算法来解决散列表数组冲突问题。</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-smi">int</span> <span class="pl-s1">i</span> = <span class="pl-s1">key</span>.<span class="pl-s1">threadLocalHashCode</span> &amp; (<span class="pl-s1">len</span>-<span class="pl-c1">1</span>);</pre></div>
+<p><code class="notranslate">ThreadLocalMap</code>中<code class="notranslate">hash</code>算法很简单，这里<code class="notranslate">i</code>就是当前 key 在散列表中对应的数组下标位置。</p>
+<p>这里最关键的就是<code class="notranslate">threadLocalHashCode</code>值的计算，<code class="notranslate">ThreadLocal</code>中有一个属性为<code class="notranslate">HASH_INCREMENT = 0x61c88647</code></p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">ThreadLocal</span>&lt;<span class="pl-smi">T</span>&gt; {
+    <span class="pl-k">private</span> <span class="pl-k">final</span> <span class="pl-smi">int</span> <span class="pl-s1">threadLocalHashCode</span> = <span class="pl-en">nextHashCode</span>();
+
+    <span class="pl-k">private</span> <span class="pl-k">static</span> <span class="pl-smi">AtomicInteger</span> <span class="pl-s1">nextHashCode</span> = <span class="pl-k">new</span> <span class="pl-smi">AtomicInteger</span>();
+
+    <span class="pl-k">private</span> <span class="pl-k">static</span> <span class="pl-k">final</span> <span class="pl-smi">int</span> <span class="pl-c1">HASH_INCREMENT</span> = <span class="pl-c1">0x61c88647</span>;
+
+    <span class="pl-k">private</span> <span class="pl-k">static</span> <span class="pl-smi">int</span> <span class="pl-en">nextHashCode</span>() {
+        <span class="pl-k">return</span> <span class="pl-s1">nextHashCode</span>.<span class="pl-en">getAndAdd</span>(<span class="pl-c1">HASH_INCREMENT</span>);
+    }
+
+    <span class="pl-k">static</span> <span class="pl-k">class</span> <span class="pl-smi">ThreadLocalMap</span> {
+        <span class="pl-smi">ThreadLocalMap</span>(<span class="pl-smi">ThreadLocal</span>&lt;?&gt; <span class="pl-s1">firstKey</span>, <span class="pl-smi">Object</span> <span class="pl-s1">firstValue</span>) {
+            <span class="pl-s1">table</span> = <span class="pl-k">new</span> <span class="pl-smi">Entry</span>[<span class="pl-c1">INITIAL_CAPACITY</span>];
+            <span class="pl-smi">int</span> <span class="pl-s1">i</span> = <span class="pl-s1">firstKey</span>.<span class="pl-s1">threadLocalHashCode</span> &amp; (<span class="pl-c1">INITIAL_CAPACITY</span> - <span class="pl-c1">1</span>);
+
+            <span class="pl-s1">table</span>[<span class="pl-s1">i</span>] = <span class="pl-k">new</span> <span class="pl-smi">Entry</span>(<span class="pl-s1">firstKey</span>, <span class="pl-s1">firstValue</span>);
+            <span class="pl-s1">size</span> = <span class="pl-c1">1</span>;
+            <span class="pl-en">setThreshold</span>(<span class="pl-c1">INITIAL_CAPACITY</span>);
+        }
+    }
+}</pre></div>
+<p>每当创建一个<code class="notranslate">ThreadLocal</code>对象，这个<code class="notranslate">ThreadLocal.nextHashCode</code> 这个值就会增长 <code class="notranslate">0x61c88647</code> 。</p>
+<p>这个值很特殊，它是<strong>斐波那契数</strong> 也叫 <strong>黄金分割数</strong>。<code class="notranslate">hash</code>增量为 这个数字，带来的好处就是 <code class="notranslate">hash</code> <strong>分布非常均匀</strong>。</p>
+<p>我们自己可以尝试下：</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/8-92d6046f8f2e447f9859f644969e1457.png"><img src="/upload/2021/10/8-92d6046f8f2e447f9859f644969e1457.png" alt="8.png" style="max-width: 100%;"></a></p>
+<p>可以看到产生的哈希码分布很均匀，这里不去细纠<strong>斐波那契</strong>具体算法，感兴趣的可以自行查阅相关资料。</p>
+<h3><code class="notranslate">ThreadLocalMap</code> Hash 冲突</h3>
+<blockquote>
+<p><strong>注明：</strong> 下面所有示例图中，<strong>绿色块</strong><code class="notranslate">Entry</code>代表<strong>正常数据</strong>，<strong>灰色块</strong>代表<code class="notranslate">Entry</code>的<code class="notranslate">key</code>值为<code class="notranslate">null</code>，<strong>已被垃圾回收</strong>。<strong>白色块</strong>表示<code class="notranslate">Entry</code>为<code class="notranslate">null</code>。</p>
+</blockquote>
+<p>虽然<code class="notranslate">ThreadLocalMap</code>中使用了<strong>黄金分割数</strong>来作为<code class="notranslate">hash</code>计算因子，大大减少了<code class="notranslate">Hash</code>冲突的概率，但是仍然会存在冲突。</p>
+<p><code class="notranslate">HashMap</code>中解决冲突的方法是在数组上构造一个<strong>链表</strong>结构，冲突的数据挂载到链表上，如果链表长度超过一定数量则会转化成<strong>红黑树</strong>。</p>
+<p>而 <code class="notranslate">ThreadLocalMap</code> 中并没有链表结构，所以这里不能使用 <code class="notranslate">HashMap</code> 解决冲突的方式了。</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/7-b43e50e51f294626be5535588f26d644.png"><img src="/upload/2021/10/7-b43e50e51f294626be5535588f26d644.png" alt="7.png" style="max-width: 100%;"></a></p>
+<p>如上图所示，如果我们插入一个<code class="notranslate">value=27</code>的数据，通过 <code class="notranslate">hash</code> 计算后应该落入槽位 4 中，而槽位 4 已经有了 <code class="notranslate">Entry</code> 数据。</p>
+<p>此时就会线性向后查找，一直找到 <code class="notranslate">Entry</code> 为 <code class="notranslate">null</code> 的槽位才会停止查找，将当前元素放入此槽位中。当然迭代过程中还有其他的情况，比如遇到了 <code class="notranslate">Entry</code> 不为 <code class="notranslate">null</code> 且 <code class="notranslate">key</code> 值相等的情况，还有 <code class="notranslate">Entry</code> 中的 <code class="notranslate">key</code> 值为 <code class="notranslate">null</code> 的情况等等都会有不同的处理，后面会一一详细讲解。</p>
+<p>这里还画了一个<code class="notranslate">Entry</code>中的<code class="notranslate">key</code>为<code class="notranslate">null</code>的数据（<strong>Entry=2 的灰色块数据</strong>），因为<code class="notranslate">key</code>值是<strong>弱引用</strong>类型，所以会有这种数据存在。在<code class="notranslate">set</code>过程中，如果遇到了<code class="notranslate">key</code>过期的<code class="notranslate">Entry</code>数据，实际上是会进行一轮<strong>探测式清理</strong>操作的，具体操作方式后面会讲到。</p>
+<h3><code class="notranslate">ThreadLocalMap.set()</code>详解</h3>
+<h4><code class="notranslate">ThreadLocalMap.set()</code>原理图解</h4>
+<p>看完了<code class="notranslate">ThreadLocal</code> <strong>hash 算法</strong>后，我们再来看<code class="notranslate">set</code>是如何实现的。</p>
+<p>往<code class="notranslate">ThreadLocalMap</code>中<code class="notranslate">set</code>数据（<strong>新增</strong>或者<strong>更新</strong>数据）分为好几种情况，针对不同的情况我们画图来说明。</p>
+<p><strong>第一种情况：</strong> 通过<code class="notranslate">hash</code>计算后的槽位对应的<code class="notranslate">Entry</code>数据为空：</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/9-111a1af39a9f4e13822739bd5b08d4dc.png"><img src="/upload/2021/10/9-111a1af39a9f4e13822739bd5b08d4dc.png" alt="9.png" style="max-width: 100%;"></a></p>
+<p>这里直接将数据放到该槽位即可。</p>
+<p><strong>第二种情况：</strong> 槽位数据不为空，<code class="notranslate">key</code>值与当前<code class="notranslate">ThreadLocal</code>通过<code class="notranslate">hash</code>计算获取的<code class="notranslate">key</code>值一致：</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/10-45b8c2b018634ae68733099ad1344ffb.png"><img src="/upload/2021/10/10-45b8c2b018634ae68733099ad1344ffb.png" alt="10.png" style="max-width: 100%;"></a></p>
+<p>这里直接更新该槽位的数据。</p>
+<p><strong>第三种情况：</strong> 槽位数据不为空，往后遍历过程中，在找到<code class="notranslate">Entry</code>为<code class="notranslate">null</code>的槽位之前，没有遇到<code class="notranslate">key</code>过期的<code class="notranslate">Entry</code>：</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/11-bf2ab2bc8cb64ca38fe0695601896b0f.png"><img src="/upload/2021/10/11-bf2ab2bc8cb64ca38fe0695601896b0f.png" alt="11.png" style="max-width: 100%;"></a></p>
+<p>遍历散列数组，线性往后查找，如果找到<code class="notranslate">Entry</code>为<code class="notranslate">null</code>的槽位，则将数据放入该槽位中，或者往后遍历过程中，遇到了<strong>key 值相等</strong>的数据，直接更新即可。</p>
+<p><strong>第四种情况：</strong> 槽位数据不为空，往后遍历过程中，在找到<code class="notranslate">Entry</code>为<code class="notranslate">null</code>的槽位之前，遇到<code class="notranslate">key</code>过期的<code class="notranslate">Entry</code>，如下图，往后遍历过程中，遇到了<code class="notranslate">index=7</code>的槽位数据<code class="notranslate">Entry</code>的<code class="notranslate">key=null</code>：</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/12-5dc559db5fd24da59c1edae87366affb.png"><img src="/upload/2021/10/12-5dc559db5fd24da59c1edae87366affb.png" alt="12.png" style="max-width: 100%;"></a></p>
+<p>散列数组下标为 7 位置对应的<code class="notranslate">Entry</code>数据<code class="notranslate">key</code>为<code class="notranslate">null</code>，表明此数据<code class="notranslate">key</code>值已经被垃圾回收掉了，此时就会执行<code class="notranslate">replaceStaleEntry()</code>方法，该方法含义是<strong>替换过期数据的逻辑</strong>，以<strong>index=7</strong>位起点开始遍历，进行探测式数据清理工作。</p>
+<p>初始化探测式清理过期数据扫描的开始位置：<code class="notranslate">slotToExpunge = staleSlot = 7</code></p>
+<p>以当前<code class="notranslate">staleSlot</code>开始 向前迭代查找，找其他过期的数据，然后更新过期数据起始扫描下标<code class="notranslate">slotToExpunge</code>。<code class="notranslate">for</code>循环迭代，直到碰到<code class="notranslate">Entry</code>为<code class="notranslate">null</code>结束。</p>
+<p>如果找到了过期的数据，继续向前迭代，直到遇到<code class="notranslate">Entry=null</code>的槽位才停止迭代，如下图所示，<strong>slotToExpunge 被更新为 0</strong>：</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/13-4db072a05bbd4c26ac60c86a1e42d18c.png"><img src="/upload/2021/10/13-4db072a05bbd4c26ac60c86a1e42d18c.png" alt="13.png" style="max-width: 100%;"></a><br>
+以当前节点(<code class="notranslate">index=7</code>)向前迭代，检测是否有过期的<code class="notranslate">Entry</code>数据，如果有则更新<code class="notranslate">slotToExpunge</code>值。碰到<code class="notranslate">null</code>则结束探测。以上图为例<code class="notranslate">slotToExpunge</code>被更新为 0。</p>
+<p>上面向前迭代的操作是为了更新探测清理过期数据的起始下标<code class="notranslate">slotToExpunge</code>的值，这个值在后面会讲解，它是用来判断当前过期槽位<code class="notranslate">staleSlot</code>之前是否还有过期元素。</p>
+<p>接着开始以<code class="notranslate">staleSlot</code>位置(<code class="notranslate">index=7</code>)向后迭代，<strong>如果找到了相同 key 值的 Entry 数据：</strong></p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/14-abb019152a9d4473a6980e35c602470b.png"><img src="/upload/2021/10/14-abb019152a9d4473a6980e35c602470b.png" alt="14.png" style="max-width: 100%;"></a></p>
+<p>从当前节点<code class="notranslate">staleSlot</code>向后查找<code class="notranslate">key</code>值相等的<code class="notranslate">Entry</code>元素，找到后更新<code class="notranslate">Entry</code>的值并交换<code class="notranslate">staleSlot</code>元素的位置(<code class="notranslate">staleSlot</code>位置为过期元素)，更新<code class="notranslate">Entry</code>数据，然后开始进行过期<code class="notranslate">Entry</code>的清理工作，如下图所示：</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/view-170f4e09268a41c6b13b24a9732165f7.png"><img src="/upload/2021/10/view-170f4e09268a41c6b13b24a9732165f7.png" alt="view.png" style="max-width: 100%;"></a></p>
+<p>向后遍历过程中，如果没有找到相同 key 值的 Entry 数据：</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/15-13c1d1e79598411c9f9c7711e860a3fc.png"><img src="/upload/2021/10/15-13c1d1e79598411c9f9c7711e860a3fc.png" alt="15.png" style="max-width: 100%;"></a></p>
+<p>从当前节点<code class="notranslate">staleSlot</code>向后查找<code class="notranslate">key</code>值相等的<code class="notranslate">Entry</code>元素，直到<code class="notranslate">Entry</code>为<code class="notranslate">null</code>则停止寻找。通过上图可知，此时<code class="notranslate">table</code>中没有<code class="notranslate">key</code>值相同的<code class="notranslate">Entry</code>。</p>
+<p>创建新的<code class="notranslate">Entry</code>，替换<code class="notranslate">table[stableSlot]</code>位置：</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/16-9f7a4a2065694200b2d7883402360dcc.png"><img src="/upload/2021/10/16-9f7a4a2065694200b2d7883402360dcc.png" alt="16.png" style="max-width: 100%;"></a></p>
+<p>替换完成后也是进行过期元素清理工作，清理工作主要是有两个方法：<code class="notranslate">expungeStaleEntry()</code>和<code class="notranslate">cleanSomeSlots()</code>，具体细节后面会讲到，请继续往后看。</p>
+<h4><code class="notranslate">ThreadLocalMap.set()</code>源码详解</h4>
+<p>上面已经用图的方式解析了<code class="notranslate">set()</code>实现的原理，其实已经很清晰了，我们接着再看下源码：</p>
+<p><code class="notranslate">java.lang.ThreadLocal</code>.<code class="notranslate">ThreadLocalMap.set()</code>:</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">private</span> <span class="pl-smi">void</span> <span class="pl-en">set</span>(<span class="pl-smi">ThreadLocal</span>&lt;?&gt; <span class="pl-s1">key</span>, <span class="pl-smi">Object</span> <span class="pl-s1">value</span>) {
+    <span class="pl-smi">Entry</span>[] <span class="pl-s1">tab</span> = <span class="pl-s1">table</span>;
+    <span class="pl-smi">int</span> <span class="pl-s1">len</span> = <span class="pl-s1">tab</span>.<span class="pl-s1">length</span>;
+    <span class="pl-smi">int</span> <span class="pl-s1">i</span> = <span class="pl-s1">key</span>.<span class="pl-s1">threadLocalHashCode</span> &amp; (<span class="pl-s1">len</span>-<span class="pl-c1">1</span>);
+
+    <span class="pl-k">for</span> (<span class="pl-smi">Entry</span> <span class="pl-s1">e</span> = <span class="pl-s1">tab</span>[<span class="pl-s1">i</span>];
+         <span class="pl-s1">e</span> != <span class="pl-c1">null</span>;
+         <span class="pl-s1">e</span> = <span class="pl-s1">tab</span>[<span class="pl-s1">i</span> = <span class="pl-en">nextIndex</span>(<span class="pl-s1">i</span>, <span class="pl-s1">len</span>)]) {
+        <span class="pl-smi">ThreadLocal</span>&lt;?&gt; <span class="pl-s1">k</span> = <span class="pl-s1">e</span>.<span class="pl-en">get</span>();
+
+        <span class="pl-k">if</span> (<span class="pl-s1">k</span> == <span class="pl-s1">key</span>) {
+            <span class="pl-s1">e</span>.<span class="pl-s1">value</span> = <span class="pl-s1">value</span>;
+            <span class="pl-k">return</span>;
+        }
+
+        <span class="pl-k">if</span> (<span class="pl-s1">k</span> == <span class="pl-c1">null</span>) {
+            <span class="pl-en">replaceStaleEntry</span>(<span class="pl-s1">key</span>, <span class="pl-s1">value</span>, <span class="pl-s1">i</span>);
+            <span class="pl-k">return</span>;
+        }
+    }
+
+    <span class="pl-s1">tab</span>[<span class="pl-s1">i</span>] = <span class="pl-k">new</span> <span class="pl-smi">Entry</span>(<span class="pl-s1">key</span>, <span class="pl-s1">value</span>);
+    <span class="pl-smi">int</span> <span class="pl-s1">sz</span> = ++<span class="pl-s1">size</span>;
+    <span class="pl-k">if</span> (!<span class="pl-en">cleanSomeSlots</span>(<span class="pl-s1">i</span>, <span class="pl-s1">sz</span>) &amp;&amp; <span class="pl-s1">sz</span> &gt;= <span class="pl-s1">threshold</span>)
+        <span class="pl-en">rehash</span>();
+}</pre></div>
+<p>这里会通过<code class="notranslate">key</code>来计算在散列表中的对应位置，然后以当前<code class="notranslate">key</code>对应的桶的位置向后查找，找到可以使用的桶。</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-smi">Entry</span>[] <span class="pl-s1">tab</span> = <span class="pl-s1">table</span>;
+<span class="pl-smi">int</span> <span class="pl-s1">len</span> = <span class="pl-s1">tab</span>.<span class="pl-s1">length</span>;
+<span class="pl-smi">int</span> <span class="pl-s1">i</span> = <span class="pl-s1">key</span>.<span class="pl-s1">threadLocalHashCode</span> &amp; (<span class="pl-s1">len</span>-<span class="pl-c1">1</span>);</pre></div>
+<p>什么情况下桶才是可以使用的呢？</p>
+<ol>
+<li><code class="notranslate">k = key</code> 说明是替换操作，可以使用</li>
+<li>碰到一个过期的桶，执行替换逻辑，占用过期桶</li>
+<li>查找过程中，碰到桶中<code class="notranslate">Entry=null</code>的情况，直接使用</li>
+</ol>
+<p>接着就是执行<code class="notranslate">for</code>循环遍历，向后查找，我们先看下<code class="notranslate">nextIndex()</code>、<code class="notranslate">prevIndex()</code>方法实现：</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/17-d2b28ec6ff114cc5948f6a077dbb2637.png"><img src="/upload/2021/10/17-d2b28ec6ff114cc5948f6a077dbb2637.png" alt="17.png" style="max-width: 100%;"></a></p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">private</span> <span class="pl-k">static</span> <span class="pl-smi">int</span> <span class="pl-en">nextIndex</span>(<span class="pl-smi">int</span> <span class="pl-s1">i</span>, <span class="pl-smi">int</span> <span class="pl-s1">len</span>) {
+    <span class="pl-k">return</span> ((<span class="pl-s1">i</span> + <span class="pl-c1">1</span> &lt; <span class="pl-s1">len</span>) ? <span class="pl-s1">i</span> + <span class="pl-c1">1</span> : <span class="pl-c1">0</span>);
+}
+
+<span class="pl-k">private</span> <span class="pl-k">static</span> <span class="pl-smi">int</span> <span class="pl-en">prevIndex</span>(<span class="pl-smi">int</span> <span class="pl-s1">i</span>, <span class="pl-smi">int</span> <span class="pl-s1">len</span>) {
+    <span class="pl-k">return</span> ((<span class="pl-s1">i</span> - <span class="pl-c1">1</span> &gt;= <span class="pl-c1">0</span>) ? <span class="pl-s1">i</span> - <span class="pl-c1">1</span> : <span class="pl-s1">len</span> - <span class="pl-c1">1</span>);
+}</pre></div>
+<p>接着看剩下<code class="notranslate">for</code>循环中的逻辑：</p>
+<ol>
+<li>遍历当前<code class="notranslate">key</code>值对应的桶中<code class="notranslate">Entry</code>数据为空，这说明散列数组这里没有数据冲突，跳出<code class="notranslate">for</code>循环，直接<code class="notranslate">set</code>数据到对应的桶中</li>
+<li>如果<code class="notranslate">key</code>值对应的桶中<code class="notranslate">Entry</code>数据不为空<br>
+2.1 如果<code class="notranslate">k = key</code>，说明当前<code class="notranslate">set</code>操作是一个替换操作，做替换逻辑，直接返回<br>
+2.2 如果<code class="notranslate">key = null</code>，说明当前桶位置的<code class="notranslate">Entry</code>是过期数据，执行<code class="notranslate">replaceStaleEntry()</code>方法(核心方法)，然后返回</li>
+<li><code class="notranslate">for</code>循环执行完毕，继续往下执行说明向后迭代的过程中遇到了<code class="notranslate">entry</code>为<code class="notranslate">null</code>的情况<br>
+3.1 在<code class="notranslate">Entry</code>为<code class="notranslate">null</code>的桶中创建一个新的<code class="notranslate">Entry</code>对象<br>
+3.2 执行<code class="notranslate">++size</code>操作</li>
+<li>调用<code class="notranslate">cleanSomeSlots()</code>做一次启发式清理工作，清理散列数组中<code class="notranslate">Entry</code>的<code class="notranslate">key</code>过期的数据<br>
+4.1 如果清理工作完成后，未清理到任何数据，且<code class="notranslate">size</code>超过了阈值(数组长度的 2/3)，进行<code class="notranslate">rehash()</code>操作<br>
+4.2 <code class="notranslate">rehash()</code>中会先进行一轮探测式清理，清理过期<code class="notranslate">key</code>，清理完成后如果<strong>size &gt;= threshold - threshold / 4</strong>，就会执行真正的扩容逻辑(扩容逻辑往后看)</li>
+</ol>
+<p>接着重点看下<code class="notranslate">replaceStaleEntry()</code>方法，<code class="notranslate">replaceStaleEntry()</code>方法提供替换过期数据的功能，我们可以对应上面<strong>第四种情况</strong>的原理图来再回顾下，具体代码如下：</p>
+<p><code class="notranslate">java.lang.ThreadLocal.ThreadLocalMap.replaceStaleEntry()</code>:</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">private</span> <span class="pl-smi">void</span> <span class="pl-en">replaceStaleEntry</span>(<span class="pl-smi">ThreadLocal</span>&lt;?&gt; <span class="pl-s1">key</span>, <span class="pl-smi">Object</span> <span class="pl-s1">value</span>,
+                                       <span class="pl-smi">int</span> <span class="pl-s1">staleSlot</span>) {
+    <span class="pl-smi">Entry</span>[] <span class="pl-s1">tab</span> = <span class="pl-s1">table</span>;
+    <span class="pl-smi">int</span> <span class="pl-s1">len</span> = <span class="pl-s1">tab</span>.<span class="pl-s1">length</span>;
+    <span class="pl-smi">Entry</span> <span class="pl-s1">e</span>;
+
+    <span class="pl-smi">int</span> <span class="pl-s1">slotToExpunge</span> = <span class="pl-s1">staleSlot</span>;
+    <span class="pl-k">for</span> (<span class="pl-smi">int</span> <span class="pl-s1">i</span> = <span class="pl-en">prevIndex</span>(<span class="pl-s1">staleSlot</span>, <span class="pl-s1">len</span>);
+         (<span class="pl-s1">e</span> = <span class="pl-s1">tab</span>[<span class="pl-s1">i</span>]) != <span class="pl-c1">null</span>;
+         <span class="pl-s1">i</span> = <span class="pl-en">prevIndex</span>(<span class="pl-s1">i</span>, <span class="pl-s1">len</span>))
+
+        <span class="pl-k">if</span> (<span class="pl-s1">e</span>.<span class="pl-en">get</span>() == <span class="pl-c1">null</span>)
+            <span class="pl-s1">slotToExpunge</span> = <span class="pl-s1">i</span>;
+
+    <span class="pl-k">for</span> (<span class="pl-smi">int</span> <span class="pl-s1">i</span> = <span class="pl-en">nextIndex</span>(<span class="pl-s1">staleSlot</span>, <span class="pl-s1">len</span>);
+         (<span class="pl-s1">e</span> = <span class="pl-s1">tab</span>[<span class="pl-s1">i</span>]) != <span class="pl-c1">null</span>;
+         <span class="pl-s1">i</span> = <span class="pl-en">nextIndex</span>(<span class="pl-s1">i</span>, <span class="pl-s1">len</span>)) {
+
+        <span class="pl-smi">ThreadLocal</span>&lt;?&gt; <span class="pl-s1">k</span> = <span class="pl-s1">e</span>.<span class="pl-en">get</span>();
+
+        <span class="pl-k">if</span> (<span class="pl-s1">k</span> == <span class="pl-s1">key</span>) {
+            <span class="pl-s1">e</span>.<span class="pl-s1">value</span> = <span class="pl-s1">value</span>;
+
+            <span class="pl-s1">tab</span>[<span class="pl-s1">i</span>] = <span class="pl-s1">tab</span>[<span class="pl-s1">staleSlot</span>];
+            <span class="pl-s1">tab</span>[<span class="pl-s1">staleSlot</span>] = <span class="pl-s1">e</span>;
+
+            <span class="pl-k">if</span> (<span class="pl-s1">slotToExpunge</span> == <span class="pl-s1">staleSlot</span>)
+                <span class="pl-s1">slotToExpunge</span> = <span class="pl-s1">i</span>;
+            <span class="pl-en">cleanSomeSlots</span>(<span class="pl-en">expungeStaleEntry</span>(<span class="pl-s1">slotToExpunge</span>), <span class="pl-s1">len</span>);
+            <span class="pl-k">return</span>;
+        }
+
+        <span class="pl-k">if</span> (<span class="pl-s1">k</span> == <span class="pl-c1">null</span> &amp;&amp; <span class="pl-s1">slotToExpunge</span> == <span class="pl-s1">staleSlot</span>)
+            <span class="pl-s1">slotToExpunge</span> = <span class="pl-s1">i</span>;
+    }
+
+    <span class="pl-s1">tab</span>[<span class="pl-s1">staleSlot</span>].<span class="pl-s1">value</span> = <span class="pl-c1">null</span>;
+    <span class="pl-s1">tab</span>[<span class="pl-s1">staleSlot</span>] = <span class="pl-k">new</span> <span class="pl-smi">Entry</span>(<span class="pl-s1">key</span>, <span class="pl-s1">value</span>);
+
+    <span class="pl-k">if</span> (<span class="pl-s1">slotToExpunge</span> != <span class="pl-s1">staleSlot</span>)
+        <span class="pl-en">cleanSomeSlots</span>(<span class="pl-en">expungeStaleEntry</span>(<span class="pl-s1">slotToExpunge</span>), <span class="pl-s1">len</span>);
+}</pre></div>
+<p><code class="notranslate">slotToExpunge</code>表示开始探测式清理过期数据的开始下标，默认从当前的<code class="notranslate">staleSlot</code>开始。以当前的<code class="notranslate">staleSlot</code>开始，向前迭代查找，找到没有过期的数据，<code class="notranslate">for</code>循环一直碰到<code class="notranslate">Entry</code>为<code class="notranslate">null</code>才会结束。如果向前找到了过期数据，更新探测清理过期数据的开始下标为 i，即<code class="notranslate">slotToExpunge=i</code></p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">for</span> (<span class="pl-smi">int</span> <span class="pl-s1">i</span> = <span class="pl-en">prevIndex</span>(<span class="pl-s1">staleSlot</span>, <span class="pl-s1">len</span>);
+     (<span class="pl-s1">e</span> = <span class="pl-s1">tab</span>[<span class="pl-s1">i</span>]) != <span class="pl-c1">null</span>;
+     <span class="pl-s1">i</span> = <span class="pl-en">prevIndex</span>(<span class="pl-s1">i</span>, <span class="pl-s1">len</span>)){
+
+    <span class="pl-k">if</span> (<span class="pl-s1">e</span>.<span class="pl-en">get</span>() == <span class="pl-c1">null</span>){
+        <span class="pl-s1">slotToExpunge</span> = <span class="pl-s1">i</span>;
+    }
+}</pre></div>
+<p>接着开始从<code class="notranslate">staleSlot</code>向后查找，也是碰到<code class="notranslate">Entry</code>为<code class="notranslate">null</code>的桶结束。<br>
+如果迭代过程中，<strong>碰到 k == key</strong>，这说明这里是替换逻辑，替换新数据并且交换当前<code class="notranslate">staleSlot</code>位置。如果<code class="notranslate">slotToExpunge == staleSlot</code>，这说明<code class="notranslate">replaceStaleEntry()</code>一开始向前查找过期数据时并未找到过期的<code class="notranslate">Entry</code>数据，接着向后查找过程中也未发现过期数据，修改开始探测式清理过期数据的下标为当前循环的 index，即<code class="notranslate">slotToExpunge = i</code>。最后调用<code class="notranslate">cleanSomeSlots(expungeStaleEntry(slotToExpunge), len);</code>进行启发式过期数据清理。</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">if</span> (<span class="pl-s1">k</span> == <span class="pl-s1">key</span>) {
+    <span class="pl-s1">e</span>.<span class="pl-s1">value</span> = <span class="pl-s1">value</span>;
+
+    <span class="pl-s1">tab</span>[<span class="pl-s1">i</span>] = <span class="pl-s1">tab</span>[<span class="pl-s1">staleSlot</span>];
+    <span class="pl-s1">tab</span>[<span class="pl-s1">staleSlot</span>] = <span class="pl-s1">e</span>;
+
+    <span class="pl-k">if</span> (<span class="pl-s1">slotToExpunge</span> == <span class="pl-s1">staleSlot</span>)
+        <span class="pl-s1">slotToExpunge</span> = <span class="pl-s1">i</span>;
+
+    <span class="pl-en">cleanSomeSlots</span>(<span class="pl-en">expungeStaleEntry</span>(<span class="pl-s1">slotToExpunge</span>), <span class="pl-s1">len</span>);
+    <span class="pl-k">return</span>;
+}</pre></div>
+<p><code class="notranslate">cleanSomeSlots()</code>和<code class="notranslate">expungeStaleEntry()</code>方法后面都会细讲，这两个是和清理相关的方法，一个是过期<code class="notranslate">key</code>相关<code class="notranslate">Entry</code>的启发式清理(<code class="notranslate">Heuristically scan</code>)，另一个是过期<code class="notranslate">key</code>相关<code class="notranslate">Entry</code>的探测式清理。</p>
+<p><strong>如果 k != key</strong>则会接着往下走，<code class="notranslate">k == null</code>说明当前遍历的<code class="notranslate">Entry</code>是一个过期数据，<code class="notranslate">slotToExpunge == staleSlot</code>说明，一开始的向前查找数据并未找到过期的<code class="notranslate">Entry</code>。如果条件成立，则更新<code class="notranslate">slotToExpunge</code> 为当前位置，这个前提是前驱节点扫描时未发现过期数据。</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">if</span> (<span class="pl-s1">k</span> == <span class="pl-c1">null</span> &amp;&amp; <span class="pl-s1">slotToExpunge</span> == <span class="pl-s1">staleSlot</span>)
+    <span class="pl-s1">slotToExpunge</span> = <span class="pl-s1">i</span>;</pre></div>
+<p>往后迭代的过程中如果没有找到<code class="notranslate">k == key</code>的数据，且碰到<code class="notranslate">Entry</code>为<code class="notranslate">null</code>的数据，则结束当前的迭代操作。此时说明这里是一个添加的逻辑，将新的数据添加到<code class="notranslate">table[staleSlot]</code> 对应的<code class="notranslate">slot</code>中。</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-s1">tab</span>[<span class="pl-s1">staleSlot</span>].<span class="pl-s1">value</span> = <span class="pl-c1">null</span>;
+<span class="pl-s1">tab</span>[<span class="pl-s1">staleSlot</span>] = <span class="pl-k">new</span> <span class="pl-smi">Entry</span>(<span class="pl-s1">key</span>, <span class="pl-s1">value</span>);</pre></div>
+<p>最后判断除了<code class="notranslate">staleSlot</code>以外，还发现了其他过期的<code class="notranslate">slot</code>数据，就要开启清理数据的逻辑：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">if</span> (<span class="pl-s1">slotToExpunge</span> != <span class="pl-s1">staleSlot</span>)
+    <span class="pl-en">cleanSomeSlots</span>(<span class="pl-en">expungeStaleEntry</span>(<span class="pl-s1">slotToExpunge</span>), <span class="pl-s1">len</span>);</pre></div>
+<h3><code class="notranslate">ThreadLocalMap</code>过期 key 的探测式清理流程</h3>
+<p>上面我们有提及<code class="notranslate">ThreadLocalMap</code>的两种过期<code class="notranslate">key</code>数据清理方式：<strong>探测式清理</strong>和<strong>启发式清理</strong>。</p>
+<p>我们先讲下探测式清理，也就是<code class="notranslate">expungeStaleEntry</code>方法，遍历散列数组，从开始位置向后探测清理过期数据，将过期数据的<code class="notranslate">Entry</code>设置为<code class="notranslate">null</code>，沿途中碰到未过期的数据则将此数据<code class="notranslate">rehash</code>后重新在<code class="notranslate">table</code>数组中定位，如果定位的位置已经有了数据，则会将未过期的数据放到最靠近此位置的<code class="notranslate">Entry=null</code>的桶中，使<code class="notranslate">rehash</code>后的<code class="notranslate">Entry</code>数据距离正确的桶的位置更近一些。操作逻辑如下：</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/18-25d7b0f5fcef4299a15acba69b3b3242.png"><img src="/upload/2021/10/18-25d7b0f5fcef4299a15acba69b3b3242.png" alt="18.png" style="max-width: 100%;"></a><br>
+如上图，<code class="notranslate">set(27)</code> 经过 hash 计算后应该落到<code class="notranslate">index=4</code>的桶中，由于<code class="notranslate">index=4</code>桶已经有了数据，所以往后迭代最终数据放入到<code class="notranslate">index=7</code>的桶中，放入后一段时间后<code class="notranslate">index=5</code>中的<code class="notranslate">Entry</code>数据<code class="notranslate">key</code>变为了<code class="notranslate">null</code></p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/19-c9bcba06d3f944749a233a5487f7df2f.png"><img src="/upload/2021/10/19-c9bcba06d3f944749a233a5487f7df2f.png" alt="19.png" style="max-width: 100%;"></a></p>
+<p>如果再有其他数据<code class="notranslate">set</code>到<code class="notranslate">map</code>中，就会触发<strong>探测式清理</strong>操作。</p>
+<p>如上图，执行<strong>探测式清理</strong>后，<code class="notranslate">index=5</code>的数据被清理掉，继续往后迭代，到<code class="notranslate">index=7</code>的元素时，经过<code class="notranslate">rehash</code>后发现该元素正确的<code class="notranslate">index=4</code>，而此位置已经有了数据，往后查找离<code class="notranslate">index=4</code>最近的<code class="notranslate">Entry=null</code>的节点(刚被探测式清理掉的数据：<code class="notranslate">index=5</code>)，找到后移动<code class="notranslate">index= 7</code>的数据到<code class="notranslate">index=5</code>中，此时桶的位置离正确的位置<code class="notranslate">index=4</code>更近了。</p>
+<p>经过一轮探测式清理后，<code class="notranslate">key</code>过期的数据会被清理掉，没过期的数据经过<code class="notranslate">rehash</code>重定位后所处的桶位置理论上更接近<code class="notranslate">i= key.hashCode &amp; (tab.len - 1)</code>的位置。这种优化会提高整个散列表查询性能。</p>
+<p>接着看下<code class="notranslate">expungeStaleEntry()</code>具体流程，我们还是以先原理图后源码讲解的方式来一步步梳理：</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/20-afd3ad2e21cb4d5c9067e68250fd17ff.png"><img src="/upload/2021/10/20-afd3ad2e21cb4d5c9067e68250fd17ff.png" alt="20.png" style="max-width: 100%;"></a></p>
+<p>我们假设<code class="notranslate">expungeStaleEntry(3)</code> 来调用此方法，如上图所示，我们可以看到<code class="notranslate">ThreadLocalMap</code>中<code class="notranslate">table</code>的数据情况，接着执行清理操作：</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/21-cb0c9e03ce4e4fcab9b5d282085ca13c.png"><img src="/upload/2021/10/21-cb0c9e03ce4e4fcab9b5d282085ca13c.png" alt="21.png" style="max-width: 100%;"></a></p>
+<p>第一步是清空当前<code class="notranslate">staleSlot</code>位置的数据，<code class="notranslate">index=3</code>位置的<code class="notranslate">Entry</code>变成了<code class="notranslate">null</code>。然后接着往后探测：</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/22-1761a21e247644e6ad526d4c1a1c9618.png"><img src="/upload/2021/10/22-1761a21e247644e6ad526d4c1a1c9618.png" alt="22.png" style="max-width: 100%;"></a></p>
+<p>执行完第二步后，index=4 的元素挪到 index=3 的槽位中。</p>
+<p>继续往后迭代检查，碰到正常数据，计算该数据位置是否偏移，如果被偏移，则重新计算<code class="notranslate">slot</code>位置，目的是让正常数据尽可能存放在正确位置或离正确位置更近的位置</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/23-41a0e0e90d3545cb9d4c624eaac4c718.png"><img src="/upload/2021/10/23-41a0e0e90d3545cb9d4c624eaac4c718.png" alt="23.png" style="max-width: 100%;"></a><br>
+在往后迭代的过程中碰到空的槽位，终止探测，这样一轮探测式清理工作就完成了，接着我们继续看看具体<strong>实现源代码</strong>：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">private</span> <span class="pl-smi">int</span> <span class="pl-en">expungeStaleEntry</span>(<span class="pl-smi">int</span> <span class="pl-s1">staleSlot</span>) {
+    <span class="pl-smi">Entry</span>[] <span class="pl-s1">tab</span> = <span class="pl-s1">table</span>;
+    <span class="pl-smi">int</span> <span class="pl-s1">len</span> = <span class="pl-s1">tab</span>.<span class="pl-s1">length</span>;
+
+    <span class="pl-s1">tab</span>[<span class="pl-s1">staleSlot</span>].<span class="pl-s1">value</span> = <span class="pl-c1">null</span>;
+    <span class="pl-s1">tab</span>[<span class="pl-s1">staleSlot</span>] = <span class="pl-c1">null</span>;
+    <span class="pl-s1">size</span>--;
+
+    <span class="pl-smi">Entry</span> <span class="pl-s1">e</span>;
+    <span class="pl-smi">int</span> <span class="pl-s1">i</span>;
+    <span class="pl-k">for</span> (<span class="pl-s1">i</span> = <span class="pl-en">nextIndex</span>(<span class="pl-s1">staleSlot</span>, <span class="pl-s1">len</span>);
+         (<span class="pl-s1">e</span> = <span class="pl-s1">tab</span>[<span class="pl-s1">i</span>]) != <span class="pl-c1">null</span>;
+         <span class="pl-s1">i</span> = <span class="pl-en">nextIndex</span>(<span class="pl-s1">i</span>, <span class="pl-s1">len</span>)) {
+        <span class="pl-smi">ThreadLocal</span>&lt;?&gt; <span class="pl-s1">k</span> = <span class="pl-s1">e</span>.<span class="pl-en">get</span>();
+        <span class="pl-k">if</span> (<span class="pl-s1">k</span> == <span class="pl-c1">null</span>) {
+            <span class="pl-s1">e</span>.<span class="pl-s1">value</span> = <span class="pl-c1">null</span>;
+            <span class="pl-s1">tab</span>[<span class="pl-s1">i</span>] = <span class="pl-c1">null</span>;
+            <span class="pl-s1">size</span>--;
+        } <span class="pl-k">else</span> {
+            <span class="pl-smi">int</span> <span class="pl-s1">h</span> = <span class="pl-s1">k</span>.<span class="pl-s1">threadLocalHashCode</span> &amp; (<span class="pl-s1">len</span> - <span class="pl-c1">1</span>);
+            <span class="pl-k">if</span> (<span class="pl-s1">h</span> != <span class="pl-s1">i</span>) {
+                <span class="pl-s1">tab</span>[<span class="pl-s1">i</span>] = <span class="pl-c1">null</span>;
+
+                <span class="pl-k">while</span> (<span class="pl-s1">tab</span>[<span class="pl-s1">h</span>] != <span class="pl-c1">null</span>)
+                    <span class="pl-s1">h</span> = <span class="pl-en">nextIndex</span>(<span class="pl-s1">h</span>, <span class="pl-s1">len</span>);
+                <span class="pl-s1">tab</span>[<span class="pl-s1">h</span>] = <span class="pl-s1">e</span>;
+            }
+        }
+    }
+    <span class="pl-k">return</span> <span class="pl-s1">i</span>;
+}</pre></div>
+<p>这里我们还是以<code class="notranslate">staleSlot=3</code> 来做示例说明，首先是将<code class="notranslate">tab[staleSlot]</code>槽位的数据清空，然后设置<code class="notranslate">size--</code><br>
+接着以<code class="notranslate">staleSlot</code>位置往后迭代，如果遇到<code class="notranslate">k==null</code>的过期数据，也是清空该槽位数据，然后<code class="notranslate">size--</code></p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-smi">ThreadLocal</span>&lt;?&gt; <span class="pl-s1">k</span> = <span class="pl-s1">e</span>.<span class="pl-en">get</span>();
+
+<span class="pl-k">if</span> (<span class="pl-s1">k</span> == <span class="pl-c1">null</span>) {
+    <span class="pl-s1">e</span>.<span class="pl-s1">value</span> = <span class="pl-c1">null</span>;
+    <span class="pl-s1">tab</span>[<span class="pl-s1">i</span>] = <span class="pl-c1">null</span>;
+    <span class="pl-s1">size</span>--;
+}</pre></div>
+<p>如果<code class="notranslate">key</code>没有过期，重新计算当前<code class="notranslate">key</code>的下标位置是不是当前槽位下标位置，如果不是，那么说明产生了<code class="notranslate">hash</code>冲突，此时以新计算出来正确的槽位位置往后迭代，找到最近一个可以存放<code class="notranslate">entry</code>的位置。</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-smi">int</span> <span class="pl-s1">h</span> = <span class="pl-s1">k</span>.<span class="pl-s1">threadLocalHashCode</span> &amp; (<span class="pl-s1">len</span> - <span class="pl-c1">1</span>);
+<span class="pl-k">if</span> (<span class="pl-s1">h</span> != <span class="pl-s1">i</span>) {
+    <span class="pl-s1">tab</span>[<span class="pl-s1">i</span>] = <span class="pl-c1">null</span>;
+
+    <span class="pl-k">while</span> (<span class="pl-s1">tab</span>[<span class="pl-s1">h</span>] != <span class="pl-c1">null</span>)
+        <span class="pl-s1">h</span> = <span class="pl-en">nextIndex</span>(<span class="pl-s1">h</span>, <span class="pl-s1">len</span>);
+
+    <span class="pl-s1">tab</span>[<span class="pl-s1">h</span>] = <span class="pl-s1">e</span>;
+}</pre></div>
+<p>这里是处理正常的产生<code class="notranslate">Hash</code>冲突的数据，经过迭代后，有过<code class="notranslate">Hash</code>冲突数据的<code class="notranslate">Entry</code>位置会更靠近正确位置，这样的话，查询的时候 效率才会更高。</p>
+<h3><code class="notranslate">ThreadLocalMap</code>扩容机制</h3>
+<p>在<code class="notranslate">ThreadLocalMap.set()</code>方法的最后，如果执行完启发式清理工作后，未清理到任何数据，且当前散列数组中<code class="notranslate">Entry</code>的数量已经达到了列表的扩容阈值<code class="notranslate">(len*2/3)</code>，就开始执行<code class="notranslate">rehash()</code>逻辑：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">if</span> (!<span class="pl-en">cleanSomeSlots</span>(<span class="pl-s1">i</span>, <span class="pl-s1">sz</span>) &amp;&amp; <span class="pl-s1">sz</span> &gt;= <span class="pl-s1">threshold</span>)
+    <span class="pl-en">rehash</span>();</pre></div>
+<p>接着看下<code class="notranslate">rehash()</code>具体实现：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">private</span> <span class="pl-smi">void</span> <span class="pl-en">rehash</span>() {
+    <span class="pl-en">expungeStaleEntries</span>();
+
+    <span class="pl-k">if</span> (<span class="pl-s1">size</span> &gt;= <span class="pl-s1">threshold</span> - <span class="pl-s1">threshold</span> / <span class="pl-c1">4</span>)
+        <span class="pl-en">resize</span>();
+}
+
+<span class="pl-k">private</span> <span class="pl-smi">void</span> <span class="pl-en">expungeStaleEntries</span>() {
+    <span class="pl-smi">Entry</span>[] <span class="pl-s1">tab</span> = <span class="pl-s1">table</span>;
+    <span class="pl-smi">int</span> <span class="pl-s1">len</span> = <span class="pl-s1">tab</span>.<span class="pl-s1">length</span>;
+    <span class="pl-k">for</span> (<span class="pl-smi">int</span> <span class="pl-s1">j</span> = <span class="pl-c1">0</span>; <span class="pl-s1">j</span> &lt; <span class="pl-s1">len</span>; <span class="pl-s1">j</span>++) {
+        <span class="pl-smi">Entry</span> <span class="pl-s1">e</span> = <span class="pl-s1">tab</span>[<span class="pl-s1">j</span>];
+        <span class="pl-k">if</span> (<span class="pl-s1">e</span> != <span class="pl-c1">null</span> &amp;&amp; <span class="pl-s1">e</span>.<span class="pl-en">get</span>() == <span class="pl-c1">null</span>)
+            <span class="pl-en">expungeStaleEntry</span>(<span class="pl-s1">j</span>);
+    }
+}</pre></div>
+<p>这里首先是会进行探测式清理工作，从<code class="notranslate">table</code>的起始位置往后清理，上面有分析清理的详细流程。清理完成之后，<code class="notranslate">table</code>中可能有一些<code class="notranslate">key</code>为<code class="notranslate">null</code>的<code class="notranslate">Entry</code>数据被清理掉，所以此时通过判断<code class="notranslate">size &gt;= threshold - threshold / 4</code> 也就是<code class="notranslate">size &gt;= threshold * 3/4</code> 来决定是否扩容。</p>
+<p>我们还记得上面进行<code class="notranslate">rehash()</code>的阈值是<code class="notranslate">size &gt;= threshold</code>，所以当面试官套路我们<code class="notranslate">ThreadLocalMap</code>扩容机制的时候 我们一定要说清楚这两个步骤：</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/24-f0ffd48e22794062b11c09729692c9f2.png"><img src="/upload/2021/10/24-f0ffd48e22794062b11c09729692c9f2.png" alt="24.png" style="max-width: 100%;"></a></p>
+<p>接着看看具体的<code class="notranslate">resize()</code>方法，为了方便演示，我们以<code class="notranslate">oldTab.len=8</code>来举例：</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/25-67fbc76817e348fcb719b5dc07ed392b.png"><img src="/upload/2021/10/25-67fbc76817e348fcb719b5dc07ed392b.png" alt="25.png" style="max-width: 100%;"></a></p>
+<p>扩容后的<code class="notranslate">tab</code>的大小为<code class="notranslate">oldLen * 2</code>，然后遍历老的散列表，重新计算<code class="notranslate">hash</code>位置，然后放到新的<code class="notranslate">tab</code>数组中，如果出现<code class="notranslate">hash</code>冲突则往后寻找最近的<code class="notranslate">entry</code>为<code class="notranslate">null</code>的槽位，遍历完成之后，<code class="notranslate">oldTab</code>中所有的<code class="notranslate">entry</code>数据都已经放入到新的<code class="notranslate">tab</code>中了。重新计算<code class="notranslate">tab</code>下次扩容的<strong>阈值</strong>，具体代码如下：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">private</span> <span class="pl-smi">void</span> <span class="pl-en">resize</span>() {
+    <span class="pl-smi">Entry</span>[] <span class="pl-s1">oldTab</span> = <span class="pl-s1">table</span>;
+    <span class="pl-smi">int</span> <span class="pl-s1">oldLen</span> = <span class="pl-s1">oldTab</span>.<span class="pl-s1">length</span>;
+    <span class="pl-smi">int</span> <span class="pl-s1">newLen</span> = <span class="pl-s1">oldLen</span> * <span class="pl-c1">2</span>;
+    <span class="pl-smi">Entry</span>[] <span class="pl-s1">newTab</span> = <span class="pl-k">new</span> <span class="pl-smi">Entry</span>[<span class="pl-s1">newLen</span>];
+    <span class="pl-smi">int</span> <span class="pl-s1">count</span> = <span class="pl-c1">0</span>;
+
+    <span class="pl-k">for</span> (<span class="pl-smi">int</span> <span class="pl-s1">j</span> = <span class="pl-c1">0</span>; <span class="pl-s1">j</span> &lt; <span class="pl-s1">oldLen</span>; ++<span class="pl-s1">j</span>) {
+        <span class="pl-smi">Entry</span> <span class="pl-s1">e</span> = <span class="pl-s1">oldTab</span>[<span class="pl-s1">j</span>];
+        <span class="pl-k">if</span> (<span class="pl-s1">e</span> != <span class="pl-c1">null</span>) {
+            <span class="pl-smi">ThreadLocal</span>&lt;?&gt; <span class="pl-s1">k</span> = <span class="pl-s1">e</span>.<span class="pl-en">get</span>();
+            <span class="pl-k">if</span> (<span class="pl-s1">k</span> == <span class="pl-c1">null</span>) {
+                <span class="pl-s1">e</span>.<span class="pl-s1">value</span> = <span class="pl-c1">null</span>;
+            } <span class="pl-k">else</span> {
+                <span class="pl-smi">int</span> <span class="pl-s1">h</span> = <span class="pl-s1">k</span>.<span class="pl-s1">threadLocalHashCode</span> &amp; (<span class="pl-s1">newLen</span> - <span class="pl-c1">1</span>);
+                <span class="pl-k">while</span> (<span class="pl-s1">newTab</span>[<span class="pl-s1">h</span>] != <span class="pl-c1">null</span>)
+                    <span class="pl-s1">h</span> = <span class="pl-en">nextIndex</span>(<span class="pl-s1">h</span>, <span class="pl-s1">newLen</span>);
+                <span class="pl-s1">newTab</span>[<span class="pl-s1">h</span>] = <span class="pl-s1">e</span>;
+                <span class="pl-s1">count</span>++;
+            }
+        }
+    }
+
+    <span class="pl-en">setThreshold</span>(<span class="pl-s1">newLen</span>);
+    <span class="pl-s1">size</span> = <span class="pl-s1">count</span>;
+    <span class="pl-s1">table</span> = <span class="pl-s1">newTab</span>;
+}</pre></div>
+<h3><code class="notranslate">ThreadLocalMap.get()</code>详解</h3>
+<p>上面已经看完了<code class="notranslate">set()</code>方法的源码，其中包括<code class="notranslate">set</code>数据、清理数据、优化数据桶的位置等操作，接着看看<code class="notranslate">get()</code>操作的原理。</p>
+<h4><code class="notranslate">ThreadLocalMap.get()</code>图解</h4>
+<p><strong>第一种情况：</strong> 通过查找<code class="notranslate">key</code>值计算出散列表中<code class="notranslate">slot</code>位置，然后该<code class="notranslate">slot</code>位置中的<code class="notranslate">Entry.key</code>和查找的<code class="notranslate">key</code>一致，则直接返回：</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/26-6edd6c54b2d94c7aa5b67aa2c3ca1148.png"><img src="/upload/2021/10/26-6edd6c54b2d94c7aa5b67aa2c3ca1148.png" alt="26.png" style="max-width: 100%;"></a></p>
+<p><strong>第二种情况：</strong> <code class="notranslate">slot</code>位置中的<code class="notranslate">Entry.key</code>和要查找的<code class="notranslate">key</code>不一致：</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/27-609485cd101548429452d2b828937e08.png"><img src="/upload/2021/10/27-609485cd101548429452d2b828937e08.png" alt="27.png" style="max-width: 100%;"></a></p>
+<p>我们以<code class="notranslate">get(ThreadLocal1)</code>为例，通过<code class="notranslate">hash</code>计算后，正确的<code class="notranslate">slot</code>位置应该是 4，而<code class="notranslate">index=4</code>的槽位已经有了数据，且<code class="notranslate">key</code>值不等于<code class="notranslate">ThreadLocal1</code>，所以需要继续往后迭代查找。</p>
+<p>迭代到<code class="notranslate">index=5</code>的数据时，此时<code class="notranslate">Entry.key=null</code>，触发一次探测式数据回收操作，执行<code class="notranslate">expungeStaleEntry()</code>方法，执行完后，<code class="notranslate">index 5,8</code>的数据都会被回收，而<code class="notranslate">index 6,7</code>的数据都会前移，此时继续往后迭代，到<code class="notranslate">index = 6</code>的时候即找到了<code class="notranslate">key</code>值相等的<code class="notranslate">Entry</code>数据，如下图所示：</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/28-f30163edfaf64c36b49e39d01d2ab884.png"><img src="/upload/2021/10/28-f30163edfaf64c36b49e39d01d2ab884.png" alt="28.png" style="max-width: 100%;"></a></p>
+<h4><code class="notranslate">ThreadLocalMap.get()</code>源码详解</h4>
+<p><code class="notranslate">java.lang.ThreadLocal.ThreadLocalMap.getEntry()</code>:</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">private</span> <span class="pl-smi">Entry</span> <span class="pl-en">getEntry</span>(<span class="pl-smi">ThreadLocal</span>&lt;?&gt; <span class="pl-s1">key</span>) {
+    <span class="pl-smi">int</span> <span class="pl-s1">i</span> = <span class="pl-s1">key</span>.<span class="pl-s1">threadLocalHashCode</span> &amp; (<span class="pl-s1">table</span>.<span class="pl-s1">length</span> - <span class="pl-c1">1</span>);
+    <span class="pl-smi">Entry</span> <span class="pl-s1">e</span> = <span class="pl-s1">table</span>[<span class="pl-s1">i</span>];
+    <span class="pl-k">if</span> (<span class="pl-s1">e</span> != <span class="pl-c1">null</span> &amp;&amp; <span class="pl-s1">e</span>.<span class="pl-en">get</span>() == <span class="pl-s1">key</span>)
+        <span class="pl-k">return</span> <span class="pl-s1">e</span>;
+    <span class="pl-k">else</span>
+        <span class="pl-k">return</span> <span class="pl-en">getEntryAfterMiss</span>(<span class="pl-s1">key</span>, <span class="pl-s1">i</span>, <span class="pl-s1">e</span>);
+}
+
+<span class="pl-k">private</span> <span class="pl-smi">Entry</span> <span class="pl-en">getEntryAfterMiss</span>(<span class="pl-smi">ThreadLocal</span>&lt;?&gt; <span class="pl-s1">key</span>, <span class="pl-smi">int</span> <span class="pl-s1">i</span>, <span class="pl-smi">Entry</span> <span class="pl-s1">e</span>) {
+    <span class="pl-smi">Entry</span>[] <span class="pl-s1">tab</span> = <span class="pl-s1">table</span>;
+    <span class="pl-smi">int</span> <span class="pl-s1">len</span> = <span class="pl-s1">tab</span>.<span class="pl-s1">length</span>;
+
+    <span class="pl-k">while</span> (<span class="pl-s1">e</span> != <span class="pl-c1">null</span>) {
+        <span class="pl-smi">ThreadLocal</span>&lt;?&gt; <span class="pl-s1">k</span> = <span class="pl-s1">e</span>.<span class="pl-en">get</span>();
+        <span class="pl-k">if</span> (<span class="pl-s1">k</span> == <span class="pl-s1">key</span>)
+            <span class="pl-k">return</span> <span class="pl-s1">e</span>;
+        <span class="pl-k">if</span> (<span class="pl-s1">k</span> == <span class="pl-c1">null</span>)
+            <span class="pl-en">expungeStaleEntry</span>(<span class="pl-s1">i</span>);
+        <span class="pl-k">else</span>
+            <span class="pl-s1">i</span> = <span class="pl-en">nextIndex</span>(<span class="pl-s1">i</span>, <span class="pl-s1">len</span>);
+        <span class="pl-s1">e</span> = <span class="pl-s1">tab</span>[<span class="pl-s1">i</span>];
+    }
+    <span class="pl-k">return</span> <span class="pl-c1">null</span>;
+}</pre></div>
+<h3><code class="notranslate">ThreadLocalMap</code>过期 key 的启发式清理流程</h3>
+<p>上面多次提及到<code class="notranslate">ThreadLocalMap</code>过期key的两种清理方式：<strong>探测式清理(expungeStaleEntry())</strong>、<strong>启发式清理(cleanSomeSlots())</strong></p>
+<p>探测式清理是以当前<code class="notranslate">Entry</code> 往后清理，遇到值为<code class="notranslate">null</code>则结束清理，属于<strong>线性探测清理</strong>。</p>
+<p>而启发式清理被作者定义为：<strong>Heuristically scan some cells looking for stale entries</strong>.</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/29-b6fc5a8527cc4e1e9ba66064aad9b62e.png"><img src="/upload/2021/10/29-b6fc5a8527cc4e1e9ba66064aad9b62e.png" alt="29.png" style="max-width: 100%;"></a></p>
+<p>具体代码如下：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">private</span> <span class="pl-smi">boolean</span> <span class="pl-en">cleanSomeSlots</span>(<span class="pl-smi">int</span> <span class="pl-s1">i</span>, <span class="pl-smi">int</span> <span class="pl-s1">n</span>) {
+    <span class="pl-smi">boolean</span> <span class="pl-s1">removed</span> = <span class="pl-c1">false</span>;
+    <span class="pl-smi">Entry</span>[] <span class="pl-s1">tab</span> = <span class="pl-s1">table</span>;
+    <span class="pl-smi">int</span> <span class="pl-s1">len</span> = <span class="pl-s1">tab</span>.<span class="pl-s1">length</span>;
+    <span class="pl-k">do</span> {
+        <span class="pl-s1">i</span> = <span class="pl-en">nextIndex</span>(<span class="pl-s1">i</span>, <span class="pl-s1">len</span>);
+        <span class="pl-smi">Entry</span> <span class="pl-s1">e</span> = <span class="pl-s1">tab</span>[<span class="pl-s1">i</span>];
+        <span class="pl-k">if</span> (<span class="pl-s1">e</span> != <span class="pl-c1">null</span> &amp;&amp; <span class="pl-s1">e</span>.<span class="pl-en">get</span>() == <span class="pl-c1">null</span>) {
+            <span class="pl-s1">n</span> = <span class="pl-s1">len</span>;
+            <span class="pl-s1">removed</span> = <span class="pl-c1">true</span>;
+            <span class="pl-s1">i</span> = <span class="pl-en">expungeStaleEntry</span>(<span class="pl-s1">i</span>);
+        }
+    } <span class="pl-k">while</span> ( (<span class="pl-s1">n</span> &gt;&gt;&gt;= <span class="pl-c1">1</span>) != <span class="pl-c1">0</span>);
+    <span class="pl-k">return</span> <span class="pl-s1">removed</span>;
+}</pre></div>
+<h3><code class="notranslate">InheritableThreadLocal</code></h3>
+<p>我们使用<code class="notranslate">ThreadLocal</code>的时候，在异步场景下是无法给子线程共享父线程中创建的线程副本数据的。</p>
+<p>为了解决这个问题，JDK 中还有一个<code class="notranslate">InheritableThreadLocal</code>类，我们来看一个例子：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">InheritableThreadLocalDemo</span> {
+    <span class="pl-k">public</span> <span class="pl-k">static</span> <span class="pl-smi">void</span> <span class="pl-en">main</span>(<span class="pl-smi">String</span>[] <span class="pl-s1">args</span>) {
+        <span class="pl-smi">ThreadLocal</span>&lt;<span class="pl-smi">String</span>&gt; <span class="pl-s1">ThreadLocal</span> = <span class="pl-k">new</span> <span class="pl-smi">ThreadLocal</span>&lt;&gt;();
+        <span class="pl-smi">ThreadLocal</span>&lt;<span class="pl-smi">String</span>&gt; <span class="pl-s1">inheritableThreadLocal</span> = <span class="pl-k">new</span> <span class="pl-smi">InheritableThreadLocal</span>&lt;&gt;();
+        <span class="pl-smi">ThreadLocal</span>.<span class="pl-en">set</span>(<span class="pl-s">"父类数据:threadLocal"</span>);
+        <span class="pl-s1">inheritableThreadLocal</span>.<span class="pl-en">set</span>(<span class="pl-s">"父类数据:inheritableThreadLocal"</span>);
+
+        <span class="pl-k">new</span> <span class="pl-smi">Thread</span>(<span class="pl-k">new</span> <span class="pl-smi">Runnable</span>() {
+            <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+            <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">run</span>() {
+                <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"子线程获取父类ThreadLocal数据："</span> + <span class="pl-smi">ThreadLocal</span>.<span class="pl-en">get</span>());
+                <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"子线程获取父类inheritableThreadLocal数据："</span> + <span class="pl-s1">inheritableThreadLocal</span>.<span class="pl-en">get</span>());
+            }
+        }).<span class="pl-en">start</span>();
+    }
+}</pre></div>
+<p>打印结果：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-smi">子线程获取父类ThreadLocal数据</span>：<span class="pl-c1">null</span>
+<span class="pl-s1">子线程获取父类inheritableThreadLocal数据</span>：<span class="pl-s1">父类数据</span>:<span class="pl-s1">inheritableThreadLocal</span></pre></div>
+<p>实现原理是子线程是通过在父线程中通过调用<code class="notranslate">new Thread()</code>方法来创建子线程，<code class="notranslate">Thread#init</code>方法在<code class="notranslate">Thread</code>的构造方法中被调用。在<code class="notranslate">init</code>方法中拷贝父线程数据到子线程中：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">private</span> <span class="pl-smi">void</span> <span class="pl-en">init</span>(<span class="pl-smi">ThreadGroup</span> <span class="pl-s1">g</span>, <span class="pl-smi">Runnable</span> <span class="pl-s1">target</span>, <span class="pl-smi">String</span> <span class="pl-s1">name</span>,
+                      <span class="pl-smi">long</span> <span class="pl-s1">stackSize</span>, <span class="pl-smi">AccessControlContext</span> <span class="pl-s1">acc</span>,
+                      <span class="pl-smi">boolean</span> <span class="pl-s1">inheritThreadLocals</span>) {
+    <span class="pl-k">if</span> (<span class="pl-s1">name</span> == <span class="pl-c1">null</span>) {
+        <span class="pl-k">throw</span> <span class="pl-k">new</span> <span class="pl-smi">NullPointerException</span>(<span class="pl-s">"name cannot be null"</span>);
+    }
+
+    <span class="pl-k">if</span> (<span class="pl-s1">inheritThreadLocals</span> &amp;&amp; <span class="pl-s1">parent</span>.<span class="pl-s1">inheritableThreadLocals</span> != <span class="pl-c1">null</span>)
+        <span class="pl-smi">this</span>.<span class="pl-s1">inheritableThreadLocals</span> =
+            <span class="pl-smi">ThreadLocal</span>.<span class="pl-en">createInheritedMap</span>(<span class="pl-s1">parent</span>.<span class="pl-s1">inheritableThreadLocals</span>);
+    <span class="pl-smi">this</span>.<span class="pl-s1">stackSize</span> = <span class="pl-s1">stackSize</span>;
+    <span class="pl-s1">tid</span> = <span class="pl-en">nextThreadID</span>();
+}</pre></div>
+<p>但<code class="notranslate">InheritableThreadLocal</code>仍然有缺陷，一般我们做异步化处理都是使用的线程池，而<code class="notranslate">InheritableThreadLocal</code>是在<code class="notranslate">new Thread</code>中的<code class="notranslate">init()</code>方法给赋值的，而线程池是线程复用的逻辑，所以这里会存在问题。</p>
+<p>当然，有问题出现就会有解决问题的方案，阿里巴巴开源了一个<code class="notranslate">TransmittableThreadLocal</code>组件就可以解决这个问题，这里就不再延伸，感兴趣的可自行查阅资料。</p>
+<h3><code class="notranslate">ThreadLocal</code>项目中使用实战</h3>
+<h4><code class="notranslate">ThreadLocal</code>使用场景</h4>
+<p>我们现在项目中日志记录用的是<code class="notranslate">ELK+Logstash</code>，最后在<code class="notranslate">Kibana</code>中进行展示和检索。</p>
+<p>现在都是分布式系统统一对外提供服务，项目间调用的关系可以通过 <code class="notranslate">traceId</code> 来关联，但是不同项目之间如何传递 <code class="notranslate">traceId</code> 呢？</p>
+<p>这里我们使用 <code class="notranslate">org.slf4j.MDC</code> 来实现此功能，内部就是通过 <code class="notranslate">ThreadLocal</code> 来实现的，具体实现如下：</p>
+<p>当前端发送请求到<strong>服务 A</strong>时，<strong>服务 A</strong>会生成一个类似<code class="notranslate">UUID</code>的<code class="notranslate">traceId</code>字符串，将此字符串放入当前线程的<code class="notranslate">ThreadLocal</code>中，在调用<strong>服务 B</strong>的时候，将<code class="notranslate">traceId</code>写入到请求的<code class="notranslate">Header</code>中，<strong>服务 B</strong>在接收请求时会先判断请求的<code class="notranslate">Header</code>中是否有<code class="notranslate">traceId</code>，如果存在则写入自己线程的<code class="notranslate">ThreadLocal</code>中。</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/30-2435861c4db84c5699fd4bd25104c606.png"><img src="/upload/2021/10/30-2435861c4db84c5699fd4bd25104c606.png" alt="30.png" style="max-width: 100%;"></a></p>
+<p>图中的<code class="notranslate">requestId</code>即为我们各个系统链路关联的<code class="notranslate">traceId</code>，系统间互相调用，通过这个<code class="notranslate">requestId</code>即可找到对应链路，这里还有会有一些其他场景：</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/10/31-a568311609324f259bf5a9adb016c48a.png"><img src="/upload/2021/10/31-a568311609324f259bf5a9adb016c48a.png" alt="31.png" style="max-width: 100%;"></a></p>
+<p>针对于这些场景，我们都可以有相应的解决方案，如下所示</p>
+<h4>Feign 远程调用解决方案</h4>
+<p><strong>服务发送请求：</strong></p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c1">@</span><span class="pl-c1">Component</span>
+<span class="pl-c1">@</span><span class="pl-c1">Slf4j</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">FeignInvokeInterceptor</span> <span class="pl-k">implements</span> <span class="pl-smi">RequestInterceptor</span> {
+
+    <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">apply</span>(<span class="pl-smi">RequestTemplate</span> <span class="pl-s1">template</span>) {
+        <span class="pl-smi">String</span> <span class="pl-s1">requestId</span> = <span class="pl-c1">MDC</span>.<span class="pl-en">get</span>(<span class="pl-s">"requestId"</span>);
+        <span class="pl-k">if</span> (<span class="pl-smi">StringUtils</span>.<span class="pl-en">isNotBlank</span>(<span class="pl-s1">requestId</span>)) {
+            <span class="pl-s1">template</span>.<span class="pl-en">header</span>(<span class="pl-s">"requestId"</span>, <span class="pl-s1">requestId</span>);
+        }
+    }
+}</pre></div>
+<p><strong>服务接收请求：</strong></p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c1">@</span><span class="pl-c1">Slf4j</span>
+<span class="pl-c1">@</span><span class="pl-c1">Component</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">LogInterceptor</span> <span class="pl-k">extends</span> <span class="pl-smi">HandlerInterceptorAdapter</span> {
+
+    <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">afterCompletion</span>(<span class="pl-smi">HttpServletRequest</span> <span class="pl-s1">arg0</span>, <span class="pl-smi">HttpServletResponse</span> <span class="pl-s1">arg1</span>, <span class="pl-smi">Object</span> <span class="pl-s1">arg2</span>, <span class="pl-smi">Exception</span> <span class="pl-s1">arg3</span>) {
+        <span class="pl-c1">MDC</span>.<span class="pl-en">remove</span>(<span class="pl-s">"requestId"</span>);
+    }
+
+    <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">postHandle</span>(<span class="pl-smi">HttpServletRequest</span> <span class="pl-s1">arg0</span>, <span class="pl-smi">HttpServletResponse</span> <span class="pl-s1">arg1</span>, <span class="pl-smi">Object</span> <span class="pl-s1">arg2</span>, <span class="pl-smi">ModelAndView</span> <span class="pl-s1">arg3</span>) {
+    }
+
+    <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+    <span class="pl-k">public</span> <span class="pl-smi">boolean</span> <span class="pl-en">preHandle</span>(<span class="pl-smi">HttpServletRequest</span> <span class="pl-s1">request</span>, <span class="pl-smi">HttpServletResponse</span> <span class="pl-s1">response</span>, <span class="pl-smi">Object</span> <span class="pl-s1">handler</span>) <span class="pl-k">throws</span> <span class="pl-smi">Exception</span> {
+
+        <span class="pl-smi">String</span> <span class="pl-s1">requestId</span> = <span class="pl-s1">request</span>.<span class="pl-en">getHeader</span>(<span class="pl-smi">BaseConstant</span>.<span class="pl-c1">REQUEST_ID_KEY</span>);
+        <span class="pl-k">if</span> (<span class="pl-smi">StringUtils</span>.<span class="pl-en">isBlank</span>(<span class="pl-s1">requestId</span>)) {
+            <span class="pl-s1">requestId</span> = <span class="pl-c1">UUID</span>.<span class="pl-en">randomUUID</span>().<span class="pl-en">toString</span>().<span class="pl-en">replace</span>(<span class="pl-s">"-"</span>, <span class="pl-s">""</span>);
+        }
+        <span class="pl-c1">MDC</span>.<span class="pl-en">put</span>(<span class="pl-s">"requestId"</span>, <span class="pl-s1">requestId</span>);
+        <span class="pl-k">return</span> <span class="pl-c1">true</span>;
+    }
+}</pre></div>
+<h4>线程池异步调用，requestId 传递</h4>
+<p>因为<code class="notranslate">MDC</code>是基于<code class="notranslate">ThreadLocal</code>去实现的，异步过程中，子线程并没有办法获取到父线程<code class="notranslate">ThreadLocal</code>存储的数据，所以这里可以自定义线程池执行器，修改其中的<code class="notranslate">run()</code>方法：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">MyThreadPoolTaskExecutor</span> <span class="pl-k">extends</span> <span class="pl-smi">ThreadPoolTaskExecutor</span> {
+
+    <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">execute</span>(<span class="pl-smi">Runnable</span> <span class="pl-s1">runnable</span>) {
+        <span class="pl-smi">Map</span>&lt;<span class="pl-smi">String</span>, <span class="pl-smi">String</span>&gt; <span class="pl-s1">context</span> = <span class="pl-c1">MDC</span>.<span class="pl-en">getCopyOfContextMap</span>();
+        <span class="pl-en">super</span>.<span class="pl-en">execute</span>(() -&gt; <span class="pl-en">run</span>(<span class="pl-s1">runnable</span>, <span class="pl-s1">context</span>));
+    }
+
+    <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+    <span class="pl-k">private</span> <span class="pl-smi">void</span> <span class="pl-en">run</span>(<span class="pl-smi">Runnable</span> <span class="pl-s1">runnable</span>, <span class="pl-smi">Map</span>&lt;<span class="pl-smi">String</span>, <span class="pl-smi">String</span>&gt; <span class="pl-s1">context</span>) {
+        <span class="pl-k">if</span> (<span class="pl-s1">context</span> != <span class="pl-c1">null</span>) {
+            <span class="pl-c1">MDC</span>.<span class="pl-en">setContextMap</span>(<span class="pl-s1">context</span>);
+        }
+        <span class="pl-k">try</span> {
+            <span class="pl-s1">runnable</span>.<span class="pl-en">run</span>();
+        } <span class="pl-k">finally</span> {
+            <span class="pl-c1">MDC</span>.<span class="pl-en">remove</span>();
+        }
+    }
+}</pre></div>
+<h4>使用 MQ 发送消息给第三方系统</h4>
+<p>在 MQ 发送的消息体中自定义属性<code class="notranslate">requestId</code>，接收方消费消息后，自己解析<code class="notranslate">requestId</code>使用即可。</p></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+
+</div>
+    <div id="footer"><div id="footer1">Copyright © <span id="copyrightYear"></span> <a href="https://shuaiwang888.github.io/appStore-Blog.github.io">Blog Title</a></div>
+<div id="footer2">
+    <span id="runday"></span><span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>
+</div>
+
+<script>
+var now=new Date();
+document.getElementById("copyrightYear").innerHTML=now.getFullYear();
+
+if(""!=""){
+    var startSite=new Date("");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";
+}
+</script></div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z', 'copy': 'M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z', 'check': 'M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","shuaiwang888/appStore-Blog.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const createClipboardHTML = (codeContent, additionalClasses = '') => `
+        <pre class="notranslate"><code class="notranslate">${codeContent}</code></pre>
+        <div class="clipboard-container position-absolute right-0 top-0 ${additionalClasses}">
+            <clipboard-copy class="ClipboardButton btn m-2 p-0" role="button" style="display: inherit;">
+                <svg height="16" width="16" class="octicon octicon-copy m-2"><path d="${IconList["copy"]}"></path></svg>
+                <svg height="16" width="16" class="octicon octicon-check color-fg-success m-2 d-none"><path d="${IconList["check"]}"></path></svg>
+            </clipboard-copy>
+            <div class="copy-feedback">Copied!</div>
+        </div>
+    `;
+
+    const handleCodeElements = (selector = '') => {
+        document.querySelectorAll(selector).forEach(codeElement => {
+            const codeContent = codeElement.innerHTML;
+            const newStructure = document.createElement('div');
+            newStructure.className = 'snippet-clipboard-content position-relative overflow-auto';
+            newStructure.innerHTML = createClipboardHTML(codeContent);
+
+            const parentElement = codeElement.parentElement;
+            if (selector.includes('highlight')) {
+                parentElement.insertBefore(newStructure, codeElement.nextSibling);
+                parentElement.removeChild(codeElement);
+            } else {
+                parentElement.parentElement.replaceChild(newStructure, parentElement);
+            }
+        });
+    };
+
+    handleCodeElements('pre.notranslate > code.notranslate');
+    handleCodeElements('div.highlight > pre.notranslate');
+
+    let currentFeedback = null;
+    document.querySelectorAll('clipboard-copy').forEach(copyButton => {
+        copyButton.addEventListener('click', () => {
+            const codeContent = copyButton.closest('.snippet-clipboard-content').innerText;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = codeContent;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            const copyIcon = copyButton.querySelector('.octicon-copy');
+            const checkIcon = copyButton.querySelector('.octicon-check');
+            const copyFeedback = copyButton.nextElementSibling;
+
+            if (currentFeedback && currentFeedback !== copyFeedback) {currentFeedback.style.display = 'none';}
+            currentFeedback = copyFeedback;
+
+            copyIcon.classList.add('d-none');
+            checkIcon.classList.remove('d-none');
+            copyFeedback.style.display = 'block';
+            copyButton.style.borderColor = 'var(--color-success-fg)';
+
+            setTimeout(() => {
+                copyIcon.classList.remove('d-none');
+                checkIcon.classList.add('d-none');
+                copyFeedback.style.display = 'none';
+                copyButton.style.borderColor = '';
+            }, 2000);
+        });
+    });
+});
+
+</script>
+
+
+</html>
