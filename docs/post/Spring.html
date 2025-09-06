@@ -1,0 +1,1679 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark" data-light-theme="light" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
+    
+    <link rel="icon" href="https://github.githubassets.com/favicons/favicon.svg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="这篇文章主要是想通过一些问题，加深大家对于 Spring 的理解，所以不会涉及太多的代码！
+
+下面的很多问题我自己在使用 Spring 的过程中也并没有注意，自己也是临时查阅了很多资料和书籍补上的。">
+<meta property="og:title" content="Spring">
+<meta property="og:description" content="这篇文章主要是想通过一些问题，加深大家对于 Spring 的理解，所以不会涉及太多的代码！
+
+下面的很多问题我自己在使用 Spring 的过程中也并没有注意，自己也是临时查阅了很多资料和书籍补上的。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://shuaiwang888.github.io/appStore-Blog.github.io/post/Spring.html">
+<meta property="og:image" content="https://github.githubassets.com/favicons/favicon.svg">
+<title>Spring</title>
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+.copy-feedback {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    color: var(--color-fg-on-emphasis);
+    background-color: var(--color-fg-muted);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
+</style>
+
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">Spring</h1>
+<div class="title-right">
+    <a href="https://shuaiwang888.github.io/appStore-Blog.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/shuaiwang888/appStore-Blog.github.io/issues/17" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><p>这篇文章主要是想通过一些问题，加深大家对于 Spring 的理解，所以不会涉及太多的代码！</p>
+<p>下面的很多问题我自己在使用 Spring 的过程中也并没有注意，自己也是临时查阅了很多资料和书籍补上的。网上也有一些很多关于 Spring 常见问题/面试题整理的文章，我感觉大部分都是互相 copy，而且很多问题也不是很好，有些回答也存在问题。所以，自己花了一周的业余时间整理了一下，希望对大家有帮助。</p>
+<h2><strong>什么是 Spring 框架?</strong></h2>
+<p>Spring 是一款开源的轻量级 Java 开发框架，旨在提高开发人员的开发效率以及系统的可维护性。</p>
+<p>Spring 翻译过来就是春天的意思，可见其目标和使命就是为 Java 程序员带来春天啊！感动！</p>
+<blockquote>
+<p>题外话 ： 语言的流行通常需要一个杀手级的应用，Spring 就是 Java 生态的一个杀手级的应用框架。</p>
+</blockquote>
+<p>我们一般说 Spring 框架指的都是 <code class="notranslate">Spring Framework</code>，它是很多模块的集合，使用这些模块可以很方便地协助我们进行开发：比如说 Spring 自带 <strong>IoC（Inverse of Control:控制反转）</strong> 和 <strong>AOP(Aspect-Oriented Programming:面向切面编程)</strong> 以及 <strong>DI（Dependency Injection:依赖注入）</strong>、可以很方便地对数据库进行访问、可以很方便地集成第三方组件（电子邮件，任务，调度，缓存等等）、对单元测试支持比较好、支持 RESTful Java 应用程序的开发。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/708ef71906b64a47f75c4d814af9ee9c4c2e76a2078ef4438bb8612066b8e797/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f33386566313232313232646534333735616263643237633364653866363062342e706e67"><img src="https://camo.githubusercontent.com/708ef71906b64a47f75c4d814af9ee9c4c2e76a2078ef4438bb8612066b8e797/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f33386566313232313232646534333735616263643237633364653866363062342e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/38ef122122de4375abcd27c3de8f60b4.png" style="max-width: 100%;"></a></p>
+<p>Spring 最核心的思想就是不重新造轮子，开箱即用！</p>
+<p>Spring 提供的核心功能主要是 <code class="notranslate">IoC</code> 和 <code class="notranslate">AOP</code> 以及 <code class="notranslate">DI</code>。学习 Spring ，一定要把 IoC 和 AOP 的核心思想搞懂！</p>
+<ul>
+<li>Spring 官网：<a href="https://spring.io/" rel="nofollow">https://spring.io/</a></li>
+<li>Github 地址： <a href="https://github.com/spring-projects/spring-framework">https://github.com/spring-projects/spring-framework</a></li>
+</ul>
+<h2><strong>列举一些重要的 Spring 模块？</strong></h2>
+<p>下图对应的是 Spring4.x 版本。目前最新的 5.x 版本中 Web 模块的 Portlet 组件已经被废弃掉，同时增加了用于异步响应式处理的 WebFlux 组件。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/751e5a1b928ca9585c9abb7a7868601004e399f3c1df3f87503965e3bb996472/68747470733a2f2f696d616765732e7869616f7a6875616e6c616e2e636f6d2f70686f746f2f323031392f65306336306234363036373131666334613062366661663033323330323437612e706e67"><img src="https://camo.githubusercontent.com/751e5a1b928ca9585c9abb7a7868601004e399f3c1df3f87503965e3bb996472/68747470733a2f2f696d616765732e7869616f7a6875616e6c616e2e636f6d2f70686f746f2f323031392f65306336306234363036373131666334613062366661663033323330323437612e706e67" alt="Spring主要模块" data-canonical-src="https://images.xiaozhuanlan.com/photo/2019/e0c60b4606711fc4a0b6faf03230247a.png" style="max-width: 100%;"></a></p>
+<p><strong>Spring Core</strong></p>
+<p>核心模块， Spring 其他所有的功能基本都需要依赖于该类库，主要提供 <strong>IoC</strong> 和 <strong>DI</strong> 功能的支持。</p>
+<p><strong>Spring Aspects</strong></p>
+<p>该模块为与 AspectJ 的集成提供支持。</p>
+<p><strong>Spring AOP</strong></p>
+<p>提供了面向切面的编程实现。</p>
+<p><strong>Spring Data Access/Integration ：</strong></p>
+<p>Spring Data Access/Integration 由 5 个模块组成：</p>
+<ul>
+<li>spring-jdbc : 提供了对数据库访问的抽象 JDBC。不同的数据库都有自己独立的 API 用于操作数据库，而 Java 程序只需要和 JDBC API 交互，这样就屏蔽了数据库的影响。</li>
+<li>spring-tx : 提供对事务的支持。</li>
+<li>spring-orm : 提供对 Hibernate 等 ORM 框架的支持。</li>
+<li>spring-oxm ： 提供对 Castor 等 OXM 框架的支持。</li>
+<li>spring-jms : Java 消息服务。</li>
+</ul>
+<p><strong>Spring Web</strong></p>
+<p>Spring Web 由 4 个模块组成：</p>
+<ul>
+<li>spring-web ：对 Web 功能的实现提供一些最基础的支持。</li>
+<li>spring-webmvc ： 提供对 Spring MVC 的实现。</li>
+<li>spring-websocket ： 提供了对 WebSocket 的支持，WebSocket 可以让客户端和服务端进行双向通信。</li>
+<li>spring-webflux ：提供对 WebFlux 的支持。WebFlux 是 Spring Framework 5.0 中引入的新的响应式框架。与 Spring MVC 不同，它不需要 Servlet API，是完全异步.</li>
+</ul>
+<p><strong>Spring Test</strong></p>
+<p>Spring 团队提倡测试驱动开发（TDD）。有了控制反转 (IoC)的帮助，单元测试和集成测试变得更简单。</p>
+<p>Spring 的测试模块对 JUnit（单元测试框架）、TestNG（类似 JUnit）、Mockito（主要用来 Mock 对象）、PowerMock（解决 Mockito 的问题比如无法模拟 final, static， private 方法）等等常用的测试框架支持的都比较好。</p>
+<h2><strong>Spring IOC</strong></h2>
+<h3><strong>谈谈自己对于 Spring IoC 的了解</strong></h3>
+<p><strong>IoC（Inverse of Control:控制反转）</strong> 是一种设计思想，而不是一个具体的技术实现。IoC 的思想就是将原本在程序中手动创建对象的控制权，交由 Spring 框架来管理。不过， IoC 并非 Spirng 特有，在其他语言中也有应用。</p>
+<p><strong>为什么叫控制反转？</strong></p>
+<ul>
+<li><strong>控制</strong> ：指的是对象创建（实例化、管理）的权力</li>
+<li><strong>反转</strong> ：控制权交给外部环境（Spring 框架、IoC 容器）</li>
+</ul>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/dd18c750a56f6d68652a5cb0e050e354ff20cbab0e8328f491a46e0b59323931/68747470733a2f2f67756964652d626c6f672d696d616765732e6f73732d636e2d7368656e7a68656e2e616c6979756e63732e636f6d2f6a6176612d67756964652d626c6f672f6672632d33363566616365623536393766303466333133393939333763303539633136322e706e67"><img src="https://camo.githubusercontent.com/dd18c750a56f6d68652a5cb0e050e354ff20cbab0e8328f491a46e0b59323931/68747470733a2f2f67756964652d626c6f672d696d616765732e6f73732d636e2d7368656e7a68656e2e616c6979756e63732e636f6d2f6a6176612d67756964652d626c6f672f6672632d33363566616365623536393766303466333133393939333763303539633136322e706e67" alt="" style="max-width: 100%;"></a></p>
+<p>将对象之间的相互依赖关系交给 IoC 容器来管理，并由 IoC 容器完成对象的注入。这样可以很大程度上简化应用的开发，把应用从复杂的依赖关系中解放出来。 IoC 容器就像是一个工厂一样，当我们需要创建一个对象的时候，只需要配置好配置文件/注解即可，完全不用考虑对象是如何被创建出来的。</p>
+<p>在实际项目中一个 Service 类可能依赖了很多其他的类，假如我们需要实例化这个 Service，你可能要每次都要搞清这个 Service 所有底层类的构造函数，这可能会把人逼疯。如果利用 IoC 的话，你只需要配置好，然后在需要的地方引用就行了，这大大增加了项目的可维护性且降低了开发难度。</p>
+<p>在 Spring 中， IoC 容器是 Spring 用来实现 IoC 的载体， IoC 容器实际上就是个 Map（key，value），Map 中存放的是各种对象。</p>
+<p>Spring 时代我们一般通过 XML 文件来配置 Bean，后来开发人员觉得 XML 文件来配置不太好，于是 SpringBoot 注解配置就慢慢开始流行起来。</p>
+<p>相关阅读：</p>
+<ul>
+<li><a href="https://javadoop.com/post/spring-ioc" rel="nofollow">IoC 源码阅读</a></li>
+<li><a href="https://mp.weixin.qq.com/s?__biz=Mzg2OTA0Njk0OA==&amp;mid=2247486938&amp;idx=1&amp;sn=c99ef0233f39a5ffc1b98c81e02dfcd4&amp;chksm=cea24211f9d5cb07fa901183ba4d96187820713a72387788408040822ffb2ed575d28e953ce7&amp;token=1736772241&amp;lang=zh_CN#rd" rel="nofollow">面试被问了几百遍的 IoC 和 AOP ，还在傻傻搞不清楚？</a></li>
+</ul>
+<p><strong>IoC容器的基本使用？</strong></p>
+<ul>
+<li>
+<p>之前的处理请求方式：请求来到对应的servlet方法，调用上层service的对应方法，再调用dao层的对应方法，最后在dao的具体实现类中处理，如此十分具有依赖和耦合性；</p>
+</li>
+<li>
+<p>如何降低耦合？  工厂设计模式：</p>
+</li>
+</ul>
+<p>①配置工厂加载文件factory.properties；</p>
+<div class="highlight highlight-text-xml"><pre class="notranslate">personService=com.ws.service.impl.PersonServiceImpl
+personDao=com.ws.dao.impl.PersonDaoImpl</pre></div>
+<p>②设计工厂模式：先加载配置文件，在根据传入的类名，实例化一个对象（service或dao）；</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">GeneralFactory</span> {
+    <span class="pl-k">private</span> <span class="pl-k">static</span> <span class="pl-smi">Properties</span> <span class="pl-s1">properties</span>;
+    
+    <span class="pl-c">// 加载配置工厂文件factory.properties</span>
+    <span class="pl-k">static</span> {
+        <span class="pl-k">try</span> (<span class="pl-smi">InputStream</span> <span class="pl-s1">is</span> = <span class="pl-smi">GeneralFactory</span>.<span class="pl-k">class</span>.<span class="pl-en">getClassLoader</span>().<span class="pl-en">getResourceAsStream</span>(<span class="pl-s">"factory.properties"</span>)) {
+            <span class="pl-s1">properties</span> = <span class="pl-k">new</span> <span class="pl-smi">Properties</span>();
+            <span class="pl-s1">properties</span>.<span class="pl-en">load</span>(<span class="pl-s1">is</span>);
+        } <span class="pl-k">catch</span> (<span class="pl-smi">Exception</span> <span class="pl-s1">e</span>) {
+            <span class="pl-s1">e</span>.<span class="pl-en">printStackTrace</span>();
+        }
+    }
+
+    <span class="pl-c">// 根据properties和传入的类名，实例化一个对象</span>
+    <span class="pl-k">public</span> <span class="pl-k">static</span> &lt;<span class="pl-smi">T</span>&gt; <span class="pl-smi">T</span> <span class="pl-en">get</span>(<span class="pl-smi">String</span> <span class="pl-s1">name</span>) {
+        <span class="pl-k">try</span> {
+            <span class="pl-c">// 类名</span>
+            <span class="pl-smi">String</span> <span class="pl-s1">clsName</span> = <span class="pl-s1">properties</span>.<span class="pl-en">getProperty</span>(<span class="pl-s1">name</span>);
+            <span class="pl-smi">Class</span> <span class="pl-s1">cls</span> = <span class="pl-smi">Class</span>.<span class="pl-en">forName</span>(<span class="pl-s1">clsName</span>);
+            <span class="pl-c">// newInstance()实例化对象</span>
+            <span class="pl-k">return</span> (<span class="pl-smi">T</span>) <span class="pl-s1">cls</span>.<span class="pl-en">newInstance</span>();
+        } <span class="pl-k">catch</span> (<span class="pl-smi">Exception</span> <span class="pl-s1">e</span>) {
+            <span class="pl-s1">e</span>.<span class="pl-en">printStackTrace</span>();;
+        }
+        <span class="pl-k">return</span> <span class="pl-c1">null</span>;
+    }
+
+    <span class="pl-c">// 这里能分别拿到service/dao的实例化对象</span>
+    <span class="pl-k">public</span> <span class="pl-k">static</span> <span class="pl-smi">PersonService</span> <span class="pl-en">getService</span>() {
+        <span class="pl-k">return</span> <span class="pl-en">get</span>(<span class="pl-s">"service"</span>);
+    }
+
+    <span class="pl-k">public</span> <span class="pl-k">static</span> <span class="pl-smi">PersonDao</span> <span class="pl-en">getDao</span>() {
+        <span class="pl-k">return</span> <span class="pl-en">get</span>(<span class="pl-s">"dao"</span>);
+    }
+}</pre></div>
+<p>③在servlet或service具体实现类中直接通过工厂模式获取对应的实例化对象；</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">PersonServlet</span> {
+    <span class="pl-k">private</span> <span class="pl-smi">PersonService</span> <span class="pl-s1">service</span>;
+    
+    <span class="pl-c">// 有构造方法才是属性，才会在xml配置文件中向上引用，实例化对象！</span>
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">setService</span>(<span class="pl-smi">PersonService</span> <span class="pl-s1">service</span>) {
+        <span class="pl-smi">this</span>.<span class="pl-s1">service</span> = <span class="pl-s1">service</span>;
+    }
+
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">remove</span>() {
+        <span class="pl-s1">service</span>.<span class="pl-en">remove</span>(<span class="pl-c1">1</span>);
+    }
+
+    <span class="pl-k">public</span> <span class="pl-k">static</span> <span class="pl-smi">void</span> <span class="pl-en">main</span>(<span class="pl-smi">String</span>[] <span class="pl-s1">args</span>) {
+        <span class="pl-c">// 读取配置文件</span>
+        <span class="pl-smi">ApplicationContext</span> <span class="pl-s1">ctx</span> = <span class="pl-k">new</span> <span class="pl-smi">ClassPathXmlApplicationContext</span>(<span class="pl-s">"applicationContext.xml"</span>);
+        <span class="pl-smi">PersonServlet</span> <span class="pl-s1">servlet</span> = <span class="pl-s1">ctx</span>.<span class="pl-en">getBean</span>(<span class="pl-s">"personServlet"</span>, <span class="pl-smi">PersonServlet</span>.<span class="pl-k">class</span>);
+        <span class="pl-s1">servlet</span>.<span class="pl-en">remove</span>();
+    }</pre></div>
+<ul>
+<li>所以，Spring起的作用就是这里的工厂而且更强大；</li>
+<li>如何在spring框架中实现呢？<br>
+①新建一个xml文件（复杂情况，而简单配置只需properties即可），直接编写的层级引用关系，便可自动实现实例化，即servlet对应引用service，而service对应引用dao；</li>
+</ul>
+<div class="highlight highlight-text-xml"><pre class="notranslate">&lt;?<span class="pl-ent">xml</span><span class="pl-e"> version</span>=<span class="pl-s"><span class="pl-pds">"</span>1.0<span class="pl-pds">"</span></span><span class="pl-e"> encoding</span>=<span class="pl-s"><span class="pl-pds">"</span>UTF-8<span class="pl-pds">"</span></span>?&gt;
+&lt;<span class="pl-ent">beans</span> <span class="pl-e">xmlns</span>=<span class="pl-s"><span class="pl-pds">"</span>http://www.springframework.org/schema/beans<span class="pl-pds">"</span></span>
+       <span class="pl-e">xmlns</span><span class="pl-e">:</span><span class="pl-e">xsi</span>=<span class="pl-s"><span class="pl-pds">"</span>http://www.w3.org/2001/XMLSchema-instance<span class="pl-pds">"</span></span>
+       <span class="pl-e">xsi</span><span class="pl-e">:</span><span class="pl-e">schemaLocation</span>=<span class="pl-s"><span class="pl-pds">"</span>http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd<span class="pl-pds">"</span></span>&gt;
+
+    &lt;<span class="pl-ent">bean</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">"</span>personDao<span class="pl-pds">"</span></span> <span class="pl-e">class</span>=<span class="pl-s"><span class="pl-pds">"</span>com.ws.dao.impl.PersonDaoImpl<span class="pl-pds">"</span></span>/&gt;
+
+    &lt;<span class="pl-ent">bean</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">"</span>personService<span class="pl-pds">"</span></span> <span class="pl-e">class</span>=<span class="pl-s"><span class="pl-pds">"</span>com.ws.service.impl.PersonServiceImpl<span class="pl-pds">"</span></span>&gt;
+        &lt;<span class="pl-ent">property</span> <span class="pl-e">name</span>=<span class="pl-s"><span class="pl-pds">"</span>dao<span class="pl-pds">"</span></span> <span class="pl-e">ref</span>=<span class="pl-s"><span class="pl-pds">"</span>personDao<span class="pl-pds">"</span></span>/&gt;
+    &lt;/<span class="pl-ent">bean</span>&gt;
+
+    &lt;<span class="pl-ent">bean</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">"</span>personServlet<span class="pl-pds">"</span></span> <span class="pl-e">class</span>=<span class="pl-s"><span class="pl-pds">"</span>com.ws.servlet.PersonServlet<span class="pl-pds">"</span></span>&gt;
+        &lt;<span class="pl-ent">property</span> <span class="pl-e">name</span>=<span class="pl-s"><span class="pl-pds">"</span>service<span class="pl-pds">"</span></span> <span class="pl-e">ref</span>=<span class="pl-s"><span class="pl-pds">"</span>personService<span class="pl-pds">"</span></span>/&gt;
+    &lt;/<span class="pl-ent">bean</span>&gt;
+&lt;/<span class="pl-ent">beans</span>&gt;</pre></div>
+<p>②在对应实现类中声明即可（private xxxService service;），但必须设置其构造方法：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">setService</span>(<span class="pl-smi">xxxService</span> <span class="pl-s1">service</span>) {                                                                           				 
+    <span class="pl-smi">this</span>.<span class="pl-s1">service</span> = <span class="pl-s1">service</span>;                                                                     }</pre></div>
+<p><strong>因为有构造方法才是属性，才会在xml配置文件中进行向上引用，实现自动实例化对象；</strong></p>
+<h2><strong>Spring 依赖注入</strong></h2>
+<ol>
+<li>由前面的知识：在xxxserviceImpl中需要dao的实例，所以通过其构造方法setDao()将xxxservice需要的xxxDao注入到里面去，此称为依赖注入；</li>
+<li>常见的注入内容有3种：①bean(自定义类型)：就是上面1总结的那种方式；②基本类型，String，BigDecimal在applicationContext.xml通过value注入；③集合类型（数组、Map、List、Set、Properties）；</li>
+<li>常见的注入方式有2种:基于setter(属性)和基于constructor(构造方法)；</li>
+</ol>
+<p><strong>基于setter(属性)</strong><br>
+<a target="_blank" rel="noopener noreferrer" href="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210922170748-6d5f906c0fd44500aee2c600508ed7a5.png"><img src="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210922170748-6d5f906c0fd44500aee2c600508ed7a5.png" alt="QQ图片20210922102307.png" style="max-width: 100%;"></a><br>
+<a target="_blank" rel="noopener noreferrer" href="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210922102310-60107af4e21646a1b24d83f5736a4d98.png"><img src="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210922102310-60107af4e21646a1b24d83f5736a4d98.png" alt="QQ图片20210922102310.png" style="max-width: 100%;"></a><br>
+<a target="_blank" rel="noopener noreferrer" href="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210922102313-a63bf49822214ebbae50b7744d1b1ac3.png"><img src="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210922102313-a63bf49822214ebbae50b7744d1b1ac3.png" alt="QQ图片20210922102313.png" style="max-width: 100%;"></a><br>
+<a target="_blank" rel="noopener noreferrer" href="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210922102317-154a4b7f56554f339e3879fd6ef9b31b.png"><img src="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210922102317-154a4b7f56554f339e3879fd6ef9b31b.png" alt="QQ图片20210922102317.png" style="max-width: 100%;"></a><br>
+<a target="_blank" rel="noopener noreferrer" href="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210922102320-62e28dc471ff44ac943c6cc12bff1629.png"><img src="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210922102320-62e28dc471ff44ac943c6cc12bff1629.png" alt="QQ图片20210922102320.png" style="max-width: 100%;"></a></p>
+<p><strong>基于constructor(构造方法)</strong><br>
+<a target="_blank" rel="noopener noreferrer" href="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210922102514-c4536aaf65bf4a68b41dea4749a86451.png"><img src="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210922102514-c4536aaf65bf4a68b41dea4749a86451.png" alt="QQ图片20210922102514.png" style="max-width: 100%;"></a><br>
+<a target="_blank" rel="noopener noreferrer" href="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210922102518-7d91196260e34dba9134ffe77cf85f44.png"><img src="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210922102518-7d91196260e34dba9134ffe77cf85f44.png" alt="QQ图片20210922102518.png" style="max-width: 100%;"></a><br>
+<a target="_blank" rel="noopener noreferrer" href="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210922102522-8ec5c2418d2d4f0f96b05beb94939b97.png"><img src="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210922102522-8ec5c2418d2d4f0f96b05beb94939b97.png" alt="QQ图片20210922102522.png" style="max-width: 100%;"></a><br>
+<a target="_blank" rel="noopener noreferrer" href="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210922102525-6ed80119cae2490dba879d2d7986fa18.png"><img src="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210922102525-6ed80119cae2490dba879d2d7986fa18.png" alt="QQ图片20210922102525.png" style="max-width: 100%;"></a></p>
+<p><strong>示例</strong></p>
+<blockquote>
+<p><strong>person的domain对象</strong></p>
+</blockquote>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">Person</span> {
+    <span class="pl-k">private</span> <span class="pl-smi">int</span> <span class="pl-s1">age</span>;
+    <span class="pl-k">private</span> <span class="pl-smi">String</span> <span class="pl-s1">name</span>;
+    <span class="pl-k">private</span> <span class="pl-smi">BigDecimal</span> <span class="pl-s1">money</span>;
+    <span class="pl-k">private</span> <span class="pl-smi">Dog</span> <span class="pl-s1">dog</span>;
+    <span class="pl-k">private</span> <span class="pl-smi">Set</span>&lt;<span class="pl-smi">String</span>&gt; <span class="pl-s1">nickNames</span>;
+    <span class="pl-k">private</span> <span class="pl-smi">Properties</span> <span class="pl-s1">friends</span>;
+
+    <span class="pl-k">public</span> <span class="pl-smi">Person</span>() {
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"Person()"</span>);
+    }
+
+    <span class="pl-k">public</span> <span class="pl-smi">Person</span>(<span class="pl-smi">int</span> <span class="pl-s1">age</span>) {
+        <span class="pl-smi">this</span>.<span class="pl-s1">age</span> = <span class="pl-s1">age</span>;
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"Person("</span> + <span class="pl-s1">age</span> + <span class="pl-s">")"</span>);
+    }
+
+    <span class="pl-c1">@</span><span class="pl-c1">ConstructorProperties</span>({<span class="pl-s">"age"</span>, <span class="pl-s">"name"</span>})
+    <span class="pl-k">public</span> <span class="pl-smi">Person</span>(<span class="pl-smi">int</span> <span class="pl-s1">age</span>, <span class="pl-smi">String</span> <span class="pl-s1">name</span>) {
+        <span class="pl-smi">this</span>.<span class="pl-s1">age</span> = <span class="pl-s1">age</span>;
+        <span class="pl-smi">this</span>.<span class="pl-s1">name</span> = <span class="pl-s1">name</span>;
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"Person("</span> + <span class="pl-s1">age</span> + <span class="pl-s">", "</span> + <span class="pl-s1">name</span> + <span class="pl-s">")"</span>);
+    }
+
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">setFriends</span>(<span class="pl-smi">Properties</span> <span class="pl-s1">friends</span>) {
+        <span class="pl-smi">this</span>.<span class="pl-s1">friends</span> = <span class="pl-s1">friends</span>;
+    }
+
+    <span class="pl-k">public</span> <span class="pl-smi">Properties</span> <span class="pl-en">getFriends</span>() {
+        <span class="pl-k">return</span> <span class="pl-s1">friends</span>;
+    }
+
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">setNickNames</span>(<span class="pl-smi">Set</span>&lt;<span class="pl-smi">String</span>&gt; <span class="pl-s1">nickNames</span>) {
+        <span class="pl-smi">this</span>.<span class="pl-s1">nickNames</span> = <span class="pl-s1">nickNames</span>;
+    }
+
+    <span class="pl-k">public</span> <span class="pl-smi">Set</span>&lt;<span class="pl-smi">String</span>&gt; <span class="pl-en">getNickNames</span>() {
+        <span class="pl-k">return</span> <span class="pl-s1">nickNames</span>;
+    }
+
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">setDog</span>(<span class="pl-smi">Dog</span> <span class="pl-s1">dog</span>) {
+        <span class="pl-smi">this</span>.<span class="pl-s1">dog</span> = <span class="pl-s1">dog</span>;
+    }
+
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">setMoney</span>(<span class="pl-smi">BigDecimal</span> <span class="pl-s1">money</span>) {
+        <span class="pl-smi">this</span>.<span class="pl-s1">money</span> = <span class="pl-s1">money</span>;
+    }
+
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">setAge</span>(<span class="pl-smi">int</span> <span class="pl-s1">age</span>) {
+        <span class="pl-smi">this</span>.<span class="pl-s1">age</span> = <span class="pl-s1">age</span>;
+    }
+
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">setName</span>(<span class="pl-smi">String</span> <span class="pl-s1">name</span>) {
+        <span class="pl-smi">this</span>.<span class="pl-s1">name</span> = <span class="pl-s1">name</span>;
+    }
+
+    <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+    <span class="pl-k">public</span> <span class="pl-smi">String</span> <span class="pl-en">toString</span>() {
+        <span class="pl-k">return</span> <span class="pl-s">"Person{"</span> +
+                <span class="pl-s">"age="</span> + <span class="pl-s1">age</span> +
+                <span class="pl-s">", dog="</span> + <span class="pl-s1">dog</span> +
+                <span class="pl-s">", money="</span> + <span class="pl-s1">money</span> +
+                <span class="pl-s">", name='"</span> + <span class="pl-s1">name</span> + <span class="pl-s">'\''</span> +
+                <span class="pl-s">'}'</span>;
+    }
+}</pre></div>
+<blockquote>
+<p><strong>配置文件applicationContext.xml进行依赖注入</strong></p>
+</blockquote>
+<div class="highlight highlight-text-xml"><pre class="notranslate">&lt;?<span class="pl-ent">xml</span><span class="pl-e"> version</span>=<span class="pl-s"><span class="pl-pds">"</span>1.0<span class="pl-pds">"</span></span><span class="pl-e"> encoding</span>=<span class="pl-s"><span class="pl-pds">"</span>UTF-8<span class="pl-pds">"</span></span>?&gt;
+&lt;<span class="pl-ent">beans</span> <span class="pl-e">xmlns</span>=<span class="pl-s"><span class="pl-pds">"</span>http://www.springframework.org/schema/beans<span class="pl-pds">"</span></span>
+       <span class="pl-e">xmlns</span><span class="pl-e">:</span><span class="pl-e">p</span>=<span class="pl-s"><span class="pl-pds">"</span>http://www.springframework.org/schema/p<span class="pl-pds">"</span></span>
+       <span class="pl-e">xmlns</span><span class="pl-e">:</span><span class="pl-e">xsi</span>=<span class="pl-s"><span class="pl-pds">"</span>http://www.w3.org/2001/XMLSchema-instance<span class="pl-pds">"</span></span>
+       <span class="pl-e">xsi</span><span class="pl-e">:</span><span class="pl-e">schemaLocation</span>=<span class="pl-s"><span class="pl-pds">"</span>http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd<span class="pl-pds">"</span></span>&gt;
+
+    
+    &lt;<span class="pl-ent">bean</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">"</span>person<span class="pl-pds">"</span></span> <span class="pl-e">class</span>=<span class="pl-s"><span class="pl-pds">"</span>com.ws.domain.Person<span class="pl-pds">"</span></span>
+          <span class="pl-e">p</span><span class="pl-e">:</span><span class="pl-e">name</span>=<span class="pl-s"><span class="pl-pds">"</span>Jack<span class="pl-pds">"</span></span> <span class="pl-e">p</span><span class="pl-e">:</span><span class="pl-e">age</span>=<span class="pl-s"><span class="pl-pds">"</span>18<span class="pl-pds">"</span></span> <span class="pl-e">p</span><span class="pl-e">:</span><span class="pl-e">dog-ref</span>=<span class="pl-s"><span class="pl-pds">"</span>dog<span class="pl-pds">"</span></span>/&gt;
+
+    &lt;<span class="pl-ent">bean</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">"</span>dog<span class="pl-pds">"</span></span> <span class="pl-e">class</span>=<span class="pl-s"><span class="pl-pds">"</span>com.ws.domain.Dog<span class="pl-pds">"</span></span>/&gt;
+
+<span class="pl-c"><span class="pl-c">&lt;!--</span>    通过setter方法注入<span class="pl-c">--&gt;</span></span>
+<span class="pl-c"><span class="pl-c">&lt;!--</span>    &lt;bean id="person" class="com.ws.domain.Person"&gt;<span class="pl-c">--&gt;</span></span>
+<span class="pl-c"><span class="pl-c">&lt;!--</span>        &lt;property name="age" value="18"/&gt;<span class="pl-c">--&gt;</span></span>
+<span class="pl-c"><span class="pl-c">&lt;!--</span>        &lt;property name="money" value="100.5"/&gt;<span class="pl-c">--&gt;</span></span>
+<span class="pl-c"><span class="pl-c">&lt;!--</span>        &lt;property name="name" value="Jack"/&gt;<span class="pl-c">--&gt;</span></span>
+<span class="pl-c"><span class="pl-c">&lt;!--</span>        &lt;property name="dog"&gt;<span class="pl-c">--&gt;</span></span>
+<span class="pl-c"><span class="pl-c">&lt;!--</span>            &lt;bean class="com.ws.domain.Dog"/&gt;<span class="pl-c">--&gt;</span></span>
+<span class="pl-c"><span class="pl-c">&lt;!--</span>        &lt;/property&gt;<span class="pl-c">--&gt;</span></span>
+
+<span class="pl-c"><span class="pl-c">&lt;!--</span>        &lt;property name="friends"&gt;<span class="pl-c">--&gt;</span></span>
+<span class="pl-c"><span class="pl-c">&lt;!--</span>            &lt;props&gt;<span class="pl-c">--&gt;</span></span>
+<span class="pl-c"><span class="pl-c">&lt;!--</span>                &lt;prop key="Jack"&gt;杰克&lt;/prop&gt;<span class="pl-c">--&gt;</span></span>
+<span class="pl-c"><span class="pl-c">&lt;!--</span>                &lt;prop key="Rose"&gt;螺丝&lt;/prop&gt;<span class="pl-c">--&gt;</span></span>
+<span class="pl-c"><span class="pl-c">&lt;!--</span>            &lt;/props&gt;<span class="pl-c">--&gt;</span></span>
+<span class="pl-c"><span class="pl-c">&lt;!--</span>        &lt;/property&gt;<span class="pl-c">--&gt;</span></span>
+<span class="pl-c"><span class="pl-c">&lt;!--</span>    &lt;/bean&gt;<span class="pl-c">--&gt;</span></span>
+
+<span class="pl-c"><span class="pl-c">&lt;!--</span>    通过构造方法注入<span class="pl-c">--&gt;</span></span>
+<span class="pl-c"><span class="pl-c">&lt;!--</span>    &lt;bean id="person" class="com.ws.domain.Person"&gt;<span class="pl-c">--&gt;</span></span>
+<span class="pl-c"><span class="pl-c">&lt;!--</span>        &lt;constructor-arg value="jack" name="name"/&gt;<span class="pl-c">--&gt;</span></span>
+<span class="pl-c"><span class="pl-c">&lt;!--</span>        &lt;constructor-arg value="28" name="age"/&gt;<span class="pl-c">--&gt;</span></span>
+<span class="pl-c"><span class="pl-c">&lt;!--</span>    &lt;/bean&gt;<span class="pl-c">--&gt;</span></span>
+
+&lt;/<span class="pl-ent">beans</span>&gt;</pre></div>
+<p><strong>注意</strong>：</p>
+<ul>
+<li>基于setter的注入需要先在根标签加一个命名空间属性，其标签大致为 <code class="notranslate">name</code>，<code class="notranslate">value</code>；</li>
+<li>基于constructor方法需要先在对应domain(以前的bean)中添加构造方法，其标签大致为<code class="notranslate">constructor-arg</code>；</li>
+</ul>
+<h2><strong>Spring 复杂对象</strong></h2>
+<blockquote>
+<p>对于复杂对象的创建主要有两种方法：实例工厂和静态工厂，FactoryBean</p>
+</blockquote>
+<h3><strong>静态工厂步骤：</strong></h3>
+<p>①在配置文件中配置调用调用 <code class="notranslate">ConnectionFactory.getConn()</code> 方法；</p>
+<div class="highlight highlight-text-xml"><pre class="notranslate">     静态工厂方法（调用ConnectionFactory.getConn()）
+    &lt;<span class="pl-ent">bean</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">"</span>conn<span class="pl-pds">"</span></span> <span class="pl-e">class</span>=<span class="pl-s"><span class="pl-pds">"</span>com.ws.obj.ConnectionFactory<span class="pl-pds">"</span></span> <span class="pl-e">factory-method</span>=<span class="pl-s"><span class="pl-pds">"</span>getConn<span class="pl-pds">"</span></span>/&gt;</pre></div>
+<p>②编写<code class="notranslate">ConnectionFactory</code>类和<code class="notranslate">getConn()</code>方法，方法中包含具体参数；</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">ConnectionFactory</span> {
+    <span class="pl-k">private</span> <span class="pl-smi">String</span> <span class="pl-s1">driverClass</span>;
+    <span class="pl-k">private</span> <span class="pl-smi">String</span> <span class="pl-s1">url</span>;
+    <span class="pl-k">private</span> <span class="pl-smi">String</span> <span class="pl-s1">username</span>;
+    <span class="pl-k">private</span> <span class="pl-smi">String</span> <span class="pl-s1">password</span>;
+
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">setDriverClass</span>(<span class="pl-smi">String</span> <span class="pl-s1">driverClass</span>) {
+        <span class="pl-smi">this</span>.<span class="pl-s1">driverClass</span> = <span class="pl-s1">driverClass</span>;
+    }
+
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">setUrl</span>(<span class="pl-smi">String</span> <span class="pl-s1">url</span>) {
+        <span class="pl-smi">this</span>.<span class="pl-s1">url</span> = <span class="pl-s1">url</span>;
+    }
+
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">setUsername</span>(<span class="pl-smi">String</span> <span class="pl-s1">username</span>) {
+        <span class="pl-smi">this</span>.<span class="pl-s1">username</span> = <span class="pl-s1">username</span>;
+    }
+
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">setPassword</span>(<span class="pl-smi">String</span> <span class="pl-s1">password</span>) {
+        <span class="pl-smi">this</span>.<span class="pl-s1">password</span> = <span class="pl-s1">password</span>;
+    }
+
+    <span class="pl-k">public</span> <span class="pl-smi">Connection</span> <span class="pl-en">getConn</span>() <span class="pl-k">throws</span> <span class="pl-smi">Exception</span> {
+        <span class="pl-smi">Class</span>.<span class="pl-en">forName</span>(<span class="pl-s1">driverClass</span>);
+        <span class="pl-k">return</span> <span class="pl-smi">DriverManager</span>.<span class="pl-en">getConnection</span>(<span class="pl-s1">url</span>, <span class="pl-s1">username</span>, <span class="pl-s1">password</span>);
+    }
+}</pre></div>
+<p>③在测试类中，先加载配置文件，用该配置文件调用<code class="notranslate">getBean()</code>方法，由其中的类名调<code class="notranslate">getConn()</code>方法创建对象；</p>
+<div class="highlight highlight-source-java"><pre class="notranslate">    <span class="pl-c1">@</span><span class="pl-c1">Test</span>
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">test</span>() {
+        <span class="pl-smi">ApplicationContext</span> <span class="pl-s1">ctx</span> = <span class="pl-k">new</span> <span class="pl-smi">ClassPathXmlApplicationContext</span>(<span class="pl-s">"applicationContext.xml"</span>);
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s1">ctx</span>.<span class="pl-en">getBean</span>(<span class="pl-s">"conn"</span>));
+    }</pre></div>
+<p>④静态工厂是用类名去调静态方法；</p>
+<h3><strong>实例工厂</strong></h3>
+<blockquote>
+<p><strong>实例工厂将具体参数放在配置文件中，以方便能够动态修改，所以getConn()方法中的参数在xml配置中就已经被动态设置；</strong></p>
+</blockquote>
+<div class="highlight highlight-text-xml"><pre class="notranslate"><span class="pl-c"><span class="pl-c">&lt;!--</span>     实例工厂方法（调用factory.getConn()）<span class="pl-c">--&gt;</span></span>
+    &lt;<span class="pl-ent">bean</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">"</span>factory<span class="pl-pds">"</span></span> <span class="pl-e">class</span>=<span class="pl-s"><span class="pl-pds">"</span>com.ws.obj.ConnectionFactory<span class="pl-pds">"</span></span>&gt;
+        &lt;<span class="pl-ent">property</span> <span class="pl-e">name</span>=<span class="pl-s"><span class="pl-pds">"</span>driverClass<span class="pl-pds">"</span></span> <span class="pl-e">value</span>=<span class="pl-s"><span class="pl-pds">"</span>com.mysql.jdbc.Driver<span class="pl-pds">"</span></span>/&gt;
+        &lt;<span class="pl-ent">property</span> <span class="pl-e">name</span>=<span class="pl-s"><span class="pl-pds">"</span>url<span class="pl-pds">"</span></span> <span class="pl-e">value</span>=<span class="pl-s"><span class="pl-pds">"</span>jdbc:mysql://localhost:3306/test_mybatis<span class="pl-pds">"</span></span>/&gt;
+        &lt;<span class="pl-ent">property</span> <span class="pl-e">name</span>=<span class="pl-s"><span class="pl-pds">"</span>username<span class="pl-pds">"</span></span> <span class="pl-e">value</span>=<span class="pl-s"><span class="pl-pds">"</span>root<span class="pl-pds">"</span></span>/&gt;
+        &lt;<span class="pl-ent">property</span> <span class="pl-e">name</span>=<span class="pl-s"><span class="pl-pds">"</span>password<span class="pl-pds">"</span></span> <span class="pl-e">value</span>=<span class="pl-s"><span class="pl-pds">"</span>root<span class="pl-pds">"</span></span>/&gt;
+    &lt;/<span class="pl-ent">bean</span>&gt;</pre></div>
+<h3><strong>FactoryBean</strong></h3>
+<blockquote>
+<p><strong>第三种方法直接具体实现FactoryBean的getObject方法，其他大致相同；</strong></p>
+</blockquote>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">ConnectionFactoryBean</span> <span class="pl-k">implements</span> <span class="pl-smi">FactoryBean</span>&lt;<span class="pl-smi">Connection</span>&gt; {
+    <span class="pl-k">private</span> <span class="pl-smi">String</span> <span class="pl-s1">driverClass</span>;
+    <span class="pl-k">private</span> <span class="pl-smi">String</span> <span class="pl-s1">url</span>;
+    <span class="pl-k">private</span> <span class="pl-smi">String</span> <span class="pl-s1">username</span>;
+    <span class="pl-k">private</span> <span class="pl-smi">String</span> <span class="pl-s1">password</span>;
+
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">setDriverClass</span>(<span class="pl-smi">String</span> <span class="pl-s1">driverClass</span>) {
+        <span class="pl-smi">this</span>.<span class="pl-s1">driverClass</span> = <span class="pl-s1">driverClass</span>;
+    }
+
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">setUrl</span>(<span class="pl-smi">String</span> <span class="pl-s1">url</span>) {
+        <span class="pl-smi">this</span>.<span class="pl-s1">url</span> = <span class="pl-s1">url</span>;
+    }
+
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">setUsername</span>(<span class="pl-smi">String</span> <span class="pl-s1">username</span>) {
+        <span class="pl-smi">this</span>.<span class="pl-s1">username</span> = <span class="pl-s1">username</span>;
+    }
+
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">setPassword</span>(<span class="pl-smi">String</span> <span class="pl-s1">password</span>) {
+        <span class="pl-smi">this</span>.<span class="pl-s1">password</span> = <span class="pl-s1">password</span>;
+    }
+
+    <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+    <span class="pl-k">public</span> <span class="pl-smi">Connection</span> <span class="pl-en">getObject</span>() <span class="pl-k">throws</span> <span class="pl-smi">Exception</span> {
+        <span class="pl-smi">Class</span>.<span class="pl-en">forName</span>(<span class="pl-s1">driverClass</span>);
+        <span class="pl-k">return</span> <span class="pl-smi">DriverManager</span>.<span class="pl-en">getConnection</span>(<span class="pl-s1">url</span>, <span class="pl-s1">username</span>, <span class="pl-s1">password</span>);
+    }
+
+    <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+    <span class="pl-k">public</span> <span class="pl-smi">Class</span>&lt;?&gt; <span class="pl-en">getObjectType</span>() {
+        <span class="pl-k">return</span> <span class="pl-smi">Connection</span>.<span class="pl-k">class</span>;
+    }
+}</pre></div>
+<h3><strong>SpEL表达式</strong></h3>
+<blockquote>
+<p><strong>JSP中的EL表达式是用${},而Spring的EL表达式使用#{}</strong></p>
+</blockquote>
+<h3><strong>scope</strong></h3>
+<blockquote>
+<p><strong>可以通过scope属性控制bean是否单例：其属性singleton单例：通过同一个id值，在同一个IoC容器中获取的永远是同一个实例，所以若创建了其他的IoC容器，通过getBean方法拿到的就不是同一个实例了</strong></p>
+</blockquote>
+<blockquote>
+<p><strong>另一个属性prototype非单例：每次getBean时创建一次bean</strong></p>
+</blockquote>
+<blockquote>
+<p><strong>注意：这里的单例不是平时涉及的单例设计模式；同一个容器就是在一个加载配置文件中：new ClassPathXmlApplicationContext("applicationContext.xml")</strong></p>
+</blockquote>
+<p><strong>注意：</strong> 为了是配置文件更加简洁，一般需要在db.properties单独配置数据库信息，而数据库的主要属性为：driverClass、username、password、url等，而我们不是直接配置这个属性名，需要在前面加特定字符，以用来区分本机自有属性：jdbc.username而非username；</p>
+<h2><strong>Converter</strong></h2>
+<ol>
+<li>Spring一般内置了转换器<code class="notranslate">converter</code>，如String转int：name="age" value="25", String转Date：name="birthday" value="1997/11/17"</li>
+<li>内置转换格式较少，所以需要自定义converter来实现特殊转换格式；</li>
+<li>如何自定义？<br>
+①实现converter接口，在构造format参数后实现convert方法，具体实现转换方法</li>
+</ol>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c">//日期转换器（String-&gt;Date类型）</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">DateConverter</span> <span class="pl-k">implements</span> <span class="pl-smi">Converter</span>&lt;<span class="pl-smi">String</span>, <span class="pl-smi">Date</span>&gt; {
+    <span class="pl-k">private</span> <span class="pl-smi">List</span>&lt;<span class="pl-smi">String</span>&gt; <span class="pl-s1">formats</span>;
+
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">setFormats</span>(<span class="pl-smi">List</span>&lt;<span class="pl-smi">String</span>&gt; <span class="pl-s1">formats</span>) {
+        <span class="pl-smi">this</span>.<span class="pl-s1">formats</span> = <span class="pl-s1">formats</span>;
+    }
+
+    <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+    <span class="pl-k">public</span> <span class="pl-smi">Date</span> <span class="pl-en">convert</span>(<span class="pl-smi">String</span> <span class="pl-s1">s</span>) {
+        <span class="pl-k">for</span> (<span class="pl-smi">String</span> <span class="pl-s1">format</span> : <span class="pl-s1">formats</span>) {
+            <span class="pl-k">try</span> {
+                <span class="pl-smi">SimpleDateFormat</span> <span class="pl-s1">fmt</span> = <span class="pl-k">new</span> <span class="pl-smi">SimpleDateFormat</span>(<span class="pl-s1">format</span>);
+                <span class="pl-k">return</span> <span class="pl-s1">fmt</span>.<span class="pl-en">parse</span>(<span class="pl-s1">s</span>);
+            } <span class="pl-k">catch</span> (<span class="pl-smi">ParseException</span> <span class="pl-s1">e</span>) {
+<span class="pl-c">//                 e.printStackTrace();</span>
+            }
+        }
+        <span class="pl-k">return</span> <span class="pl-c1">null</span>;
+    }
+}</pre></div>
+<p>②在applicationContext.xml注册converter，在此表明多种转换格式</p>
+<div class="highlight highlight-text-xml"><pre class="notranslate">&lt;?<span class="pl-ent">xml</span><span class="pl-e"> version</span>=<span class="pl-s"><span class="pl-pds">"</span>1.0<span class="pl-pds">"</span></span><span class="pl-e"> encoding</span>=<span class="pl-s"><span class="pl-pds">"</span>UTF-8<span class="pl-pds">"</span></span>?&gt;
+&lt;<span class="pl-ent">beans</span> <span class="pl-e">xmlns</span>=<span class="pl-s"><span class="pl-pds">"</span>http://www.springframework.org/schema/beans<span class="pl-pds">"</span></span>
+       <span class="pl-e">xmlns</span><span class="pl-e">:</span><span class="pl-e">p</span>=<span class="pl-s"><span class="pl-pds">"</span>http://www.springframework.org/schema/p<span class="pl-pds">"</span></span>
+       <span class="pl-e">xmlns</span><span class="pl-e">:</span><span class="pl-e">xsi</span>=<span class="pl-s"><span class="pl-pds">"</span>http://www.w3.org/2001/XMLSchema-instance<span class="pl-pds">"</span></span>
+       <span class="pl-e">xsi</span><span class="pl-e">:</span><span class="pl-e">schemaLocation</span>=<span class="pl-s"><span class="pl-pds">"</span>http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd<span class="pl-pds">"</span></span>&gt;
+
+<span class="pl-c"><span class="pl-c">&lt;!--</span>    这种是使用内置的日期转换器，但是支持格式较少：09/10/2111; 而09_10_2111就不能转换成功<span class="pl-c">--&gt;</span></span>
+<span class="pl-c"><span class="pl-c">&lt;!--</span>    &lt;bean id="person" class="com.ws.domain.Person" p:birthday="2021-06-07"/&gt;<span class="pl-c">--&gt;</span></span>
+    &lt;<span class="pl-ent">bean</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">"</span>person<span class="pl-pds">"</span></span> <span class="pl-e">class</span>=<span class="pl-s"><span class="pl-pds">"</span>com.ws.domain.Person<span class="pl-pds">"</span></span> <span class="pl-e">p</span><span class="pl-e">:</span><span class="pl-e">birthday</span>=<span class="pl-s"><span class="pl-pds">"</span>06_07_2021<span class="pl-pds">"</span></span>/&gt;
+
+<span class="pl-c"><span class="pl-c">&lt;!--</span>    所以需要自己实现转换<span class="pl-c">--&gt;</span></span>
+    <span class="pl-c"><span class="pl-c">&lt;!--</span> 配置FactoryBean <span class="pl-c">--&gt;</span></span>
+    &lt;<span class="pl-ent">bean</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">"</span>conversionService<span class="pl-pds">"</span></span> <span class="pl-e">class</span>=<span class="pl-s"><span class="pl-pds">"</span>org.springframework.context.support.ConversionServiceFactoryBean<span class="pl-pds">"</span></span>&gt;
+        &lt;<span class="pl-ent">property</span> <span class="pl-e">name</span>=<span class="pl-s"><span class="pl-pds">"</span>converters<span class="pl-pds">"</span></span>&gt;
+            &lt;<span class="pl-ent">set</span>&gt;
+                &lt;<span class="pl-ent">bean</span> <span class="pl-e">class</span>=<span class="pl-s"><span class="pl-pds">"</span>com.ws.converter.DateConverter<span class="pl-pds">"</span></span>&gt;
+                    &lt;<span class="pl-ent">property</span> <span class="pl-e">name</span>=<span class="pl-s"><span class="pl-pds">"</span>formats<span class="pl-pds">"</span></span>&gt;
+                        &lt;<span class="pl-ent">list</span>&gt;
+                            &lt;<span class="pl-ent">value</span>&gt;yyyy-MM-dd&lt;/<span class="pl-ent">value</span>&gt;
+                            &lt;<span class="pl-ent">value</span>&gt;MM_dd_yyyy&lt;/<span class="pl-ent">value</span>&gt;
+                        &lt;/<span class="pl-ent">list</span>&gt;
+                    &lt;/<span class="pl-ent">property</span>&gt;
+                &lt;/<span class="pl-ent">bean</span>&gt;
+            &lt;/<span class="pl-ent">set</span>&gt;
+        &lt;/<span class="pl-ent">property</span>&gt;
+    &lt;/<span class="pl-ent">bean</span>&gt;
+
+&lt;/<span class="pl-ent">beans</span>&gt;</pre></div>
+<h2><strong>Spring bean</strong></h2>
+<h3><strong>什么是 bean？</strong></h3>
+<p>简单来说，bean 代指的就是那些被 IoC 容器所管理的对象。</p>
+<p>我们需要告诉 IoC 容器帮助我们管理哪些对象，这个是通过配置元数据来定义的。配置元数据可以是 XML 文件、注解或者 Java 配置类。</p>
+<div class="highlight highlight-text-xml"><pre class="notranslate"><span class="pl-c"><span class="pl-c">&lt;!--</span> Constructor-arg with 'value' attribute <span class="pl-c">--&gt;</span></span>
+&lt;<span class="pl-ent">bean</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">"</span>...<span class="pl-pds">"</span></span> <span class="pl-e">class</span>=<span class="pl-s"><span class="pl-pds">"</span>...<span class="pl-pds">"</span></span>&gt;
+   &lt;<span class="pl-ent">constructor-arg</span> <span class="pl-e">value</span>=<span class="pl-s"><span class="pl-pds">"</span>...<span class="pl-pds">"</span></span>/&gt;
+&lt;/<span class="pl-ent">bean</span>&gt;</pre></div>
+<p>下图简单地展示了 IoC 容器如何使用配置元数据来管理对象。</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/65a90cfee0994f0ac07fae752a6f86cb30f543755fcbf35fa165b14306e25f05/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f30363262343232626437616334643533616664323866623734623262633934642e706e67"><img src="https://camo.githubusercontent.com/65a90cfee0994f0ac07fae752a6f86cb30f543755fcbf35fa165b14306e25f05/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f30363262343232626437616334643533616664323866623734623262633934642e706e67" alt="" data-canonical-src="https://img-blog.csdnimg.cn/062b422bd7ac4d53afd28fb74b2bc94d.png" style="max-width: 100%;"></a></p>
+<p><code class="notranslate">org.springframework.beans</code>和 <code class="notranslate">org.springframework.context</code> 这两个包是 IoC 实现的基础，如果想要研究 IoC 相关的源码的话，可以去看看</p>
+<h3><strong>bean 的作用域有哪些?</strong></h3>
+<p>Spring 中 Bean 的作用域通常有下面几种：</p>
+<ul>
+<li><strong>singleton</strong> : 唯一 bean 实例，Spring 中的 bean 默认都是单例的，对单例设计模式的应用。</li>
+<li><strong>prototype</strong> : 每次请求都会创建一个新的 bean 实例。</li>
+<li><strong>request</strong> : 每一次 HTTP 请求都会产生一个新的 bean，该 bean 仅在当前 HTTP request 内有效。</li>
+<li><strong>session</strong> : 每一次来自新 session 的 HTTP 请求都会产生一个新的 bean，该 bean 仅在当前 HTTP session 内有效。</li>
+<li><strong>global-session</strong> ： 全局 session 作用域，仅仅在基于 portlet 的 web 应用中才有意义，Spring5 已经没有了。Portlet 是能够生成语义代码(例如：HTML)片段的小型 Java Web 插件。它们基于 portlet 容器，可以像 servlet 一样处理 HTTP 请求。但是，与 servlet 不同，每个 portlet 都有不同的会话。</li>
+</ul>
+<p><strong>如何配置 bean 的作用域呢？</strong></p>
+<p><strong>xml 方式：</strong></p>
+<div class="highlight highlight-text-xml"><pre class="notranslate">&lt;<span class="pl-ent">bean</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">"</span>...<span class="pl-pds">"</span></span> <span class="pl-e">class</span>=<span class="pl-s"><span class="pl-pds">"</span>...<span class="pl-pds">"</span></span> <span class="pl-e">scope</span>=<span class="pl-s"><span class="pl-pds">"</span>singleton<span class="pl-pds">"</span></span>&gt;&lt;/<span class="pl-ent">bean</span>&gt;</pre></div>
+<p><strong>注解方式：</strong></p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c1">@</span><span class="pl-c1">Bean</span>
+<span class="pl-c1">@</span><span class="pl-c1">Scope</span>(<span class="pl-s1">value</span> = <span class="pl-smi">ConfigurableBeanFactory</span>.<span class="pl-c1">SCOPE_PROTOTYPE</span>)
+<span class="pl-k">public</span> <span class="pl-smi">Person</span> <span class="pl-en">personPrototype</span>() {
+    <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-smi">Person</span>();
+}</pre></div>
+<h3><strong>单例 bean 的线程安全问题了解吗？</strong></h3>
+<p>大部分时候我们并没有在项目中使用多线程，所以很少有人会关注这个问题。单例 bean 存在线程问题，主要是因为当多个线程操作同一个对象的时候是存在资源竞争的。</p>
+<p>常见的有两种解决办法：</p>
+<ol>
+<li>在 bean 中尽量避免定义可变的成员变量。</li>
+<li>在类中定义一个 <code class="notranslate">ThreadLocal</code> 成员变量，将需要的可变成员变量保存在 <code class="notranslate">ThreadLocal</code> 中（推荐的一种方式）。</li>
+</ol>
+<p>不过，大部分 bean 实际都是无状态（没有实例变量）的（比如 Dao、Service），这种情况下， bean 是线程安全的。</p>
+<h3><strong><a class="user-mention notranslate" data-hovercard-type="organization" data-hovercard-url="/orgs/component/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/component">@component</a> 和 <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/bean/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/bean">@bean</a> 的区别是什么？</strong></h3>
+<ol>
+<li><code class="notranslate">@Component</code> 注解作用于类，而<code class="notranslate">@Bean</code>注解作用于方法。</li>
+<li><code class="notranslate">@Component</code>通常是通过类路径扫描来自动侦测以及自动装配到 Spring 容器中（我们可以使用 <code class="notranslate">@ComponentScan</code> 注解定义要扫描的路径从中找出标识了需要装配的类自动装配到 Spring 的 bean 容器中）。<code class="notranslate">@Bean</code> 注解通常是我们在标有该注解的方法中定义产生这个 bean,<code class="notranslate">@Bean</code>告诉了 Spring 这是某个类的实例，当我需要用它的时候还给我。</li>
+<li><code class="notranslate">@Bean</code> 注解比 <code class="notranslate">@Component</code> 注解的自定义性更强，而且很多地方我们只能通过 <code class="notranslate">@Bean</code> 注解来注册 bean。比如当我们引用第三方库中的类需要装配到 <code class="notranslate">Spring</code>容器时，则只能通过 <code class="notranslate">@Bean</code>来实现。</li>
+</ol>
+<p><code class="notranslate">@Bean</code>注解使用示例：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c1">@</span><span class="pl-c1">Configuration</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">AppConfig</span> {
+    <span class="pl-c1">@</span><span class="pl-c1">Bean</span>
+    <span class="pl-k">public</span> <span class="pl-smi">TransferService</span> <span class="pl-en">transferService</span>() {
+        <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-smi">TransferServiceImpl</span>();
+    }
+
+}</pre></div>
+<p>上面的代码相当于下面的 xml 配置</p>
+<div class="highlight highlight-text-xml"><pre class="notranslate">&lt;<span class="pl-ent">beans</span>&gt;
+    &lt;<span class="pl-ent">bean</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">"</span>transferService<span class="pl-pds">"</span></span> <span class="pl-e">class</span>=<span class="pl-s"><span class="pl-pds">"</span>com.acme.TransferServiceImpl<span class="pl-pds">"</span></span>/&gt;
+&lt;/<span class="pl-ent">beans</span>&gt;</pre></div>
+<p>下面这个例子是通过 <code class="notranslate">@Component</code> 无法实现的。</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c1">@</span><span class="pl-c1">Bean</span>
+<span class="pl-k">public</span> <span class="pl-smi">OneService</span> <span class="pl-en">getService</span>(<span class="pl-smi">status</span>) {
+    <span class="pl-en">case</span> (<span class="pl-s1">status</span>)  {
+        <span class="pl-s1">when</span> <span class="pl-c1">1</span>:
+                <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-smi">serviceImpl1</span>();
+        <span class="pl-s1">when</span> <span class="pl-c1">2</span>:
+                <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-smi">serviceImpl2</span>();
+        <span class="pl-s1">when</span> <span class="pl-c1">3</span>:
+                <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-smi">serviceImpl3</span>();
+    }
+}</pre></div>
+<h3><strong>将一个类声明为 bean 的注解有哪些?</strong></h3>
+<p>我们一般使用 <code class="notranslate">@Autowired</code> 注解自动装配 bean，要想把类标识成可用于 <code class="notranslate">@Autowired</code> 注解自动装配的 bean 的类,采用以下注解可实现：</p>
+<ul>
+<li><code class="notranslate">@Component</code> ：通用的注解，可标注任意类为 <code class="notranslate">Spring</code> 组件。如果一个 Bean 不知道属于哪个层，可以使用<code class="notranslate">@Component</code> 注解标注。</li>
+<li><code class="notranslate">@Repository</code> : 对应持久层即 Dao 层，主要用于数据库相关操作。</li>
+<li><code class="notranslate">@Service</code> : 对应服务层，主要涉及一些复杂的逻辑，需要用到 Dao 层。</li>
+<li><code class="notranslate">@Controller</code> : 对应 Spring MVC 控制层，主要用户接受用户请求并调用 Service 层返回数据给前端页面。</li>
+</ul>
+<h3><strong>bean 的生命周期?</strong></h3>
+<blockquote>
+<p>下面的内容整理自：<a href="https://yemengying.com/2016/07/14/spring-bean-life-cycle/" rel="nofollow">https://yemengying.com/2016/07/14/spring-bean-life-cycle/</a> ，除了这篇文章，再推荐一篇很不错的文章 ：<a href="https://www.cnblogs.com/zrtqsk/p/3735273.html" rel="nofollow">https://www.cnblogs.com/zrtqsk/p/3735273.html</a> 。</p>
+</blockquote>
+<ul>
+<li>Bean 容器找到配置文件中 <code class="notranslate">Spring Bean</code> 的定义。</li>
+<li>Bean 容器利用 <code class="notranslate">Java Reflection API</code> 创建一个 <code class="notranslate">Bean</code> 的实例。</li>
+<li>如果涉及到一些属性值 利用 <code class="notranslate">set()</code>方法设置一些属性值。</li>
+<li>如果 Bean 实现了 <code class="notranslate">BeanNameAware</code> 接口，调用 <code class="notranslate">setBeanName()</code>方法，传入 Bean 的名字。</li>
+<li>如果 Bean 实现了 <code class="notranslate">BeanClassLoaderAware</code> 接口，调用 <code class="notranslate">setBeanClassLoader()</code>方法，传入 <code class="notranslate">ClassLoader</code>对象的实例。</li>
+<li>如果 Bean 实现了 <code class="notranslate">BeanFactoryAware</code> 接口，调用 <code class="notranslate">setBeanFactory()</code>方法，传入 <code class="notranslate">BeanFactory</code>对象的实例。</li>
+<li>与上面的类似，如果实现了其他 <code class="notranslate">*.Aware</code>接口，就调用相应的方法。</li>
+<li>如果有和加载这个 Bean 的 Spring 容器相关的 <code class="notranslate">BeanPostProcessor</code> 对象，执行<code class="notranslate">postProcessBeforeInitialization()</code> 方法</li>
+<li>如果 Bean 实现了<code class="notranslate">InitializingBean</code>接口，执行<code class="notranslate">afterPropertiesSet()</code>方法。</li>
+<li>如果 Bean 在配置文件中的定义包含 init-method 属性，执行指定的方法。</li>
+<li>如果有和加载这个 Bean 的 Spring 容器相关的 <code class="notranslate">BeanPostProcessor</code> 对象，执行<code class="notranslate">postProcessAfterInitialization()</code> 方法</li>
+<li>当要销毁 Bean 的时候，如果 Bean 实现了 <code class="notranslate">DisposableBean</code> 接口，执行 <code class="notranslate">destroy()</code> 方法。</li>
+<li>当要销毁 Bean 的时候，如果 Bean 在配置文件中的定义包含 <code class="notranslate">destroy-method</code> 属性，执行指定的方法。</li>
+</ul>
+<p>图示：</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/4bc343f8e46d81d14804c67d5907caef5f88ea0aa6f429d998d76f3ada4c70c5/68747470733a2f2f696d616765732e7869616f7a6875616e6c616e2e636f6d2f70686f746f2f323031392f32346263326261643363653238313434643630643965306132656466366337662e6a7067"><img src="https://camo.githubusercontent.com/4bc343f8e46d81d14804c67d5907caef5f88ea0aa6f429d998d76f3ada4c70c5/68747470733a2f2f696d616765732e7869616f7a6875616e6c616e2e636f6d2f70686f746f2f323031392f32346263326261643363653238313434643630643965306132656466366337662e6a7067" alt="Spring Bean 生命周期" data-canonical-src="https://images.xiaozhuanlan.com/photo/2019/24bc2bad3ce28144d60d9e0a2edf6c7f.jpg" style="max-width: 100%;"></a></p>
+<p>与之比较类似的中文版本:</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/46136a526c18123596b55e9e1177e8aab1ca141ebfd766a2969fcad5bf1bf2c7/68747470733a2f2f696d616765732e7869616f7a6875616e6c616e2e636f6d2f70686f746f2f323031392f62356432363435363536353761353339356332373831303831613734383365312e6a7067"><img src="https://camo.githubusercontent.com/46136a526c18123596b55e9e1177e8aab1ca141ebfd766a2969fcad5bf1bf2c7/68747470733a2f2f696d616765732e7869616f7a6875616e6c616e2e636f6d2f70686f746f2f323031392f62356432363435363536353761353339356332373831303831613734383365312e6a7067" alt="Spring Bean 生命周期" data-canonical-src="https://images.xiaozhuanlan.com/photo/2019/b5d264565657a5395c2781081a7483e1.jpg" style="max-width: 100%;"></a></p>
+<p><strong>总结：</strong></p>
+<blockquote>
+<p><strong>生命周期就是bean从出生到死亡经历的周期方法：</strong></p>
+</blockquote>
+<div class="highlight highlight-source-java"><pre class="notranslate">      # <span class="pl-s1">构造方法</span>
+      <span class="pl-c1">01</span> - <span class="pl-s1">UserServiceImpl</span>
+
+      # <span class="pl-s1">属性输入</span>:<span class="pl-s1">setter</span>
+      <span class="pl-c1">02</span> - <span class="pl-s1">setAge</span> - <span class="pl-c1">20</span>
+
+      # <span class="pl-s1">让你知道一下bean的名字</span>（<span class="pl-s1">id</span>、<span class="pl-s1">name</span>）:<span class="pl-s1">BeanNameAware的setBeanName</span>
+      <span class="pl-c1">03</span> - <span class="pl-s1">BeanNameAware</span> - <span class="pl-s1">setBeanName</span> - <span class="pl-s1">userService</span>
+
+      # <span class="pl-s1">让你知道一下你在哪个容器里面</span>:<span class="pl-s1">ApplicationContextAware的setApplicationContext</span>
+      <span class="pl-c1">04</span> - <span class="pl-s1">ApplicationContextAware</span> - <span class="pl-s1">setApplicationContext</span> - <span class="pl-smi">org</span>.<span class="pl-smi">springframework</span>.<span class="pl-smi">context</span>.<span class="pl-smi">support</span>.<span class="pl-smi">ClassPathXmlApplicationContext</span><span class="pl-c1">@</span><span class="pl-c1">14</span><span class="pl-c1">acaea5</span>, <span class="pl-s1">started</span> <span class="pl-s1">on</span> <span class="pl-s1">Fri</span> <span class="pl-s1">Aug</span> <span class="pl-c1">21</span> <span class="pl-c1">21</span>:<span class="pl-c1">14</span>:<span class="pl-c1">50</span> <span class="pl-c1">CST</span> <span class="pl-c1">2020</span>
+
+      # <span class="pl-s1">初始化方法调用之前调用</span>
+      <span class="pl-c1">05</span> - <span class="pl-s1">BeanPostProcessor</span> - <span class="pl-s1">postProcessBeforeInitialization</span> - <span class="pl-s1">userService</span>
+
+      # <span class="pl-s1">构造</span>、<span class="pl-s1">注入完毕之后调用</span>①（<span class="pl-s1">初始化</span>，<span class="pl-s1">加载资源</span>）
+      <span class="pl-c1">06</span> - <span class="pl-s1">InitializingBean</span> - <span class="pl-s1">afterPropertiesSet</span>
+
+      # <span class="pl-s1">构造</span>、<span class="pl-s1">注入完毕之后调用</span>②（<span class="pl-s1">初始化</span>，<span class="pl-s1">加载资源</span>）
+      <span class="pl-c1">07</span> - <span class="pl-s1">init</span>-<span class="pl-s1">method</span>
+
+      # <span class="pl-s1">初始化方法调用之后调用</span>
+      <span class="pl-c1">0</span><span class="pl-c1">8</span> - <span class="pl-s1">BeanPostProcessor</span> - <span class="pl-s1">postProcessAfterInitialization</span> - <span class="pl-s1">userService</span>
+
+      # <span class="pl-s1">业务方法</span>
+      <span class="pl-c1">0</span><span class="pl-c1">9</span> - <span class="pl-s1">UserServiceImpl</span> - <span class="pl-s1">login</span> - <span class="pl-c1">123_456</span>
+
+      # <span class="pl-s1">销毁之前调用</span>①（<span class="pl-s1">释放资源</span>）
+      <span class="pl-c1">10</span> - <span class="pl-s1">DisposableBean</span> - <span class="pl-s1">destroy</span>
+
+      # <span class="pl-s1">销毁之前调用</span>②（<span class="pl-s1">释放资源</span>）
+      <span class="pl-c1">11</span> - <span class="pl-s1">destroy</span>-<span class="pl-s1">method</span></pre></div>
+<blockquote>
+<p><strong>注意：第5、8两步是在初始化资源加载前后执行，所以可以在这两步对其进行拦截做一些判断和处理操作，只有当bean的scope为singleton时，IoC容器关闭后才会调用第10、11个方法。测试步骤如下：</strong></p>
+</blockquote>
+<p><strong>1. 在UsreService创建业务方法login()</strong></p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-k">interface</span> <span class="pl-smi">UserService</span> {
+    <span class="pl-smi">boolean</span> <span class="pl-en">login</span>(<span class="pl-smi">String</span> <span class="pl-s1">username</span>, <span class="pl-smi">String</span> <span class="pl-s1">password</span>);
+}</pre></div>
+<p><strong>2. 在UserServiceImpl中具体实现业务方法，同时测试bean的生命周期，注意实现的哪些类和需要注入的属性age</strong></p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">UserServiceImpl</span> <span class="pl-k">implements</span>
+        <span class="pl-smi">UserService</span>,
+        <span class="pl-smi">BeanNameAware</span>, <span class="pl-smi">ApplicationContextAware</span>,
+        <span class="pl-smi">InitializingBean</span>, <span class="pl-smi">DisposableBean</span> {
+
+    <span class="pl-k">private</span> <span class="pl-smi">Integer</span> <span class="pl-s1">age</span>;
+
+    <span class="pl-c">// 1、构造方法为第一个调用的</span>
+    <span class="pl-k">public</span> <span class="pl-smi">UserServiceImpl</span>() {
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"01 - UserServiceImpl"</span>);
+    }
+
+    <span class="pl-c">// 2、setter为第二个调用的生命周期</span>
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">setAge</span>(<span class="pl-smi">Integer</span> <span class="pl-s1">age</span>) {
+        <span class="pl-smi">this</span>.<span class="pl-s1">age</span> = <span class="pl-s1">age</span>;
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"02 - setAge - "</span> + <span class="pl-s1">age</span>);
+    }
+
+    <span class="pl-c">// 3、实现BeanNameAware接口：让你知道一下bean的名字（id/name：userService/setBeanName）</span>
+    <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">setBeanName</span>(<span class="pl-smi">String</span> <span class="pl-s1">name</span>) {
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"03 - BeanNameAware - setBeanName - "</span> + <span class="pl-s1">name</span>);
+    }
+
+    <span class="pl-c">// 4、ApplicationContextAware接口：让你知道一下你在哪个容器里面(setApplicationContext)</span>
+    <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">setApplicationContext</span>(<span class="pl-smi">ApplicationContext</span> <span class="pl-s1">applicationContext</span>) <span class="pl-k">throws</span> <span class="pl-smi">BeansException</span> {
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"04 - ApplicationContextAware - setApplicationContext - "</span> + <span class="pl-s1">applicationContext</span>);
+    }
+
+    <span class="pl-c">// 6、InitializingBean：构造、注入完毕之后调用①（初始化，加载资源：afterPropertiesSet）</span>
+    <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">afterPropertiesSet</span>() <span class="pl-k">throws</span> <span class="pl-smi">Exception</span> {
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"06 - InitializingBean - afterPropertiesSet"</span>);
+    }
+
+    <span class="pl-c">// 7、构造、注入完毕之后调用②（初始化，加载资源）</span>
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">init</span>() {
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"07 - init-method"</span>);
+    }
+
+    <span class="pl-c">// 9、UserServiceImpl：login这个业务方法为第九个被调用的</span>
+    <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+    <span class="pl-k">public</span> <span class="pl-smi">boolean</span> <span class="pl-en">login</span>(<span class="pl-smi">String</span> <span class="pl-s1">username</span>, <span class="pl-smi">String</span> <span class="pl-s1">password</span>) {
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"09 - UserServiceImpl - login - "</span> + <span class="pl-s1">username</span> + <span class="pl-s">"_"</span> + <span class="pl-s1">password</span>);
+        <span class="pl-k">return</span> <span class="pl-c1">false</span>;
+    }
+
+    <span class="pl-c">// 10、DisposableBean：销毁之前调用①（释放资源）</span>
+    <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">destroy</span>() <span class="pl-k">throws</span> <span class="pl-smi">Exception</span> {
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"10 - DisposableBean - destroy"</span>);
+    }
+
+    <span class="pl-c">// 11、销毁之前调用②（释放资源）</span>
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">dealloc</span>() {
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"11 - destroy-method"</span>);
+    }
+}</pre></div>
+<p><strong>3. 在xml中注入bean对象，这里只有一个age属性</strong></p>
+<div class="highlight highlight-text-xml"><pre class="notranslate">&lt;?<span class="pl-ent">xml</span><span class="pl-e"> version</span>=<span class="pl-s"><span class="pl-pds">"</span>1.0<span class="pl-pds">"</span></span><span class="pl-e"> encoding</span>=<span class="pl-s"><span class="pl-pds">"</span>UTF-8<span class="pl-pds">"</span></span>?&gt;
+&lt;<span class="pl-ent">beans</span> <span class="pl-e">xmlns</span>=<span class="pl-s"><span class="pl-pds">"</span>http://www.springframework.org/schema/beans<span class="pl-pds">"</span></span>
+       <span class="pl-e">xmlns</span><span class="pl-e">:</span><span class="pl-e">p</span>=<span class="pl-s"><span class="pl-pds">"</span>http://www.springframework.org/schema/p<span class="pl-pds">"</span></span>
+       <span class="pl-e">xmlns</span><span class="pl-e">:</span><span class="pl-e">xsi</span>=<span class="pl-s"><span class="pl-pds">"</span>http://www.w3.org/2001/XMLSchema-instance<span class="pl-pds">"</span></span>
+       <span class="pl-e">xsi</span><span class="pl-e">:</span><span class="pl-e">schemaLocation</span>=<span class="pl-s"><span class="pl-pds">"</span>http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd<span class="pl-pds">"</span></span>&gt;
+
+    &lt;<span class="pl-ent">bean</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">"</span>userService<span class="pl-pds">"</span></span>
+          <span class="pl-e">class</span>=<span class="pl-s"><span class="pl-pds">"</span>com.ws.service.impl.UserServiceImpl<span class="pl-pds">"</span></span>
+          <span class="pl-e">p</span><span class="pl-e">:</span><span class="pl-e">age</span>=<span class="pl-s"><span class="pl-pds">"</span>20<span class="pl-pds">"</span></span>
+          <span class="pl-e">init-method</span>=<span class="pl-s"><span class="pl-pds">"</span>init<span class="pl-pds">"</span></span>
+          <span class="pl-e">destroy-method</span>=<span class="pl-s"><span class="pl-pds">"</span>dealloc<span class="pl-pds">"</span></span>/&gt;
+
+    &lt;<span class="pl-ent">bean</span> <span class="pl-e">class</span>=<span class="pl-s"><span class="pl-pds">"</span>com.ws.processor.MyProcessor<span class="pl-pds">"</span></span> <span class="pl-e">scope</span>=<span class="pl-s"><span class="pl-pds">"</span>singleton<span class="pl-pds">"</span></span>/&gt;
+&lt;/<span class="pl-ent">beans</span>&gt;</pre></div>
+<p><strong>4. 上面可知，11个bean生命周期并未测试完全，所以5,8需要单独测试且可以统一处理所有的Bean</strong></p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c">/**</span>
+<span class="pl-c"> * 可以统一处理所有的Bean</span>
+<span class="pl-c"> */</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">MyProcessor</span> <span class="pl-k">implements</span> <span class="pl-smi">BeanPostProcessor</span> {
+    <span class="pl-c">// 5、初始化方法调用之前调用BeanPostProcessor - postProcessBeforeInitialization</span>
+    <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+    <span class="pl-k">public</span> <span class="pl-smi">Object</span> <span class="pl-en">postProcessBeforeInitialization</span>(<span class="pl-smi">Object</span> <span class="pl-s1">bean</span>, <span class="pl-smi">String</span> <span class="pl-s1">beanName</span>) <span class="pl-k">throws</span> <span class="pl-smi">BeansException</span> {
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"05 - BeanPostProcessor - postProcessBeforeInitialization - "</span> + <span class="pl-s1">beanName</span>);
+        <span class="pl-k">return</span> <span class="pl-s1">bean</span>;
+    }
+
+    <span class="pl-c">// 8、初始化方法调用之后调用:BeanPostProcessor - postProcessAfterInitialization</span>
+    <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+    <span class="pl-k">public</span> <span class="pl-smi">Object</span> <span class="pl-en">postProcessAfterInitialization</span>(<span class="pl-smi">Object</span> <span class="pl-s1">bean</span>, <span class="pl-smi">String</span> <span class="pl-s1">beanName</span>) <span class="pl-k">throws</span> <span class="pl-smi">BeansException</span> {
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"08 - BeanPostProcessor - postProcessAfterInitialization - "</span> + <span class="pl-s1">beanName</span>);
+        <span class="pl-k">return</span> <span class="pl-s1">bean</span>;
+    }
+}</pre></div>
+<p><strong>5. 测试类</strong></p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">UserTest</span> {
+    <span class="pl-c1">@</span><span class="pl-c1">Test</span>
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">test</span>() {
+        <span class="pl-c">// 创建容器</span>
+        <span class="pl-smi">ClassPathXmlApplicationContext</span> <span class="pl-s1">ctx</span> = <span class="pl-k">new</span> <span class="pl-smi">ClassPathXmlApplicationContext</span>(<span class="pl-s">"applicationContext.xml"</span>);
+
+        <span class="pl-smi">UserService</span> <span class="pl-s1">service</span> = <span class="pl-s1">ctx</span>.<span class="pl-en">getBean</span>(<span class="pl-s">"userService"</span>, <span class="pl-smi">UserService</span>.<span class="pl-k">class</span>);
+        <span class="pl-s1">service</span>.<span class="pl-en">login</span>(<span class="pl-s">"123"</span>, <span class="pl-s">"456"</span>);
+
+        <span class="pl-c">// 关闭容器</span>
+        <span class="pl-s1">ctx</span>.<span class="pl-en">close</span>();
+    }</pre></div>
+<p><strong>6. 测试结果：确实是顺序执行的</strong></p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210922170748-6d5f906c0fd44500aee2c600508ed7a5.png"><img src="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210922170748-6d5f906c0fd44500aee2c600508ed7a5.png" alt="QQ图片20210922170748.png" style="max-width: 100%;"></a></p>
+<h2><strong>Spring 代理</strong></h2>
+<blockquote>
+<p><strong>业务层service中除了业务代码，如业务运算和dao操作等必要的操作，还有附加的代码，如事务、日志、性能监控、异常处理等可选的操作；</strong></p>
+</blockquote>
+<blockquote>
+<p><strong>所以附加代码的加入就导致了业务层代码的累赘，这里就提出了代理：就是在网络层调用代理类。代理类包含业务代码和附加代码，通过业务代码调用业务层的业务代码；</strong></p>
+</blockquote>
+<blockquote>
+<p><strong>代理就是在不修改目标类的目标方法代码的前提下，为目标方法增加额外功能；代理类中必须也有同样的目标方法，即 代理类实现跟目标类同样的接口，若目标类没有实现接口，代理类继承目标类；</strong></p>
+</blockquote>
+<blockquote>
+<p><strong>代理分为静态和动态，其中动态代理可以是JDK自带的（目标类必须有具体实现）和 CGLib（可以没有实现类），具体见Java重要知识点2！</strong></p>
+</blockquote>
+<h2><strong>Spring AOP</strong></h2>
+<h3><strong>谈谈自己对于 AOP 的了解</strong></h3>
+<p>AOP (Aspect-Oriented Programming:面向切面编程) 能够将那些与业务无关，却为业务模块所共同调用的逻辑或责任（例如事务处理、日志管理、权限控制等）封装起来，便于减少系统的重复代码，降低模块间的耦合度，并有利于未来的可拓展性和可维护性。</p>
+<p>Spring AOP 就是基于动态代理的，如果要代理的对象，实现了某个接口，那么 Spring AOP 会使用 <strong>JDK Proxy</strong>，去创建代理对象，而对于没有实现接口的对象，就无法使用 JDK Proxy 去进行代理了，这时候 Spring AOP 会使用 <strong>Cglib</strong> 生成一个被代理对象的子类来作为代理，如下图所示：</p>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/7d604e2b5b9591432e0c5eeb2a8224217a1b04c57d69776577cab70947f3b384/68747470733a2f2f696d616765732e7869616f7a6875616e6c616e2e636f6d2f70686f746f2f323031392f39323664666335343962303664323830613337333937663966643439626639642e6a7067"><img src="https://camo.githubusercontent.com/7d604e2b5b9591432e0c5eeb2a8224217a1b04c57d69776577cab70947f3b384/68747470733a2f2f696d616765732e7869616f7a6875616e6c616e2e636f6d2f70686f746f2f323031392f39323664666335343962303664323830613337333937663966643439626639642e6a7067" alt="SpringAOPProcess" data-canonical-src="https://images.xiaozhuanlan.com/photo/2019/926dfc549b06d280a37397f9fd49bf9d.jpg" style="max-width: 100%;"></a></p>
+<p>当然你也可以使用 <strong>AspectJ</strong> ！Spring AOP 已经集成了 AspectJ ，AspectJ 应该算的上是 Java 生态系统中最完整的 AOP 框架了。</p>
+<h3><strong>Spring AOP 和 AspectJ AOP 有什么区别？</strong></h3>
+<p><strong>Spring AOP 属于运行时增强，而 AspectJ 是编译时增强。</strong> Spring AOP 基于代理(Proxying)，而 AspectJ 基于字节码操作(Bytecode Manipulation)。</p>
+<p>Spring AOP 已经集成了 AspectJ ，AspectJ 应该算的上是 Java 生态系统中最完整的 AOP 框架了。AspectJ 相比于 Spring AOP 功能更加强大，但是 Spring AOP 相对来说更简单，</p>
+<p>如果我们的切面比较少，那么两者性能差异不大。但是，当切面太多的话，最好选择 AspectJ ，它比 Spring AOP 快很多</p>
+<h3><strong>具体实现</strong></h3>
+<blockquote>
+<p><strong>通过AOP完成附加功能主要有两个方法：实现 <code class="notranslate">MethodBeforeAdvice</code> 接口（只会在目标方法执行前执行附加代码）以及实现 <code class="notranslate">MethodInterceptor</code> 接口（前后均可）；</strong></p>
+</blockquote>
+<p><strong>实现 <code class="notranslate">MethodBeforeAdvice</code> 接口</strong></p>
+<ol>
+<li>配置applicationContext.xml文件（配置附加代码执行位置以及切面）</li>
+</ol>
+<div class="highlight highlight-text-xml"><pre class="notranslate">    <span class="pl-c"><span class="pl-c">&lt;!--</span> 附加代码执行处 <span class="pl-c">--&gt;</span></span>
+    &lt;<span class="pl-ent">bean</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">"</span>logAdvice<span class="pl-pds">"</span></span> <span class="pl-e">class</span>=<span class="pl-s"><span class="pl-pds">"</span>com.ws.aop.LogAdvice<span class="pl-pds">"</span></span>/&gt;
+
+    &lt;<span class="pl-ent">aop</span><span class="pl-ent">:</span><span class="pl-ent">config</span>&gt;
+        <span class="pl-c"><span class="pl-c">&lt;!--</span> 切入点：给哪些类的哪些方法增加附加代码？ <span class="pl-c">--&gt;</span></span>
+        <span class="pl-c"><span class="pl-c">&lt;!--</span> execution(* *(..))代表所有类的所有方法都会被切入 <span class="pl-c">--&gt;</span></span>
+        &lt;<span class="pl-ent">aop</span><span class="pl-ent">:</span><span class="pl-ent">pointcut</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">"</span>pc<span class="pl-pds">"</span></span> <span class="pl-e">expression</span>=<span class="pl-s"><span class="pl-pds">"</span>execution(* *(..))<span class="pl-pds">"</span></span>/&gt;
+
+        <span class="pl-c"><span class="pl-c">&lt;!--</span> 附加代码位置 <span class="pl-c">--&gt;</span></span>
+        &lt;<span class="pl-ent">aop</span><span class="pl-ent">:</span><span class="pl-ent">advisor</span> <span class="pl-e">advice-ref</span>=<span class="pl-s"><span class="pl-pds">"</span>logAdvice<span class="pl-pds">"</span></span> <span class="pl-e">pointcut-ref</span>=<span class="pl-s"><span class="pl-pds">"</span>pc<span class="pl-pds">"</span></span>/&gt;
+    &lt;/<span class="pl-ent">aop</span><span class="pl-ent">:</span><span class="pl-ent">config</span>&gt;</pre></div>
+<ol start="2">
+<li>附加代码类</li>
+</ol>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">LogAdvice</span> <span class="pl-k">implements</span> <span class="pl-smi">MethodBeforeAdvice</span> {
+    <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">before</span>(<span class="pl-smi">Method</span> <span class="pl-s1">method</span>, <span class="pl-smi">Object</span>[] <span class="pl-s1">args</span>, <span class="pl-smi">Object</span> <span class="pl-s1">target</span>) <span class="pl-k">throws</span> <span class="pl-smi">Throwable</span> {
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"LogAdvice - before ------------------"</span>);
+    }
+}</pre></div>
+<ol start="3">
+<li>在各自的接口或者实现了接口的具体实现类中，编写方法（注解<code class="notranslate">@Log</code>是自定义注解的方法<code class="notranslate">@annotation</code>切入），省略<code class="notranslate">userService/Impl</code>和<code class="notranslate">personService/Impl</code>。</li>
+</ol>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c">// 只有接口，没有实现类（使用CGLib代理），而如果由实现类，使用JDK自带的代理</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">SkillService</span> {
+    <span class="pl-k">private</span> <span class="pl-smi">int</span> <span class="pl-s1">age</span>;
+    <span class="pl-c1">@</span><span class="pl-c1">Log</span>
+    <span class="pl-k">public</span> <span class="pl-smi">boolean</span> <span class="pl-en">save</span>(<span class="pl-smi">Object</span> <span class="pl-s1">skill</span>) {
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"SkillService - save"</span>);
+        <span class="pl-k">return</span> <span class="pl-c1">false</span>;
+    }
+}</pre></div>
+<ol start="4">
+<li>测试代码</li>
+</ol>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c">// 某些类的某些方法才需要代理去增加附加代码</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">UserTest</span> {
+
+    <span class="pl-c1">@</span><span class="pl-c1">Test</span>
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">test</span>() {
+        <span class="pl-c">// 创建容器</span>
+        <span class="pl-smi">ApplicationContext</span> <span class="pl-s1">ctx</span> = <span class="pl-k">new</span> <span class="pl-smi">ClassPathXmlApplicationContext</span>(<span class="pl-s">"applicationContext.xml"</span>);
+
+        <span class="pl-smi">SkillService</span> <span class="pl-s1">skillService</span> = <span class="pl-s1">ctx</span>.<span class="pl-en">getBean</span>(<span class="pl-s">"skillService"</span>, <span class="pl-smi">SkillService</span>.<span class="pl-k">class</span>);
+        <span class="pl-s1">skillService</span>.<span class="pl-en">save</span>(<span class="pl-c1">null</span>);
+
+        <span class="pl-smi">UserService</span> <span class="pl-s1">userService</span> = <span class="pl-s1">ctx</span>.<span class="pl-en">getBean</span>(<span class="pl-s">"userService"</span>, <span class="pl-smi">UserService</span>.<span class="pl-k">class</span>);
+        <span class="pl-s1">userService</span>.<span class="pl-en">login</span>(<span class="pl-c1">null</span>, <span class="pl-c1">null</span>);
+        <span class="pl-s1">userService</span>.<span class="pl-en">register</span>(<span class="pl-c1">null</span>);
+
+        <span class="pl-smi">PersonService</span> <span class="pl-s1">personService</span> = <span class="pl-s1">ctx</span>.<span class="pl-en">getBean</span>(<span class="pl-s">"personService"</span>, <span class="pl-smi">PersonService</span>.<span class="pl-k">class</span>);
+        <span class="pl-s1">personService</span>.<span class="pl-en">run</span>();
+    }
+}</pre></div>
+<ol start="5">
+<li>测试结果<br>
+<a target="_blank" rel="noopener noreferrer" href="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210922224954-48ac3d75ca3341e385ecfdfec35e457e.png"><img src="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210922224954-48ac3d75ca3341e385ecfdfec35e457e.png" alt="QQ图片20210922224954.png" style="max-width: 100%;"></a></li>
+</ol>
+<blockquote>
+<p><strong>注意:</strong> 所有接口的所有方法都像在配置文件中设置的那样，全部接口的全部方法都会被AOP附加代码。<br>
+<strong>但是存在一个缺点就是附加代码只能在目标方法的前面！</strong></p>
+</blockquote>
+<p><strong>实现 <code class="notranslate">MethodInterceptor</code> 接口</strong></p>
+<ol>
+<li>配置applicationContext.xml文件（配置附加代码执行位置以及切面）</li>
+</ol>
+<div class="highlight highlight-text-xml"><pre class="notranslate">    <span class="pl-c"><span class="pl-c">&lt;!--</span> 附加代码执行处 <span class="pl-c">--&gt;</span></span>
+    &lt;<span class="pl-ent">bean</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">"</span>logInterceptor<span class="pl-pds">"</span></span> <span class="pl-e">class</span>=<span class="pl-s"><span class="pl-pds">"</span>com.ws.aop.LogInterceptor<span class="pl-pds">"</span></span>/&gt;
+
+
+    &lt;<span class="pl-ent">aop</span><span class="pl-ent">:</span><span class="pl-ent">config</span> <span class="pl-e">proxy-target-class</span>=<span class="pl-s"><span class="pl-pds">"</span>false<span class="pl-pds">"</span></span>&gt;
+        <span class="pl-c"><span class="pl-c">&lt;!--</span> 切入点：给哪些类的哪些方法增加附加代码？ <span class="pl-c">--&gt;</span></span>
+        <span class="pl-c"><span class="pl-c">&lt;!--</span> execution(* *(..))代表所有类的所有方法都会被切入 <span class="pl-c">--&gt;</span></span>
+        &lt;<span class="pl-ent">aop</span><span class="pl-ent">:</span><span class="pl-ent">pointcut</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">"</span>pc<span class="pl-pds">"</span></span> <span class="pl-e">expression</span>=<span class="pl-s"><span class="pl-pds">"</span>execution(* *(..))<span class="pl-pds">"</span></span>/&gt;
+
+        <span class="pl-c"><span class="pl-c">&lt;!--</span> 附加代码位置 <span class="pl-c">--&gt;</span></span>
+        &lt;<span class="pl-ent">aop</span><span class="pl-ent">:</span><span class="pl-ent">advisor</span> <span class="pl-e">advice-ref</span>=<span class="pl-s"><span class="pl-pds">"</span>logInterceptor<span class="pl-pds">"</span></span> <span class="pl-e">pointcut-ref</span>=<span class="pl-s"><span class="pl-pds">"</span>pc<span class="pl-pds">"</span></span>/&gt;
+    &lt;/<span class="pl-ent">aop</span><span class="pl-ent">:</span><span class="pl-ent">config</span>&gt;</pre></div>
+<ol start="2">
+<li>附加代码类</li>
+</ol>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">LogInterceptor</span> <span class="pl-k">implements</span> <span class="pl-smi">MethodInterceptor</span> {
+    <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+    <span class="pl-k">public</span> <span class="pl-smi">Object</span> <span class="pl-en">invoke</span>(<span class="pl-smi">MethodInvocation</span> <span class="pl-s1">invocation</span>) <span class="pl-k">throws</span> <span class="pl-smi">Throwable</span> {
+
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"1 ----------------"</span>);
+
+        <span class="pl-c">// 调用目标对象的目标方法</span>
+        <span class="pl-smi">Object</span> <span class="pl-s1">result</span> = <span class="pl-s1">invocation</span>.<span class="pl-en">proceed</span>();
+
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"2 ----------------"</span>);
+
+        <span class="pl-k">return</span> <span class="pl-s1">result</span>;
+    }
+}</pre></div>
+<ol start="3">
+<li>在各自的接口或者实现了接口的具体实现类中，编写方法，省略<code class="notranslate">skillService</code>和<code class="notranslate">personService/Impl</code>。</li>
+</ol>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c">// 定义接口</span>
+<span class="pl-k">public</span> <span class="pl-k">interface</span> <span class="pl-smi">UserService</span> {
+    <span class="pl-smi">boolean</span> <span class="pl-en">login</span>(<span class="pl-smi">String</span> <span class="pl-s1">username</span>, <span class="pl-smi">String</span> <span class="pl-s1">password</span>);
+    <span class="pl-smi">boolean</span> <span class="pl-en">register</span>(<span class="pl-smi">String</span> <span class="pl-s1">username</span>);
+}</pre></div>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c">// 具体实现类</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">UserServiceImpl</span> <span class="pl-k">implements</span> <span class="pl-smi">UserService</span>, <span class="pl-smi">BeanNameAware</span>, <span class="pl-smi">ApplicationContextAware</span> {
+    <span class="pl-k">private</span> <span class="pl-smi">ApplicationContext</span> <span class="pl-s1">ctx</span>;
+    <span class="pl-k">private</span> <span class="pl-smi">String</span> <span class="pl-s1">beanName</span>;
+
+    <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+    <span class="pl-k">public</span> <span class="pl-smi">boolean</span> <span class="pl-en">login</span>(<span class="pl-smi">String</span> <span class="pl-s1">username</span>, <span class="pl-smi">String</span> <span class="pl-s1">password</span>) {
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"UserServiceImpl - login"</span>);
+        <span class="pl-k">return</span> <span class="pl-c1">false</span>;
+    }
+
+    <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+    <span class="pl-c1">@</span><span class="pl-c1">Log</span>
+    <span class="pl-k">public</span> <span class="pl-smi">boolean</span> <span class="pl-en">register</span>(<span class="pl-smi">String</span> <span class="pl-s1">username</span>) {
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"UserServiceImpl - register"</span>);
+        <span class="pl-k">return</span> <span class="pl-c1">false</span>;
+    }
+
+    <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">setApplicationContext</span>(<span class="pl-smi">ApplicationContext</span> <span class="pl-s1">applicationContext</span>) <span class="pl-k">throws</span> <span class="pl-smi">BeansException</span> {
+        <span class="pl-s1">ctx</span> = <span class="pl-s1">applicationContext</span>;
+    }
+
+    <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">setBeanName</span>(<span class="pl-smi">String</span> <span class="pl-s1">name</span>) {
+        <span class="pl-s1">beanName</span> = <span class="pl-s1">name</span>;
+    }
+}</pre></div>
+<ol start="4">
+<li>测试代码相同，测试结果如下：</li>
+</ol>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210923093953-63045448c02241b4934de0541a812686.png"><img src="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210923093953-63045448c02241b4934de0541a812686.png" alt="QQ图片20210923093953.png" style="max-width: 100%;"></a></p>
+<blockquote>
+<p><strong>由结果可知：实现了AOP，而且在目标方法前后都可以附加代码</strong></p>
+</blockquote>
+<p><strong>AOP动态代理的底层实现</strong></p>
+<ul>
+<li>Spring动态代理的底层实现：如果果目标类有实现接口，使用 <code class="notranslate">JDK</code> 实现；如果目标类没有实现接口，使用 <code class="notranslate">CGLib</code> 实现。</li>
+<li>在 <code class="notranslate">BeanPostProcessor</code> 的 <code class="notranslate">postProcessAfterInitialization</code> 方法中创建代理对象。</li>
+<li>也可以通过 <code class="notranslate">proxy-target-class</code> 属性修改底层实现方案：true（强制使用CGLib），false（按照默认方法）。</li>
+</ul>
+<div class="highlight highlight-text-xml"><pre class="notranslate">	&lt;<span class="pl-ent">aop</span><span class="pl-ent">:</span><span class="pl-ent">config</span> <span class="pl-e">proxy-target-class</span>=<span class="pl-s"><span class="pl-pds">"</span>false<span class="pl-pds">"</span></span>&gt;</pre></div>
+<p><strong>AOP切入点表达式</strong></p>
+<blockquote>
+<p><strong>常见的切入点指示符有：<code class="notranslate">execution</code>、<code class="notranslate">args</code>、<code class="notranslate">within</code>、<code class="notranslate">@annotation</code> 等，当然了还可以使用 <code class="notranslate">&amp;&amp;(and)</code>、<code class="notranslate">||(or)</code>、<code class="notranslate">！(非)</code> 组合切入点表达式！</strong></p>
+</blockquote>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210923100532-7a9767925a3647899bfdf0d0372e5c20.png"><img src="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210923100532-7a9767925a3647899bfdf0d0372e5c20.png" alt="QQ图片20210923100532.png" style="max-width: 100%;"></a></p>
+<p><strong>注意：</strong> 默认情况下，目标方法相互调用时，总共只会被切入1次。解决方法：拿到代理对象去调用目标方法，见UserServiceImpl</p>
+<blockquote>
+<p><strong>当然了，AOP可以同时配置多个<code class="notranslate">pointcut</code>、<code class="notranslate">advisor</code>！</strong></p>
+</blockquote>
+<div class="highlight highlight-text-xml"><pre class="notranslate">    <span class="pl-c"><span class="pl-c">&lt;!--</span> 附加代码执行处 <span class="pl-c">--&gt;</span></span>
+    &lt;<span class="pl-ent">bean</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">"</span>logAdvice<span class="pl-pds">"</span></span> <span class="pl-e">class</span>=<span class="pl-s"><span class="pl-pds">"</span>com.ws.aop.LogAdvice<span class="pl-pds">"</span></span>/&gt;
+    &lt;<span class="pl-ent">bean</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">"</span>logInterceptor<span class="pl-pds">"</span></span> <span class="pl-e">class</span>=<span class="pl-s"><span class="pl-pds">"</span>com.ws.aop.LogInterceptor<span class="pl-pds">"</span></span>/&gt;
+
+    <span class="pl-c"><span class="pl-c">&lt;!--</span>配置多个切面的第一种方式<span class="pl-c">--&gt;</span></span>
+    &lt;<span class="pl-ent">aop</span><span class="pl-ent">:</span><span class="pl-ent">config</span>&gt;
+        &lt;<span class="pl-ent">aop</span><span class="pl-ent">:</span><span class="pl-ent">pointcut</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">"</span>pc1<span class="pl-pds">"</span></span> <span class="pl-e">expression</span>=<span class="pl-s"><span class="pl-pds">"</span>within(com.ws.service.impl.UserServiceImpl)<span class="pl-pds">"</span></span>/&gt;
+        &lt;<span class="pl-ent">aop</span><span class="pl-ent">:</span><span class="pl-ent">advisor</span> <span class="pl-e">advice-ref</span>=<span class="pl-s"><span class="pl-pds">"</span>logInterceptor<span class="pl-pds">"</span></span> <span class="pl-e">pointcut-ref</span>=<span class="pl-s"><span class="pl-pds">"</span>pc1<span class="pl-pds">"</span></span>/&gt;
+        &lt;<span class="pl-ent">aop</span><span class="pl-ent">:</span><span class="pl-ent">advisor</span> <span class="pl-e">advice-ref</span>=<span class="pl-s"><span class="pl-pds">"</span>logAdvice<span class="pl-pds">"</span></span> <span class="pl-e">pointcut-ref</span>=<span class="pl-s"><span class="pl-pds">"</span>pc1<span class="pl-pds">"</span></span>/&gt;
+    &lt;/<span class="pl-ent">aop</span><span class="pl-ent">:</span><span class="pl-ent">config</span>&gt;
+
+    &lt;<span class="pl-ent">aop</span><span class="pl-ent">:</span><span class="pl-ent">config</span>&gt;
+        &lt;<span class="pl-ent">aop</span><span class="pl-ent">:</span><span class="pl-ent">pointcut</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">"</span>pc2<span class="pl-pds">"</span></span> <span class="pl-e">expression</span>=<span class="pl-s"><span class="pl-pds">"</span>within(com.ws.service.SkillService)<span class="pl-pds">"</span></span>/&gt;
+        &lt;<span class="pl-ent">aop</span><span class="pl-ent">:</span><span class="pl-ent">advisor</span> <span class="pl-e">advice-ref</span>=<span class="pl-s"><span class="pl-pds">"</span>logInterceptor<span class="pl-pds">"</span></span> <span class="pl-e">pointcut-ref</span>=<span class="pl-s"><span class="pl-pds">"</span>pc2<span class="pl-pds">"</span></span>/&gt;
+    &lt;/<span class="pl-ent">aop</span><span class="pl-ent">:</span><span class="pl-ent">config</span>&gt;
+
+    <span class="pl-c"><span class="pl-c">&lt;!--</span>配置多个切面的第一种方式<span class="pl-c">--&gt;</span></span>
+    &lt;<span class="pl-ent">aop</span><span class="pl-ent">:</span><span class="pl-ent">config</span>&gt;
+        &lt;<span class="pl-ent">aop</span><span class="pl-ent">:</span><span class="pl-ent">pointcut</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">"</span>pc1<span class="pl-pds">"</span></span> <span class="pl-e">expression</span>=<span class="pl-s"><span class="pl-pds">"</span>within(com.ws.service.impl.UserServiceImpl)<span class="pl-pds">"</span></span>/&gt;
+        &lt;<span class="pl-ent">aop</span><span class="pl-ent">:</span><span class="pl-ent">pointcut</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">"</span>pc2<span class="pl-pds">"</span></span> <span class="pl-e">expression</span>=<span class="pl-s"><span class="pl-pds">"</span>within(com.ws.service.SkillService)<span class="pl-pds">"</span></span>/&gt;
+
+        &lt;<span class="pl-ent">aop</span><span class="pl-ent">:</span><span class="pl-ent">advisor</span> <span class="pl-e">advice-ref</span>=<span class="pl-s"><span class="pl-pds">"</span>logInterceptor<span class="pl-pds">"</span></span> <span class="pl-e">pointcut-ref</span>=<span class="pl-s"><span class="pl-pds">"</span>pc1<span class="pl-pds">"</span></span>/&gt;
+        &lt;<span class="pl-ent">aop</span><span class="pl-ent">:</span><span class="pl-ent">advisor</span> <span class="pl-e">advice-ref</span>=<span class="pl-s"><span class="pl-pds">"</span>logInterceptor<span class="pl-pds">"</span></span> <span class="pl-e">pointcut-ref</span>=<span class="pl-s"><span class="pl-pds">"</span>pc2<span class="pl-pds">"</span></span>/&gt;
+        &lt;<span class="pl-ent">aop</span><span class="pl-ent">:</span><span class="pl-ent">advisor</span> <span class="pl-e">advice-ref</span>=<span class="pl-s"><span class="pl-pds">"</span>logAdvice<span class="pl-pds">"</span></span> <span class="pl-e">pointcut-ref</span>=<span class="pl-s"><span class="pl-pds">"</span>pc1<span class="pl-pds">"</span></span>/&gt;
+    &lt;/<span class="pl-ent">aop</span><span class="pl-ent">:</span><span class="pl-ent">config</span>&gt;</pre></div>
+<p><strong>总结：</strong></p>
+<ul>
+<li>AOP面向切面编程: Spring使用AOP技术封装了动态代理的功能，就不用像上节那样创建代理；</li>
+<li>切面：包含切入点 <code class="notranslate">aop:pointcut</code>，即给哪些类的哪些方法增加附加代码; 也包含附加代码的位置<code class="notranslate">aop:advisor</code>， 切到切入点对应方法后，在AOP技术下，并没有了创建代理对象和invoke()回调；</li>
+<li><code class="notranslate">LogAdvice</code>中实现了<code class="notranslate">MethodBeforeAdvice</code>，只有一个<code class="notranslate">before</code>方法，即只能在切入点的前面插入代码；</li>
+<li>而<code class="notranslate">LogInterceptor</code>实现了<code class="notranslate">MethodInterceptor</code>，只需实现它的<code class="notranslate">invoke方法</code>就能在前后插入代码了；</li>
+<li>由本节可知，创建动态代理的方法有两种，一是JDK自带的，二是Spring集成的CGLib，其创建代理同样也是在 <code class="notranslate">Bean</code> 生命周期的第八步 <code class="notranslate">BeanPostProcessor</code> 的 <code class="notranslate">postProcessAfterInitialization</code> 方法中创建；</li>
+<li>切面配置里面，附加代码映射位置相对简单，而具体切入点使用到了AOP切入点表达式! 常见的切入点指示符: <code class="notranslate">execution/args/within/@annotation</code>，具体看参考资料；<br>
+①<code class="notranslate">@annotation</code>：<code class="notranslate">@annotation(com.ws.annotation.Log)</code>: 表示注解中有Log注解的方法进行切入。<br>
+②<code class="notranslate">AOP</code>细节：默认情况下，目标方法相互调用时，总共只会被切入1次，解决方法是：拿到代理对象去调用目标方法。<br>
+③<code class="notranslate">within</code>：<code class="notranslate">within(com.ws.service.impl.UserServiceImpl)</code>: 表示切入了UserServiceImpl里的全部方法。</li>
+</ul>
+<h2><strong>Spring 事务</strong></h2>
+<p>Spring/SpringBoot 模块下专门有一篇是讲 Spring 事务的，总结的非常详细，通俗易懂。</p>
+<h3><strong>Spring 管理事务的方式有几种？</strong></h3>
+<ul>
+<li><strong>编程式事务</strong>： 在代码中硬编码(不推荐使用) : 通过 <code class="notranslate">TransactionTemplate</code>或者 <code class="notranslate">TransactionManager</code> 手动管理事务，实际应用中很少使用，但是对于你理解 Spring 事务管理原理有帮助。</li>
+<li><strong>声明式事务</strong>： 在 XML 配置文件中配置或者直接基于注解（推荐使用），实际是通过 AOP 实现（基于<code class="notranslate">@Transactional</code> 的全注解方式使用最多），使用Spring的声明式事务，可以极其容易地进行事务管理（只需要在 <code class="notranslate">XML</code> 中进行声明配置，一般是在 <code class="notranslate">Service</code> 层进行事务管理）。</li>
+</ul>
+<h3><strong>Spring 事务中哪几种事务传播行为?</strong></h3>
+<p><strong>事务传播行为是为了解决业务层方法之间互相调用的事务问题</strong>。</p>
+<p>当事务方法被另一个事务方法调用时，必须指定事务应该如何传播。例如：方法可能继续在现有事务中运行，也可能开启一个新事务，并在自己的事务中运行。</p>
+<p>正确的事务传播行为可能的值如下:</p>
+<p><strong>1.<code class="notranslate">TransactionDefinition.PROPAGATION_REQUIRED</code></strong></p>
+<p>使用的最多的一个事务传播行为，我们平时经常使用的<code class="notranslate">@Transactional</code>注解默认使用就是这个事务传播行为。如果当前存在事务，则加入该事务；如果当前没有事务，则创建一个新的事务。</p>
+<p><strong><code class="notranslate">2.TransactionDefinition.PROPAGATION_REQUIRES_NEW</code></strong></p>
+<p>创建一个新的事务，如果当前存在事务，则把当前事务挂起。也就是说不管外部方法是否开启事务，<code class="notranslate">Propagation.REQUIRES_NEW</code>修饰的内部方法会新开启自己的事务，且开启的事务相互独立，互不干扰。</p>
+<p><strong>3.<code class="notranslate">TransactionDefinition.PROPAGATION_NESTED</code></strong></p>
+<p>如果当前存在事务，则创建一个事务作为当前事务的嵌套事务来运行；如果当前没有事务，则该取值等价于<code class="notranslate">TransactionDefinition.PROPAGATION_REQUIRED</code>。</p>
+<p><strong>4.<code class="notranslate">TransactionDefinition.PROPAGATION_MANDATORY</code></strong></p>
+<p>如果当前存在事务，则加入该事务；如果当前没有事务，则抛出异常。（mandatory：强制性）</p>
+<p>这个使用的很少。</p>
+<p>若是错误的配置以下 3 种事务传播行为，事务将不会发生回滚：</p>
+<ul>
+<li><strong><code class="notranslate">TransactionDefinition.PROPAGATION_SUPPORTS</code></strong>: 如果当前存在事务，则加入该事务；如果当前没有事务，则以非事务的方式继续运行。</li>
+<li><strong><code class="notranslate">TransactionDefinition.PROPAGATION_NOT_SUPPORTED</code></strong>: 以非事务方式运行，如果当前存在事务，则把当前事务挂起。</li>
+<li><strong><code class="notranslate">TransactionDefinition.PROPAGATION_NEVER</code></strong>: 以非事务方式运行，如果当前存在事务，则抛出异常。</li>
+</ul>
+<h3><strong>Spring 事务中的隔离级别有哪几种?</strong></h3>
+<p>和事务传播行为这块一样，为了方便使用，Spring 也相应地定义了一个枚举类：<code class="notranslate">Isolation</code></p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-k">enum</span> <span class="pl-smi">Isolation</span> {
+
+    <span class="pl-c1">DEFAULT</span>(<span class="pl-smi">TransactionDefinition</span>.<span class="pl-c1">ISOLATION_DEFAULT</span>),
+
+    <span class="pl-c1">READ_UNCOMMITTED</span>(<span class="pl-smi">TransactionDefinition</span>.<span class="pl-c1">ISOLATION_READ_UNCOMMITTED</span>),
+
+    <span class="pl-c1">READ_COMMITTED</span>(<span class="pl-smi">TransactionDefinition</span>.<span class="pl-c1">ISOLATION_READ_COMMITTED</span>),
+
+    <span class="pl-c1">REPEATABLE_READ</span>(<span class="pl-smi">TransactionDefinition</span>.<span class="pl-c1">ISOLATION_REPEATABLE_READ</span>),
+
+    <span class="pl-c1">SERIALIZABLE</span>(<span class="pl-smi">TransactionDefinition</span>.<span class="pl-c1">ISOLATION_SERIALIZABLE</span>);
+
+    <span class="pl-k">private</span> <span class="pl-k">final</span> <span class="pl-smi">int</span> <span class="pl-s1">value</span>;
+
+    <span class="pl-smi">Isolation</span>(<span class="pl-smi">int</span> <span class="pl-s1">value</span>) {
+        <span class="pl-smi">this</span>.<span class="pl-s1">value</span> = <span class="pl-s1">value</span>;
+    }
+
+    <span class="pl-k">public</span> <span class="pl-smi">int</span> <span class="pl-en">value</span>() {
+        <span class="pl-k">return</span> <span class="pl-smi">this</span>.<span class="pl-s1">value</span>;
+    }
+
+}</pre></div>
+<p>下面我依次对每一种事务隔离级别进行介绍：</p>
+<blockquote>
+<p><strong><code class="notranslate">TransactionDefinition.ISOLATION_DEFAULT</code></strong> :使用后端数据库默认的隔离级别，MySQL 默认采用的 <code class="notranslate">REPEATABLE_READ</code> 隔离级别 Oracle 默认采用的 <code class="notranslate">READ_COMMITTED</code> 隔离级别，而Isolution用于设置事务的隔离级别。</p>
+</blockquote>
+<ul>
+<li><strong><code class="notranslate">TransactionDefinition.ISOLATION_READ_UNCOMMITTED</code></strong> :最低的隔离级别，使用这个隔离级别很少，因为它允许读取尚未提交的数据变更，<strong>可能会导致脏读、幻读或不可重复读</strong></li>
+<li><strong><code class="notranslate">TransactionDefinition.ISOLATION_READ_COMMITTED</code></strong> : 允许读取并发事务已经提交的数据，<strong>可以阻止脏读，但是幻读或不可重复读仍有可能发生</strong></li>
+<li><strong><code class="notranslate">TransactionDefinition.ISOLATION_REPEATABLE_READ</code></strong> : 对同一字段的多次读取结果都是一致的，除非数据是被本身事务自己所修改，<strong>可以阻止脏读和不可重复读，但幻读仍有可能发生。</strong></li>
+<li><strong><code class="notranslate">TransactionDefinition.ISOLATION_SERIALIZABLE</code></strong> : 最高的隔离级别，完全服从 ACID 的隔离级别。所有的事务依次逐个执行，这样事务之间就完全不可能产生干扰，也就是说，<strong>该级别可以防止脏读、不可重复读以及幻读</strong>。但是这将严重影响程序的性能。通常情况下也不会用到该级别。</li>
+</ul>
+<h3><strong><a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/transactional/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/transactional">@transactional</a>(rollbackFor = Exception.class)注解了解吗？</strong></h3>
+<p><code class="notranslate">Exception</code> 分为运行时异常 <code class="notranslate">RuntimeException</code> 和非运行时异常。事务管理对于企业应用来说是至关重要的，即使出现异常情况，它也可以保证数据的一致性。</p>
+<p>当 <code class="notranslate">@Transactional</code> 注解作用于类上时，该类的所有 public 方法将都具有该类型的事务属性，同时，我们也可以在方法级别使用该标注来覆盖类级别的定义。如果类或者方法加了这个注解，那么这个类里面的方法抛出异常，就会回滚，数据库里面的数据也会回滚。</p>
+<p>在 <code class="notranslate">@Transactional</code> 注解中如果不配置<code class="notranslate">rollback-for</code>属性,那么事务只会在遇到<code class="notranslate">RuntimeException</code>的时候才会回滚，加上 <code class="notranslate">rollback-for=Exception.class</code>,可以让事务在遇到非运行时异常时也回滚。</p>
+<h3>具体如下：</h3>
+<div class="highlight highlight-text-xml"><pre class="notranslate">    <span class="pl-c"><span class="pl-c">&lt;!--</span>引入数据库配置文件db.properties<span class="pl-c">--&gt;</span></span>
+    &lt;<span class="pl-ent">context</span><span class="pl-ent">:</span><span class="pl-ent">property-placeholder</span> <span class="pl-e">location</span>=<span class="pl-s"><span class="pl-pds">"</span>db.properties<span class="pl-pds">"</span></span>/&gt;
+
+    <span class="pl-c"><span class="pl-c">&lt;!--</span> 将数据库配置文件属性设置到数据源（Druid） <span class="pl-c">--&gt;</span></span>
+    &lt;<span class="pl-ent">bean</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">"</span>dataSource<span class="pl-pds">"</span></span> <span class="pl-e">class</span>=<span class="pl-s"><span class="pl-pds">"</span>com.alibaba.druid.pool.DruidDataSource<span class="pl-pds">"</span></span>&gt;
+        &lt;<span class="pl-ent">property</span> <span class="pl-e">name</span>=<span class="pl-s"><span class="pl-pds">"</span>driverClassName<span class="pl-pds">"</span></span> <span class="pl-e">value</span>=<span class="pl-s"><span class="pl-pds">"</span>${jdbc.driverClass}<span class="pl-pds">"</span></span>/&gt;
+        &lt;<span class="pl-ent">property</span> <span class="pl-e">name</span>=<span class="pl-s"><span class="pl-pds">"</span>url<span class="pl-pds">"</span></span> <span class="pl-e">value</span>=<span class="pl-s"><span class="pl-pds">"</span>${jdbc.url}<span class="pl-pds">"</span></span>/&gt;
+        &lt;<span class="pl-ent">property</span> <span class="pl-e">name</span>=<span class="pl-s"><span class="pl-pds">"</span>username<span class="pl-pds">"</span></span> <span class="pl-e">value</span>=<span class="pl-s"><span class="pl-pds">"</span>${jdbc.username}<span class="pl-pds">"</span></span>/&gt;
+        &lt;<span class="pl-ent">property</span> <span class="pl-e">name</span>=<span class="pl-s"><span class="pl-pds">"</span>password<span class="pl-pds">"</span></span> <span class="pl-e">value</span>=<span class="pl-s"><span class="pl-pds">"</span>${jdbc.password}<span class="pl-pds">"</span></span>/&gt;
+    &lt;/<span class="pl-ent">bean</span>&gt;
+
+    <span class="pl-c"><span class="pl-c">&lt;!--</span> 创建SqlSessionFactory <span class="pl-c">--&gt;</span></span>
+    &lt;<span class="pl-ent">bean</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">"</span>sqlSessionFactory<span class="pl-pds">"</span></span> <span class="pl-e">class</span>=<span class="pl-s"><span class="pl-pds">"</span>org.mybatis.spring.SqlSessionFactoryBean<span class="pl-pds">"</span></span>&gt;
+        <span class="pl-c"><span class="pl-c">&lt;!--</span> 数据源 <span class="pl-c">--&gt;</span></span>
+        &lt;<span class="pl-ent">property</span> <span class="pl-e">name</span>=<span class="pl-s"><span class="pl-pds">"</span>dataSource<span class="pl-pds">"</span></span> <span class="pl-e">ref</span>=<span class="pl-s"><span class="pl-pds">"</span>dataSource<span class="pl-pds">"</span></span>/&gt;
+        <span class="pl-c"><span class="pl-c">&lt;!--</span> 这个包底下的类会自动设置别名（一般是领域模型） <span class="pl-c">--&gt;</span></span>
+        &lt;<span class="pl-ent">property</span> <span class="pl-e">name</span>=<span class="pl-s"><span class="pl-pds">"</span>typeAliasesPackage<span class="pl-pds">"</span></span> <span class="pl-e">value</span>=<span class="pl-s"><span class="pl-pds">"</span>com.ws.domain<span class="pl-pds">"</span></span>/&gt;
+        <span class="pl-c"><span class="pl-c">&lt;!--</span> 映射文件的位置 <span class="pl-c">--&gt;</span></span>
+        &lt;<span class="pl-ent">property</span> <span class="pl-e">name</span>=<span class="pl-s"><span class="pl-pds">"</span>mapperLocations<span class="pl-pds">"</span></span>&gt;
+            &lt;<span class="pl-ent">array</span>&gt;
+                &lt;<span class="pl-ent">value</span>&gt;mappers/*.xml&lt;/<span class="pl-ent">value</span>&gt;
+            &lt;/<span class="pl-ent">array</span>&gt;
+        &lt;/<span class="pl-ent">property</span>&gt;
+    &lt;/<span class="pl-ent">bean</span>&gt;
+
+    <span class="pl-c"><span class="pl-c">&lt;!--</span> 扫描dao <span class="pl-c">--&gt;</span></span>
+    &lt;<span class="pl-ent">bean</span> <span class="pl-e">class</span>=<span class="pl-s"><span class="pl-pds">"</span>org.mybatis.spring.mapper.MapperScannerConfigurer<span class="pl-pds">"</span></span>&gt;
+        <span class="pl-c"><span class="pl-c">&lt;!--</span> 设置SqlSessionFactoryBean的id <span class="pl-c">--&gt;</span></span>
+        &lt;<span class="pl-ent">property</span> <span class="pl-e">name</span>=<span class="pl-s"><span class="pl-pds">"</span>sqlSessionFactoryBeanName<span class="pl-pds">"</span></span> <span class="pl-e">value</span>=<span class="pl-s"><span class="pl-pds">"</span>sqlSessionFactory<span class="pl-pds">"</span></span>/&gt;
+        <span class="pl-c"><span class="pl-c">&lt;!--</span> 设置dao的包 <span class="pl-c">--&gt;</span></span>
+        &lt;<span class="pl-ent">property</span> <span class="pl-e">name</span>=<span class="pl-s"><span class="pl-pds">"</span>basePackage<span class="pl-pds">"</span></span> <span class="pl-e">value</span>=<span class="pl-s"><span class="pl-pds">"</span>com.ws.dao<span class="pl-pds">"</span></span>/&gt;
+    &lt;/<span class="pl-ent">bean</span>&gt;
+
+    &lt;<span class="pl-ent">bean</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">"</span>skillService<span class="pl-pds">"</span></span> <span class="pl-e">class</span>=<span class="pl-s"><span class="pl-pds">"</span>com.ws.service.impl.SkillServiceImpl<span class="pl-pds">"</span></span>&gt;
+        &lt;<span class="pl-ent">property</span> <span class="pl-e">name</span>=<span class="pl-s"><span class="pl-pds">"</span>dao<span class="pl-pds">"</span></span> <span class="pl-e">ref</span>=<span class="pl-s"><span class="pl-pds">"</span>skillDao<span class="pl-pds">"</span></span>/&gt;
+    &lt;/<span class="pl-ent">bean</span>&gt;
+
+    <span class="pl-c"><span class="pl-c">&lt;!--</span> 事务管理器：通过AOP实现 <span class="pl-c">--&gt;</span></span>
+    &lt;<span class="pl-ent">bean</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">"</span>txMgr<span class="pl-pds">"</span></span>
+          <span class="pl-e">class</span>=<span class="pl-s"><span class="pl-pds">"</span>org.springframework.jdbc.datasource.DataSourceTransactionManager<span class="pl-pds">"</span></span>&gt;
+        &lt;<span class="pl-ent">property</span> <span class="pl-e">name</span>=<span class="pl-s"><span class="pl-pds">"</span>dataSource<span class="pl-pds">"</span></span> <span class="pl-e">ref</span>=<span class="pl-s"><span class="pl-pds">"</span>dataSource<span class="pl-pds">"</span></span>/&gt;
+    &lt;/<span class="pl-ent">bean</span>&gt;
+
+    <span class="pl-c"><span class="pl-c">&lt;!--</span> 附加代码：事务管理代码 <span class="pl-c">--&gt;</span></span>
+    &lt;<span class="pl-ent">tx</span><span class="pl-ent">:</span><span class="pl-ent">advice</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">"</span>txAdvice<span class="pl-pds">"</span></span> <span class="pl-e">transaction-manager</span>=<span class="pl-s"><span class="pl-pds">"</span>txMgr<span class="pl-pds">"</span></span>&gt;
+        &lt;<span class="pl-ent">tx</span><span class="pl-ent">:</span><span class="pl-ent">attributes</span>&gt;
+<span class="pl-c"><span class="pl-c">&lt;!--</span>        no-rollback-for这里表示哪些异常不会导致事务回滚；rollback-for哪些异常会导致事务回滚<span class="pl-c">--&gt;</span></span>
+            &lt;<span class="pl-ent">tx</span><span class="pl-ent">:</span><span class="pl-ent">method</span> <span class="pl-e">name</span>=<span class="pl-s"><span class="pl-pds">"</span>*<span class="pl-pds">"</span></span> <span class="pl-e">no-rollback-for</span>=<span class="pl-s"><span class="pl-pds">"</span>RuntimeException<span class="pl-pds">"</span></span>/&gt;
+            &lt;<span class="pl-ent">tx</span><span class="pl-ent">:</span><span class="pl-ent">method</span> <span class="pl-e">name</span>=<span class="pl-s"><span class="pl-pds">"</span>list*<span class="pl-pds">"</span></span> <span class="pl-e">propagation</span>=<span class="pl-s"><span class="pl-pds">"</span>SUPPORTS<span class="pl-pds">"</span></span>/&gt;
+            &lt;<span class="pl-ent">tx</span><span class="pl-ent">:</span><span class="pl-ent">method</span> <span class="pl-e">name</span>=<span class="pl-s"><span class="pl-pds">"</span>update*<span class="pl-pds">"</span></span>/&gt;
+        &lt;/<span class="pl-ent">tx</span><span class="pl-ent">:</span><span class="pl-ent">attributes</span>&gt;
+    &lt;/<span class="pl-ent">tx</span><span class="pl-ent">:</span><span class="pl-ent">advice</span>&gt;
+
+    <span class="pl-c"><span class="pl-c">&lt;!--</span> 切面 <span class="pl-c">--&gt;</span></span>
+    &lt;<span class="pl-ent">aop</span><span class="pl-ent">:</span><span class="pl-ent">config</span>&gt;
+        &lt;<span class="pl-ent">aop</span><span class="pl-ent">:</span><span class="pl-ent">pointcut</span> <span class="pl-e">id</span>=<span class="pl-s"><span class="pl-pds">"</span>pc<span class="pl-pds">"</span></span> <span class="pl-e">expression</span>=<span class="pl-s"><span class="pl-pds">"</span>within(com.ws.service..*)<span class="pl-pds">"</span></span>/&gt;
+        &lt;<span class="pl-ent">aop</span><span class="pl-ent">:</span><span class="pl-ent">advisor</span> <span class="pl-e">advice-ref</span>=<span class="pl-s"><span class="pl-pds">"</span>txAdvice<span class="pl-pds">"</span></span> <span class="pl-e">pointcut-ref</span>=<span class="pl-s"><span class="pl-pds">"</span>pc<span class="pl-pds">"</span></span>/&gt;
+    &lt;/<span class="pl-ent">aop</span><span class="pl-ent">:</span><span class="pl-ent">config</span>&gt;</pre></div>
+<p><strong>由上可知：</strong></p>
+<blockquote>
+<p><strong>propagation</strong></p>
+</blockquote>
+<p>可以通过 <code class="notranslate">propagation</code> 属性设置事务的传播行为。用于指定当事务嵌套时，如何管理事务，当Service调用Service时，会出现事务嵌套，注意各传播行为的使用场景。</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210923104836-61d6d8b21a1f411da92a5587a8f41bac.png"><img src="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210923104836-61d6d8b21a1f411da92a5587a8f41bac.png" alt="QQ图片20210923104836.png" style="max-width: 100%;"></a></p>
+<div class="highlight highlight-text-xml"><pre class="notranslate">	<span class="pl-c"><span class="pl-c">&lt;!--</span>使用xml设置<span class="pl-c">--&gt;</span></span>
+	&lt;<span class="pl-ent">tx</span><span class="pl-ent">:</span><span class="pl-ent">method</span> <span class="pl-e">name</span>=<span class="pl-s"><span class="pl-pds">"</span>list*<span class="pl-pds">"</span></span> <span class="pl-e">propagation</span>=<span class="pl-s"><span class="pl-pds">"</span>SUPPORTS<span class="pl-pds">"</span></span>/&gt;</pre></div>
+<blockquote>
+<p><strong>read-only</strong></p>
+</blockquote>
+<p>如果一个事务只执行读操作，那么数据库可能会采取某些优化措施：<code class="notranslate">read-only设置为true</code>，告诉数据库这是个只读事务（只适用于 <code class="notranslate">REQUIRED</code> 或者 <code class="notranslate">REQUIRED_NEW</code>）</p>
+<div class="highlight highlight-text-xml"><pre class="notranslate">	&lt;<span class="pl-ent">tx</span><span class="pl-ent">:</span><span class="pl-ent">method</span> <span class="pl-e">name</span>=<span class="pl-s"><span class="pl-pds">"</span>list*<span class="pl-pds">"</span></span> <span class="pl-e">propagation</span>=<span class="pl-s"><span class="pl-pds">"</span>REQUIRED<span class="pl-pds">"</span></span> <span class="pl-e">read-only</span>=<span class="pl-s"><span class="pl-pds">"</span>true<span class="pl-pds">"</span></span>/&gt;</pre></div>
+<blockquote>
+<p><strong>timeout</strong></p>
+</blockquote>
+<p>单位是秒，默认是-1（按照数据库默认情况处理），超时就会抛出异常</p>
+<div class="highlight highlight-text-xml"><pre class="notranslate">	&lt;<span class="pl-ent">tx</span><span class="pl-ent">:</span><span class="pl-ent">method</span> <span class="pl-e">name</span>=<span class="pl-s"><span class="pl-pds">"</span>list*<span class="pl-pds">"</span></span> <span class="pl-e">timeout</span>=<span class="pl-s"><span class="pl-pds">"</span>4<span class="pl-pds">"</span></span>/&gt;</pre></div>
+<blockquote>
+<p><strong>rollback-for、no-rollback-for</strong></p>
+</blockquote>
+<p>默认情况下，<code class="notranslate">RuntimeException</code>、<code class="notranslate">Error</code>会导致事务回滚，而 <code class="notranslate">Exception</code> 不会；<br>
+<code class="notranslate">rollback-for:</code> 设置哪些异常会导致事务回滚，即在上述RuntimeException、Error两个异常基础上增加异常；<code class="notranslate">no-rollback-for:</code> 设置哪些异常不会导致事务回滚，即在Exception基础上增加一些异常；</p>
+<div class="highlight highlight-text-xml"><pre class="notranslate">	<span class="pl-c"><span class="pl-c">&lt;!--</span>本来RuntimeException回导致事务回滚，下面设置之后便不会回滚<span class="pl-c">--&gt;</span></span>
+	&lt;<span class="pl-ent">tx</span><span class="pl-ent">:</span><span class="pl-ent">method</span> <span class="pl-e">name</span>=<span class="pl-s"><span class="pl-pds">"</span>*<span class="pl-pds">"</span></span> <span class="pl-e">no-rollback-for</span>=<span class="pl-s"><span class="pl-pds">"</span>RuntimeException<span class="pl-pds">"</span></span>/&gt;</pre></div>
+<blockquote>
+<p><strong>isolation</strong><br>
+isolation用于设置事务的隔离级别，照数据库的默认设置级别为 <code class="notranslate">REPEATABLE_READ</code>，略！详见Spring事务总结</p>
+</blockquote>
+<div class="highlight highlight-source-sql"><pre class="notranslate">	<span class="pl-c"><span class="pl-c">#</span> 查询隔离级别的SQL语句</span>
+	<span class="pl-k">SELECT</span> @@TX_ISOLATION
+
+	<span class="pl-c"><span class="pl-c">#</span> 设置隔离级别</span>
+	<span class="pl-k">SET</span> GLOBAL TRANSACTION ISOLATION LEVEL 隔离级别</pre></div>
+<h2><strong>Spring 注解</strong></h2>
+<blockquote>
+<p><strong>提示：如果Spring的配置文件内容过多，可以采取多个配置文件的形式，可以在加载配置文件时依次加载或通配符加载，或者在其中一个配置文件中import导入其他几个。</strong></p>
+</blockquote>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">MyTest</span> {
+    <span class="pl-c1">@</span><span class="pl-c1">Test</span>
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">test</span>() {
+        <span class="pl-c">// 引入配置文件：分看单独写</span>
+        <span class="pl-smi">ApplicationContext</span> <span class="pl-s1">ctx</span> = <span class="pl-k">new</span> <span class="pl-smi">ClassPathXmlApplicationContext</span>(
+                <span class="pl-s">"applicationContext.xml"</span>,
+                <span class="pl-s">"applicationContext-mybatis.xml"</span>,
+                <span class="pl-s">"applicationContext-tx.xml"</span>);
+        <span class="pl-c">// 用通配符</span>
+<span class="pl-c">//        ApplicationContext ctx = new ClassPathXmlApplicationContext(</span>
+<span class="pl-c">//                "classpath*:applicationContext*.xml");</span>
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s1">ctx</span>.<span class="pl-en">getBean</span>(<span class="pl-s">"person"</span>));
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s1">ctx</span>.<span class="pl-en">getBean</span>(<span class="pl-s">"dog"</span>));
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s1">ctx</span>.<span class="pl-en">getBean</span>(<span class="pl-s">"user"</span>));
+    }
+}</pre></div>
+<h3><strong>1.注解实现bean标签</strong></h3>
+<ul>
+<li><code class="notranslate">@Component</code>：相当于<code class="notranslate">&lt;bean&gt;</code>；通过value属性设置bean的id，默认会将类名的首字母小写形式作为bean的id；<code class="notranslate">@Controller</code>用于标识控制器层，<code class="notranslate">@Service</code>用于标识业务层，<code class="notranslate">@Repository</code>用于标识Dao层（前面三者都是用于配置文件的扫描，只是名称不一样，只是区分哪层，如果不知道哪层就使用<code class="notranslate">@Component</code>）。</li>
+<li><code class="notranslate">@Scope</code>：设置<code class="notranslate">singleton（单列）</code>、<code class="notranslate">prototype</code>。</li>
+<li><code class="notranslate">@Lazy</code>：scope为singleton时延迟加载。</li>
+<li>可以通过<code class="notranslate">&lt;context:component-scan&gt;</code>设置需要扫描的包，可以扫描到所有的<code class="notranslate">@Component</code>，其中<code class="notranslate">@ComponentScan</code>相当于<code class="notranslate">&lt;context:component-scan&gt;</code></li>
+</ul>
+<div class="highlight highlight-text-xml"><pre class="notranslate">	&lt;<span class="pl-ent">context</span><span class="pl-ent">:</span><span class="pl-ent">component-scan</span> <span class="pl-e">base-package</span>=<span class="pl-s"><span class="pl-pds">"</span>com.ws<span class="pl-pds">"</span></span>/&gt;</pre></div>
+<h3><strong>2.注解实现注入</strong></h3>
+<ul>
+<li><code class="notranslate">@Autowired</code>：默认按照类型注入bean实例；可以写在成员变量（不会调用seeter）、setter 、构造方法上；可以配合使用<code class="notranslate">@Qualifier</code>、<code class="notranslate">@Named</code>：设置需要注入的bean的id；required设置为false时表示找不到对应bean抛出异常。</li>
+<li><code class="notranslate">@value</code>: 用于注入String、基本类型、BigDecimal等类型，可以配合配置文件，使用${}读取配置文件中的内容。</li>
+<li><code class="notranslate">@PropertySource</code>、<code class="notranslate">@PropertySources</code>相当于<br>
+<code class="notranslate">&lt;context:property-placeholder location="user.properties"/&gt;</code></li>
+</ul>
+<p>bean注入对象：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c1">@</span><span class="pl-c1">Component</span>
+<span class="pl-c1">@</span><span class="pl-c1">PropertySource</span>(<span class="pl-s">"user.properties"</span>)
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">User</span> {
+    <span class="pl-c1">@</span><span class="pl-c1">Value</span>(<span class="pl-s">"${name}"</span>)
+    <span class="pl-k">private</span> <span class="pl-smi">String</span> <span class="pl-s1">name</span>;
+    <span class="pl-k">private</span> <span class="pl-smi">Dog</span> <span class="pl-s1">dog</span>;
+
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">setName</span>(<span class="pl-smi">String</span> <span class="pl-s1">name</span>) {
+        <span class="pl-smi">this</span>.<span class="pl-s1">name</span> = <span class="pl-s1">name</span>;
+    }
+
+    <span class="pl-c1">@</span><span class="pl-c1">Autowired</span>(<span class="pl-s1">required</span> = <span class="pl-c1">false</span>)
+    <span class="pl-c1">@</span><span class="pl-c1">Qualifier</span>(<span class="pl-s">"dog"</span>)
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">setDog</span>(<span class="pl-smi">Dog</span> <span class="pl-s1">dog</span>) {
+        <span class="pl-smi">this</span>.<span class="pl-s1">dog</span> = <span class="pl-s1">dog</span>;
+    }
+
+    <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+    <span class="pl-k">public</span> <span class="pl-smi">String</span> <span class="pl-en">toString</span>() {
+        <span class="pl-k">return</span> <span class="pl-s">"User{"</span> +
+                <span class="pl-s">"name="</span> + <span class="pl-s1">name</span> +
+                <span class="pl-s">",dog="</span> + <span class="pl-s1">dog</span> +
+                <span class="pl-s">'}'</span>;
+    }
+}</pre></div>
+<p>配置文件user.properties：</p>
+<div class="highlight highlight-text-xml"><pre class="notranslate">	name=Rose</pre></div>
+<h3><strong>3.注解实现注入构造方法</strong></h3>
+<p>可以通过<code class="notranslate">@Autowired</code>指定创建bean时调用的构造方法<br>
+<a target="_blank" rel="noopener noreferrer" href="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210923161612-26d177efe9cb4b6e80582fb97756b4f8.png"><img src="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210923161612-26d177efe9cb4b6e80582fb97756b4f8.png" alt="QQ图片20210923161612.png" style="max-width: 100%;"></a></p>
+<h3><strong>4.注解实现AOP</strong></h3>
+<ul>
+<li><code class="notranslate">@Aspect</code>: 用来标识一个切面类，其对象需要放到IoC容器中</li>
+<li><code class="notranslate">@Around</code>: 用来设置切入的附加代码</li>
+<li>还需要加上 <code class="notranslate">&lt;aop:aspectj-autoproxy&gt;</code> 标签，替代之前的 <code class="notranslate">&lt;aop:config&gt;</code>：同样有 <code class="notranslate">proxy-target-class</code> 属性设置AOP的底层实现方案</li>
+<li><code class="notranslate">@Pointcut</code>复用切入点，即用EL表达式表示哪个类中的哪个方法切入</li>
+</ul>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c">// 切面类</span>
+<span class="pl-c1">@</span><span class="pl-c1">Aspect</span>
+<span class="pl-c1">@</span><span class="pl-c1">Component</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">DefaultAspect</span> {
+    <span class="pl-c">// 切入的目标</span>
+    <span class="pl-c1">@</span><span class="pl-c1">Pointcut</span>(<span class="pl-s">"within(com.ws.service.impl.UserServiceImpl)"</span>)
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">pc</span>() {}
+
+    <span class="pl-c">// 切入点的附加代码</span>
+    <span class="pl-c1">@</span><span class="pl-c1">Around</span>(<span class="pl-s">"pc()"</span>)
+    <span class="pl-k">public</span> <span class="pl-smi">Object</span> <span class="pl-en">log</span>(<span class="pl-smi">ProceedingJoinPoint</span> <span class="pl-s1">point</span>) <span class="pl-k">throws</span> <span class="pl-smi">Throwable</span> {
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"log-----------------------1"</span>);
+
+        <span class="pl-c">// 调用目标方法</span>
+        <span class="pl-smi">Object</span> <span class="pl-s1">ret</span> = <span class="pl-s1">point</span>.<span class="pl-en">proceed</span>();
+
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"log-----------------------2"</span>);
+        <span class="pl-k">return</span> <span class="pl-s1">ret</span>;
+    }
+
+    <span class="pl-c1">@</span><span class="pl-c1">Around</span>(<span class="pl-s">"pc()"</span>)
+    <span class="pl-k">public</span> <span class="pl-smi">Object</span> <span class="pl-en">watch</span>(<span class="pl-smi">ProceedingJoinPoint</span> <span class="pl-s1">point</span>) <span class="pl-k">throws</span> <span class="pl-smi">Throwable</span> {
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"watch-----------------------1"</span>);
+
+        <span class="pl-c">// 调用目标方法</span>
+        <span class="pl-smi">Object</span> <span class="pl-s1">ret</span> = <span class="pl-s1">point</span>.<span class="pl-en">proceed</span>();
+
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"watch-----------------------2"</span>);
+        <span class="pl-k">return</span> <span class="pl-s1">ret</span>;
+    }
+}</pre></div>
+<p>xml</p>
+<div class="highlight highlight-text-xml"><pre class="notranslate">    &lt;<span class="pl-ent">context</span><span class="pl-ent">:</span><span class="pl-ent">component-scan</span> <span class="pl-e">base-package</span>=<span class="pl-s"><span class="pl-pds">"</span>com.ws<span class="pl-pds">"</span></span>/&gt;
+
+<span class="pl-c"><span class="pl-c">&lt;!--</span>    这里是用来替代之前的&lt;aop:config&gt;<span class="pl-c">--&gt;</span></span>
+    &lt;<span class="pl-ent">aop</span><span class="pl-ent">:</span><span class="pl-ent">aspectj-autoproxy</span>/&gt;</pre></div>
+<h3><strong>5.注解实现事务</strong></h3>
+<ul>
+<li><code class="notranslate">@Transactional</code>: 设置在需要进行事务管理的类（一般是service）上使用这个注解,表示所有方法都会自动管理事务。</li>
+<li>可以在需要进行事务管理的方法上使用这个注解（可以覆盖类中<code class="notranslate">@Transactional</code>的配置）。</li>
+<li>可以设置<code class="notranslate">isolation</code>、<code class="notranslate">propagation</code> 、<code class="notranslate">timeout</code> 、<code class="notranslate">rollbackFor</code> 、<code class="notranslate">noRollbackFor</code> 、<code class="notranslate">readOnly</code> 等前面介绍的属性。</li>
+<li>使用<code class="notranslate">&lt;tx:annotation-driven&gt;</code>取代之前的 <code class="notranslate">&lt;tx:advice&gt;</code>、<code class="notranslate">&lt;aop:config&gt;</code>，同样有<code class="notranslate">proxy-target-class</code>属性设置AOP的底层实现方案。</li>
+</ul>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c1">@</span><span class="pl-c1">Service</span>(<span class="pl-s">"skillService"</span>)
+<span class="pl-c1">@</span><span class="pl-c1">Transactional</span>  <span class="pl-c">// 作用到类，表示全部方法都事务管理</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">SkillServiceImpl</span> <span class="pl-k">implements</span> <span class="pl-smi">SkillService</span> {
+    <span class="pl-k">private</span> <span class="pl-smi">SkillDao</span> <span class="pl-s1">dao</span>;
+
+    <span class="pl-c1">@</span><span class="pl-c1">Autowired</span>
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">setDao</span>(<span class="pl-smi">SkillDao</span> <span class="pl-s1">dao</span>) {
+        <span class="pl-smi">this</span>.<span class="pl-s1">dao</span> = <span class="pl-s1">dao</span>;
+    }
+
+    <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+    <span class="pl-c1">@</span><span class="pl-c1">Transactional</span>(<span class="pl-s1">propagation</span> = <span class="pl-smi">Propagation</span>.<span class="pl-c1">SUPPORTS</span>) <span class="pl-c">// 作用到具体方法，可以覆盖类的@Transactional设置</span>
+    <span class="pl-k">public</span> <span class="pl-smi">List</span>&lt;<span class="pl-smi">Skill</span>&gt; <span class="pl-en">list</span>() {
+        <span class="pl-k">return</span> <span class="pl-s1">dao</span>.<span class="pl-en">list</span>();
+    }
+
+    <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+    <span class="pl-k">public</span> <span class="pl-smi">boolean</span> <span class="pl-en">save</span>(<span class="pl-smi">Skill</span> <span class="pl-s1">skill</span>) {
+        <span class="pl-k">return</span> <span class="pl-s1">dao</span>.<span class="pl-en">save</span>(<span class="pl-s1">skill</span>);
+    }
+
+    <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+    <span class="pl-k">public</span> <span class="pl-smi">boolean</span> <span class="pl-en">update</span>(<span class="pl-smi">Skill</span> <span class="pl-s1">skill</span>) {
+        <span class="pl-k">return</span> <span class="pl-s1">dao</span>.<span class="pl-en">update</span>(<span class="pl-s1">skill</span>);
+    }
+
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">test</span>(<span class="pl-smi">Skill</span> <span class="pl-s1">skill</span>) <span class="pl-k">throws</span> <span class="pl-smi">Exception</span> {
+
+        <span class="pl-s1">dao</span>.<span class="pl-en">save</span>(<span class="pl-s1">skill</span>);
+
+        <span class="pl-k">throw</span> <span class="pl-k">new</span> <span class="pl-smi">RuntimeException</span>();
+    }
+}</pre></div>
+<h3><strong>6.<a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/configuration/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/configuration">@configuration</a>、<a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/bean/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/bean">@bean</a></strong></h3>
+<ul>
+<li><code class="notranslate">@Configuration</code>注解可以取代<code class="notranslate">applicationContext.xml</code>,它也是一个<code class="notranslate">@Component</code>。</li>
+<li>可以在<code class="notranslate">@Configuration</code>注解的类中，使用<code class="notranslate">@Bean</code>修饰方法，进行bean对象的创建，默认情况下方法名就是<code class="notranslate">bean</code>的<code class="notranslate">id</code>，也可以通过<code class="notranslate">name</code>，<code class="notranslate">value</code>属性设置<code class="notranslate">bean</code>的<code class="notranslate">id</code>。</li>
+<li>如果<code class="notranslate">bean</code>属性本身有<code class="notranslate">@Autowired</code>，那么直接new原来对象即可，Spring会利用<code class="notranslate">@Autowired</code>技术，自动注入<code class="notranslate">bean</code>给<code class="notranslate">@Bean</code>方法的参数。</li>
+<li><code class="notranslate">@Bean</code>方法的注入<code class="notranslate">FacoryBean</code>中，表面上<code class="notranslate">@Bean</code>方法返回的是<code class="notranslate">DogFacoryBean</code>，但由于<code class="notranslate">@Configuration</code>底层使用了<code class="notranslate">CGLib</code>，对<code class="notranslate">@Bean</code>进行了增强处理，所以会调用<code class="notranslate">DogFactoryBean</code>的<code class="notranslate">getObject</code>方法。</li>
+</ul>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c1">@</span><span class="pl-c1">Component</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">DogFactoryBean</span> <span class="pl-k">implements</span> <span class="pl-smi">FactoryBean</span>&lt;<span class="pl-smi">Dog</span>&gt; {
+    <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+    <span class="pl-k">public</span> <span class="pl-smi">Dog</span> <span class="pl-en">getObject</span>() <span class="pl-k">throws</span> <span class="pl-smi">Exception</span> {
+        <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-smi">Dog</span>();
+    }
+
+    <span class="pl-c1">@</span><span class="pl-c1">Override</span>
+    <span class="pl-k">public</span> <span class="pl-smi">Class</span>&lt;?&gt; <span class="pl-en">getObjectType</span>() {
+        <span class="pl-k">return</span> <span class="pl-smi">Dog</span>.<span class="pl-k">class</span>;
+    }
+}</pre></div>
+<ul>
+<li><a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/bean/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/bean">@bean</a>方法注入其他类型</li>
+</ul>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c1">@</span><span class="pl-c1">Configuration</span>
+<span class="pl-c1">@</span><span class="pl-c1">PropertySource</span>(<span class="pl-s">"skill.properties"</span>)
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">BeanConfig</span> {
+    <span class="pl-c1">@</span><span class="pl-c1">Value</span>(<span class="pl-s">"${name}"</span>)
+    <span class="pl-k">private</span> <span class="pl-smi">String</span> <span class="pl-s1">name</span>;
+    <span class="pl-c1">@</span><span class="pl-c1">Value</span>(<span class="pl-s">"${level}"</span>)
+    <span class="pl-k">private</span> <span class="pl-smi">int</span> <span class="pl-s1">level</span>;
+
+    <span class="pl-c1">@</span><span class="pl-c1">Bean</span>
+    <span class="pl-k">public</span> <span class="pl-smi">Skill</span> <span class="pl-en">skill</span>() {
+        <span class="pl-smi">Skill</span> <span class="pl-s1">skill</span> = <span class="pl-k">new</span> <span class="pl-smi">Skill</span>();
+        <span class="pl-s1">skill</span>.<span class="pl-en">setName</span>(<span class="pl-s1">name</span>);
+        <span class="pl-s1">skill</span>.<span class="pl-en">setLevel</span>(<span class="pl-s1">level</span>);
+        <span class="pl-k">return</span> <span class="pl-s1">skill</span>;
+    }</pre></div>
+<p>配置文件skill.properties：</p>
+<div class="highlight highlight-text-xml"><pre class="notranslate">name=Rose
+level=20</pre></div>
+<h3><strong>7.创建工厂的入口</strong></h3>
+<ul>
+<li>如果创建工厂的入口是XML，一般就用<code class="notranslate">ClassPathXmlApplicationContext</code>来加载xml文件；xml文件中可以通过<code class="notranslate">&lt;context:component-scan&gt;</code>来扫描注解信息，通过来导入其他xml配置文件；</li>
+<li>如果创建工厂的入口是注解，一般就用<code class="notranslate">AnnotationConfigApplicationContext</code>来加载，可以通过注解<code class="notranslate">@Import</code>、<code class="notranslate">@ComponentScan</code>扫描其他注解信息，通过<code class="notranslate">@ImportSource</code>导入其他注解信息；</li>
+</ul>
+<div class="highlight highlight-source-java"><pre class="notranslate">	<span class="pl-s1">ctx</span> = <span class="pl-k">new</span> <span class="pl-smi">AnnotationConfigApplicationContext</span>(<span class="pl-s">"com.ws"</span>);</pre></div>
+<ul>
+<li>虽然有各种各样的关联扫描方法，但我们可以将各种配置文件写在一个集中的类中：<code class="notranslate">BeanConfig</code></li>
+<li>在Spring中，bean有3种常见的创建方式：①<code class="notranslate">@Component</code>: 常用于源码可修改，创建过程比较简单，直接调用构造方法即可的类型；②<code class="notranslate">@Bean</code>: 常用于源码不可修改的类型(如第三方库)或者创建过程比较复杂的类型；③<code class="notranslate">&lt;Bean&gt;</code>: xml文件适用于所有类型。</li>
+<li>使用优先级:<code class="notranslate">③&gt;②&gt;①</code></li>
+</ul>
+<h3><strong>8.纯注解开发AOP</strong></h3>
+<p>纯注解开发AOP，利用<code class="notranslate">@EnableAspectJAutoProxy</code>代替<code class="notranslate">&lt;aop:aspectj-autoproxy/&gt;</code></p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c1">@</span><span class="pl-c1">Aspect</span>
+<span class="pl-c1">@</span><span class="pl-c1">Component</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">DefaultAspect</span> {
+    <span class="pl-c1">@</span><span class="pl-c1">Pointcut</span>(<span class="pl-s">"within(com.ws.service.impl.UserServiceImpl)"</span>)
+    <span class="pl-k">public</span> <span class="pl-smi">void</span> <span class="pl-en">pc</span>() {}
+
+    <span class="pl-c1">@</span><span class="pl-c1">Around</span>(<span class="pl-s">"pc()"</span>)
+    <span class="pl-k">public</span> <span class="pl-smi">Object</span> <span class="pl-en">log</span>(<span class="pl-smi">ProceedingJoinPoint</span> <span class="pl-s1">point</span>) <span class="pl-k">throws</span> <span class="pl-smi">Throwable</span> {
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"log-----------------------1"</span>);
+
+        <span class="pl-c">// 调用目标方法</span>
+        <span class="pl-smi">Object</span> <span class="pl-s1">ret</span> = <span class="pl-s1">point</span>.<span class="pl-en">proceed</span>();
+
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"log-----------------------2"</span>);
+        <span class="pl-k">return</span> <span class="pl-s1">ret</span>;
+    }
+
+    <span class="pl-c1">@</span><span class="pl-c1">Around</span>(<span class="pl-s">"pc()"</span>)
+    <span class="pl-k">public</span> <span class="pl-smi">Object</span> <span class="pl-en">watch</span>(<span class="pl-smi">ProceedingJoinPoint</span> <span class="pl-s1">point</span>) <span class="pl-k">throws</span> <span class="pl-smi">Throwable</span> {
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"watch-----------------------1"</span>);
+
+        <span class="pl-c">// 调用目标方法</span>
+        <span class="pl-smi">Object</span> <span class="pl-s1">ret</span> = <span class="pl-s1">point</span>.<span class="pl-en">proceed</span>();
+
+        <span class="pl-smi">System</span>.<span class="pl-s1">out</span>.<span class="pl-en">println</span>(<span class="pl-s">"watch-----------------------2"</span>);
+        <span class="pl-k">return</span> <span class="pl-s1">ret</span>;
+    }
+}</pre></div>
+<p>单独一个类</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c1">@</span><span class="pl-c1">Configuration</span>
+<span class="pl-c1">@</span><span class="pl-c1">EnableAspectJAutoProxy</span>
+<span class="pl-c1">@</span><span class="pl-c1">ComponentScan</span>(<span class="pl-s">"com.ws"</span>)
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">AppConfig</span> {
+}</pre></div>
+<p>这样就可以实现AOP</p>
+<h3><strong>9.纯注解开发整合MyBatis</strong></h3>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c">// 利用spring的纯注解整合mybatis</span>
+<span class="pl-c1">@</span><span class="pl-c1">Configuration</span>
+<span class="pl-c1">@</span><span class="pl-c1">PropertySource</span>(<span class="pl-s">"db.properties"</span>)
+<span class="pl-c1">@</span><span class="pl-c1">MapperScan</span>(<span class="pl-s">"${mybatis.mapperScan}"</span>)
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">MyBatisConfig</span> {
+    <span class="pl-c1">@</span><span class="pl-c1">Value</span>(<span class="pl-s">"${jdbc.driverClassName}"</span>)
+    <span class="pl-k">private</span> <span class="pl-smi">String</span> <span class="pl-s1">driverClassName</span>;
+    <span class="pl-c1">@</span><span class="pl-c1">Value</span>(<span class="pl-s">"${jdbc.url}"</span>)
+    <span class="pl-k">private</span> <span class="pl-smi">String</span> <span class="pl-s1">url</span>;
+    <span class="pl-c1">@</span><span class="pl-c1">Value</span>(<span class="pl-s">"${jdbc.username}"</span>)
+    <span class="pl-k">private</span> <span class="pl-smi">String</span> <span class="pl-s1">username</span>;
+    <span class="pl-c1">@</span><span class="pl-c1">Value</span>(<span class="pl-s">"${jdbc.password}"</span>)
+    <span class="pl-k">private</span> <span class="pl-smi">String</span> <span class="pl-s1">password</span>;
+    <span class="pl-c1">@</span><span class="pl-c1">Value</span>(<span class="pl-s">"${mybatis.typeAliasesPackage}"</span>)
+    <span class="pl-k">private</span> <span class="pl-smi">String</span> <span class="pl-s1">typeAliasesPackage</span>;
+    <span class="pl-c1">@</span><span class="pl-c1">Value</span>(<span class="pl-s">"${mybatis.mapperLocations}"</span>)
+    <span class="pl-k">private</span> <span class="pl-smi">String</span> <span class="pl-s1">mapperLocations</span>;
+
+    <span class="pl-c">// 数据源</span>
+    <span class="pl-c1">@</span><span class="pl-c1">Bean</span>
+    <span class="pl-k">public</span> <span class="pl-smi">DataSource</span> <span class="pl-en">dataSource</span>() {
+        <span class="pl-smi">DruidDataSource</span> <span class="pl-s1">ds</span> = <span class="pl-k">new</span> <span class="pl-smi">DruidDataSource</span>();
+        <span class="pl-s1">ds</span>.<span class="pl-en">setDriverClassName</span>(<span class="pl-s1">driverClassName</span>);
+        <span class="pl-s1">ds</span>.<span class="pl-en">setUrl</span>(<span class="pl-s1">url</span>);
+        <span class="pl-s1">ds</span>.<span class="pl-en">setUsername</span>(<span class="pl-s1">username</span>);
+        <span class="pl-s1">ds</span>.<span class="pl-en">setPassword</span>(<span class="pl-s1">password</span>);
+        <span class="pl-k">return</span> <span class="pl-s1">ds</span>;
+    }
+
+    <span class="pl-c">// 创建sqlSessionFactory</span>
+    <span class="pl-c1">@</span><span class="pl-c1">Bean</span>
+    <span class="pl-k">public</span> <span class="pl-smi">SqlSessionFactoryBean</span> <span class="pl-en">sqlSessionFactory</span>() <span class="pl-k">throws</span> <span class="pl-smi">Exception</span> {
+        <span class="pl-smi">SqlSessionFactoryBean</span> <span class="pl-s1">bean</span> = <span class="pl-k">new</span> <span class="pl-smi">SqlSessionFactoryBean</span>();
+        <span class="pl-s1">bean</span>.<span class="pl-en">setDataSource</span>(<span class="pl-en">dataSource</span>());
+        <span class="pl-s1">bean</span>.<span class="pl-en">setTypeAliasesPackage</span>(<span class="pl-s1">typeAliasesPackage</span>); <span class="pl-c">// 这个包下的类自动设置别名</span>
+        <span class="pl-smi">PathMatchingResourcePatternResolver</span> <span class="pl-s1">resolver</span> = <span class="pl-k">new</span> <span class="pl-smi">PathMatchingResourcePatternResolver</span>();
+        <span class="pl-s1">bean</span>.<span class="pl-en">setMapperLocations</span>(<span class="pl-s1">resolver</span>.<span class="pl-en">getResources</span>(<span class="pl-s1">mapperLocations</span>)); <span class="pl-c">// 映射文件的位置(db.properties中已配置)</span>
+        <span class="pl-k">return</span> <span class="pl-s1">bean</span>;
+    }
+
+    <span class="pl-c">// 扫描Dao可以省略;直接由@MapperScan("${mybatis.mapperScan}")注解代替</span>
+<span class="pl-c">//    @Bean</span>
+<span class="pl-c">//    public MapperScannerConfigurer configurer() {</span>
+<span class="pl-c">//        MapperScannerConfigurer configurer = new MapperScannerConfigurer();</span>
+<span class="pl-c">//        configurer.setSqlSessionFactoryBeanName("sqlSessionFactory");</span>
+<span class="pl-c">//        configurer.setBasePackage("com.ws.dao");</span>
+<span class="pl-c">//        return configurer;</span>
+<span class="pl-c">//    }</span></pre></div>
+<p>对比：</p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210923171407-143b2988b536450891e9eb9fcff445cd.png"><img src="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210923171407-143b2988b536450891e9eb9fcff445cd.png" alt="QQ图片20210923171407.png" style="max-width: 100%;"></a></p>
+<h3><strong>10.纯注解开发事务管理</strong></h3>
+<p>纯注解的事务管理，用注解<code class="notranslate">@EnableTransactionManagement</code>替代<code class="notranslate">&lt;tx:annotation-driven&gt;</code></p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c1">@</span><span class="pl-c1">Configuration</span>
+<span class="pl-c1">@</span><span class="pl-c1">EnableTransactionManagement</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">TxConfig</span> {
+    <span class="pl-c1">@</span><span class="pl-c1">Bean</span>
+    <span class="pl-k">public</span> <span class="pl-smi">DataSourceTransactionManager</span> <span class="pl-en">mgr</span>(<span class="pl-smi">DataSource</span> <span class="pl-s1">dataSource</span>) {
+        <span class="pl-smi">DataSourceTransactionManager</span> <span class="pl-s1">mgr</span> = <span class="pl-k">new</span> <span class="pl-smi">DataSourceTransactionManager</span>();
+        <span class="pl-s1">mgr</span>.<span class="pl-en">setDataSource</span>(<span class="pl-s1">dataSource</span>);
+        <span class="pl-k">return</span> <span class="pl-s1">mgr</span>;
+    }
+}</pre></div>
+<h3><strong>11.JSR注解</strong></h3>
+<p>略</p>
+<h3><strong>12.component-scan详解</strong></h3>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210923171939-31a3550dab0d423c92c39d82115a0967.png"><img src="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210923171939-31a3550dab0d423c92c39d82115a0967.png" alt="QQ图片20210923171939.png" style="max-width: 100%;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210923171943-2f688ce56bb34e8abaca94954676fc90.png"><img src="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210923171943-2f688ce56bb34e8abaca94954676fc90.png" alt="QQ图片20210923171943.png" style="max-width: 100%;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210923171946-36040c3034a54305bb67a7fde205cc15.png"><img src="/upload/2021/09/QQ%E5%9B%BE%E7%89%8720210923171946-36040c3034a54305bb67a7fde205cc15.png" alt="QQ图片20210923171946.png" style="max-width: 100%;"></a></p>
+<h2><strong>JPA</strong></h2>
+<h3><strong>如何使用 JPA 在数据库中非持久化一个字段？</strong></h3>
+<p>假如我们有下面一个类：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c1">@</span><span class="pl-c1">Entity</span>(<span class="pl-s1">name</span>=<span class="pl-s">"USER"</span>)
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">User</span> {
+
+    <span class="pl-c1">@</span><span class="pl-c1">Id</span>
+    <span class="pl-c1">@</span><span class="pl-c1">GeneratedValue</span>(<span class="pl-s1">strategy</span> = <span class="pl-smi">GenerationType</span>.<span class="pl-c1">AUTO</span>)
+    <span class="pl-c1">@</span><span class="pl-c1">Column</span>(<span class="pl-s1">name</span> = <span class="pl-s">"ID"</span>)
+    <span class="pl-k">private</span> <span class="pl-smi">Long</span> <span class="pl-s1">id</span>;
+
+    <span class="pl-c1">@</span><span class="pl-c1">Column</span>(<span class="pl-s1">name</span>=<span class="pl-s">"USER_NAME"</span>)
+    <span class="pl-k">private</span> <span class="pl-smi">String</span> <span class="pl-s1">userName</span>;
+
+    <span class="pl-c1">@</span><span class="pl-c1">Column</span>(<span class="pl-s1">name</span>=<span class="pl-s">"PASSWORD"</span>)
+    <span class="pl-k">private</span> <span class="pl-smi">String</span> <span class="pl-s1">password</span>;
+
+    <span class="pl-k">private</span> <span class="pl-smi">String</span> <span class="pl-s1">secrect</span>;
+
+}</pre></div>
+<p>如果我们想让<code class="notranslate">secrect</code> 这个字段不被持久化，也就是不被数据库存储怎么办？我们可以采用下面几种方法：</p>
+<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-k">static</span> <span class="pl-smi">String</span> <span class="pl-s1">transient1</span>; <span class="pl-c">// not persistent because of static</span>
+<span class="pl-k">final</span> <span class="pl-smi">String</span> <span class="pl-s1">transient2</span> = <span class="pl-s">"Satish"</span>; <span class="pl-c">// not persistent because of final</span>
+<span class="pl-k">transient</span> <span class="pl-smi">String</span> <span class="pl-s1">transient3</span>; <span class="pl-c">// not persistent because of transient</span>
+<span class="pl-c1">@</span><span class="pl-c1">Transient</span>
+<span class="pl-smi">String</span> <span class="pl-s1">transient4</span>; <span class="pl-c">// not persistent because of @Transient</span></pre></div>
+<p>一般使用后面两种方式比较多，我个人使用注解的方式比较多。</p>
+<h2><strong>参考</strong></h2>
+<ul>
+<li>《Spring 技术内幕》</li>
+<li><a href="http://www.cnblogs.com/wmyskxz/p/8820371.html" rel="nofollow">http://www.cnblogs.com/wmyskxz/p/8820371.html</a></li>
+<li><a href="https://www.journaldev.com/2696/spring-interview-questions-and-answers" rel="nofollow">https://www.journaldev.com/2696/spring-interview-questions-and-answers</a></li>
+<li><a href="https://www.edureka.co/blog/interview-questions/spring-interview-questions/" rel="nofollow">https://www.edureka.co/blog/interview-questions/spring-interview-questions/</a></li>
+<li><a href="https://www.cnblogs.com/clwydjgs/p/9317849.html" rel="nofollow">https://www.cnblogs.com/clwydjgs/p/9317849.html</a></li>
+<li><a href="https://howtodoinjava.com/interview-questions/top-spring-interview-questions-with-answers/" rel="nofollow">https://howtodoinjava.com/interview-questions/top-spring-interview-questions-with-answers/</a></li>
+<li><a href="http://www.tomaszezula.com/2014/02/09/spring-series-part-5-component-vs-bean/" rel="nofollow">http://www.tomaszezula.com/2014/02/09/spring-series-part-5-component-vs-bean/</a></li>
+<li><a href="https://stackoverflow.com/questions/34172888/difference-between-bean-and-autowired" rel="nofollow">https://stackoverflow.com/questions/34172888/difference-between-bean-and-autowired</a></li>
+</ul></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+
+</div>
+    <div id="footer"><div id="footer1">Copyright © <span id="copyrightYear"></span> <a href="https://shuaiwang888.github.io/appStore-Blog.github.io">Blog Title</a></div>
+<div id="footer2">
+    <span id="runday"></span><span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>
+</div>
+
+<script>
+var now=new Date();
+document.getElementById("copyrightYear").innerHTML=now.getFullYear();
+
+if(""!=""){
+    var startSite=new Date("");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";
+}
+</script></div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z', 'copy': 'M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z', 'check': 'M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","shuaiwang888/appStore-Blog.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const createClipboardHTML = (codeContent, additionalClasses = '') => `
+        <pre class="notranslate"><code class="notranslate">${codeContent}</code></pre>
+        <div class="clipboard-container position-absolute right-0 top-0 ${additionalClasses}">
+            <clipboard-copy class="ClipboardButton btn m-2 p-0" role="button" style="display: inherit;">
+                <svg height="16" width="16" class="octicon octicon-copy m-2"><path d="${IconList["copy"]}"></path></svg>
+                <svg height="16" width="16" class="octicon octicon-check color-fg-success m-2 d-none"><path d="${IconList["check"]}"></path></svg>
+            </clipboard-copy>
+            <div class="copy-feedback">Copied!</div>
+        </div>
+    `;
+
+    const handleCodeElements = (selector = '') => {
+        document.querySelectorAll(selector).forEach(codeElement => {
+            const codeContent = codeElement.innerHTML;
+            const newStructure = document.createElement('div');
+            newStructure.className = 'snippet-clipboard-content position-relative overflow-auto';
+            newStructure.innerHTML = createClipboardHTML(codeContent);
+
+            const parentElement = codeElement.parentElement;
+            if (selector.includes('highlight')) {
+                parentElement.insertBefore(newStructure, codeElement.nextSibling);
+                parentElement.removeChild(codeElement);
+            } else {
+                parentElement.parentElement.replaceChild(newStructure, parentElement);
+            }
+        });
+    };
+
+    handleCodeElements('pre.notranslate > code.notranslate');
+    handleCodeElements('div.highlight > pre.notranslate');
+
+    let currentFeedback = null;
+    document.querySelectorAll('clipboard-copy').forEach(copyButton => {
+        copyButton.addEventListener('click', () => {
+            const codeContent = copyButton.closest('.snippet-clipboard-content').innerText;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = codeContent;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            const copyIcon = copyButton.querySelector('.octicon-copy');
+            const checkIcon = copyButton.querySelector('.octicon-check');
+            const copyFeedback = copyButton.nextElementSibling;
+
+            if (currentFeedback && currentFeedback !== copyFeedback) {currentFeedback.style.display = 'none';}
+            currentFeedback = copyFeedback;
+
+            copyIcon.classList.add('d-none');
+            checkIcon.classList.remove('d-none');
+            copyFeedback.style.display = 'block';
+            copyButton.style.borderColor = 'var(--color-success-fg)';
+
+            setTimeout(() => {
+                copyIcon.classList.remove('d-none');
+                checkIcon.classList.add('d-none');
+                copyFeedback.style.display = 'none';
+                copyButton.style.borderColor = '';
+            }, 2000);
+        });
+    });
+});
+
+</script>
+
+
+</html>
